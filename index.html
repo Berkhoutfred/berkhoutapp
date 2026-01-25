@@ -6,40 +6,28 @@
     <title>Berkhout Ritregistratie</title>
     <style>
         body { font-family: sans-serif; background: #f0f0f5; margin: 0; padding: 15px; color: #333; }
-        
-        /* Stijl voor het logo */
-        .logo-container { text-align: center; margin-bottom: 20px; margin-top: 10px; }
-        .logo-img { max-width: 100%; height: auto; max-height: 90px; }
-
+        .logo-container { text-align: center; margin-bottom: 20px; }
+        .logo-img { max-width: 100%; height: auto; max-height: 80px; }
         .card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        
-        label { display: block; font-size: 12px; font-weight: bold; color: #666; text-transform: uppercase; margin-bottom: 4px; }
+        h2 { font-size: 16px; margin: 0 0 12px 0; color: #0056b3; border-bottom: 2px solid #f0f0f5; padding-bottom: 5px; }
+        label { display: block; font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase; margin-bottom: 4px; }
         input[type="text"], input[type="date"], input[type="number"], select {
             width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; background: #fff; margin-bottom: 12px;
         }
-
-        .rit-rij { padding: 10px 0; border-bottom: 1px solid #eee; }
-        .locatie-naam { font-weight: bold; margin-bottom: 6px; }
-        
-        .input-groep { display: flex; gap: 8px; align-items: center; }
-        .tijd-selector { display: flex; align-items: center; background: #eee; border-radius: 6px; flex: 1; overflow: hidden; }
-        .t-btn { background: #0056b3; color: white; border: none; width: 45px; height: 45px; font-size: 20px; font-weight: bold; }
-        .tijd-val { flex: 1; text-align: center; font-weight: bold; font-size: 16px; }
-        
-        .km-input { width: 110px !important; margin-bottom: 0 !important; }
-
-        .stremming-box {
-            display: flex; align-items: center; justify-content: space-between;
-            background: #fff3cd; padding: 12px; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 15px;
-        }
-        .stremming-box label { margin: 0; color: #856404; font-size: 15px; text-transform: none; }
-        input[type="checkbox"] { width: 24px; height: 24px; }
-
+        .rit-rij { padding: 12px 0; border-bottom: 1px solid #eee; }
+        .locatie-naam { font-weight: bold; margin-bottom: 8px; font-size: 14px; }
+        .selector-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+        .control-label { min-width: 40px; font-size: 10px; color: #888; font-weight: bold; }
+        .stepper { display: flex; align-items: center; background: #eee; border-radius: 6px; flex: 1; overflow: hidden; border: 1px solid #ddd; }
+        .t-btn { background: #0056b3; color: white; border: none; width: 45px; height: 42px; font-size: 18px; font-weight: bold; }
+        .val-display { flex: 1; text-align: center; font-weight: bold; font-size: 15px; background: white; line-height: 42px; height: 42px; }
+        .km-field { border: none; width: 100%; text-align: center; font-size: 16px; font-weight: bold; padding: 10px 0; background: white; }
+        .stremming-box { display: flex; align-items: center; justify-content: space-between; background: #fff3cd; padding: 12px; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 10px; }
+        .stremming-box label { margin: 0; color: #856404; font-size: 14px; text-transform: none; }
         .totaal-sectie { background: #e7f3ff; padding: 15px; border-radius: 8px; border: 1px solid #b3d7ff; margin-top: 15px; }
         .totaal-regel { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; }
         .totaal-waarde { color: #0056b3; font-size: 18px; }
-
-        .btn-verzend { background: #28a745; color: white; width: 100%; padding: 18px; font-size: 18px; font-weight: bold; border: none; border-radius: 8px; margin-top: 15px; }
+        .btn-verzend { background: #28a745; color: white; width: 100%; padding: 18px; font-size: 18px; font-weight: bold; border: none; border-radius: 12px; margin-top: 15px; }
         .btn-wis { background: #dc3545; color: white; width: 100%; padding: 10px; font-size: 14px; border: none; border-radius: 8px; margin-top: 25px; opacity: 0.7; }
     </style>
 </head>
@@ -50,8 +38,9 @@
     </div>
 
     <div class="card">
-        <label style="color: #0056b3; font-size: 14px;">Naam Chauffeur</label>
-        <select id="chauffeur-naam" style="border: 2px solid #0056b3; background: #f8fbff; font-weight: bold;">
+        <h2>Basisgegevens</h2>
+        <label>Chauffeur</label>
+        <select id="chauffeur-naam">
             <option value="">Kies chauffeur...</option>
             <option value="Fred Haan">Fred Haan</option>
             <option value="Fred Stravers">Fred Stravers</option>
@@ -63,9 +52,9 @@
             <option value="Monique Westerholt">Monique Westerholt</option>
             <option value="Niek Berkhout">Niek Berkhout</option>
         </select>
-        
+
         <label>Begindatum</label>
-        <input type="date" id="rit-datum">
+        <input type="date" id="rit-datum" onchange="berekenAlles()">
 
         <label>Bus nummer</label>
         <select id="bus-nummer">
@@ -78,18 +67,12 @@
             <option value="62">62</option>
         </select>
 
-        <label>Klant / Opdrachtgever</label>
+        <label>Klant</label>
         <input type="text" id="klant-naam" placeholder="Naam van de klant">
 
         <div style="display: flex; gap: 10px;">
-            <div style="flex: 1;">
-                <label>Van</label>
-                <input type="text" id="van-plaats" placeholder="Vertrekplaats">
-            </div>
-            <div style="flex: 1;">
-                <label>Naar</label>
-                <input type="text" id="naar-plaats" placeholder="Bestemming">
-            </div>
+            <div style="flex: 1;"><label>Van</label><input type="text" id="van-plaats"></div>
+            <div style="flex: 1;"><label>Naar</label><input type="text" id="naar-plaats"></div>
         </div>
     </div>
 
@@ -98,7 +81,7 @@
         <div id="ritLijst"></div>
         
         <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #f0f0f5;">
-            <label>Einddatum (na retour garage)</label>
+            <label>Einddatum</label>
             <input type="date" id="rit-einddatum" onchange="berekenAlles()">
         </div>
 
@@ -108,18 +91,12 @@
         </div>
 
         <div class="totaal-sectie">
-            <div class="totaal-regel">
-                <span>Totale diensttijd:</span>
-                <span class="totaal-waarde" id="totaalTijd">0u 0m</span>
-            </div>
-            <div class="totaal-regel">
-                <span>Totaal gereden KM:</span>
-                <span class="totaal-waarde" id="totaalKm">0 km</span>
-            </div>
+            <div class="totaal-regel"><span>Diensttijd:</span><span class="totaal-waarde" id="totaalTijd">0u 0m</span></div>
+            <div class="totaal-regel"><span>Totaal KM:</span><span class="totaal-waarde" id="totaalKm">0 km</span></div>
         </div>
     </div>
 
-    <button class="btn-verzend" onclick="verstuurMail()">VERSTUUR RITDATA VIA MAIL</button>
+    <button class="btn-verzend" onclick="verstuurMail()">VERSTUUR RITDATA</button>
     <button class="btn-wis" onclick="wisAlles()">WIS ALLE VELDEN</button>
 
     <script>
@@ -136,13 +113,21 @@
                 html += `
                 <div class="rit-rij">
                     <div class="locatie-naam">${loc}</div>
-                    <div class="input-groep">
-                        <div class="tijd-selector">
+                    <div class="selector-row">
+                        <div class="control-label">TIJD</div>
+                        <div class="stepper">
                             <button class="t-btn" onclick="pasTijdAan(${index}, -15)">-</button>
-                            <div class="tijd-val" id="tijd-${index}">${standaardTijden[index]}</div>
+                            <div class="val-display" id="tijd-${index}">${standaardTijden[index]}</div>
                             <button class="t-btn" onclick="pasTijdAan(${index}, 15)">+</button>
                         </div>
-                        <input type="number" id="km-${index}" class="km-input" placeholder="KM" oninput="berekenAlles()">
+                    </div>
+                    <div class="selector-row">
+                        <div class="control-label">KM</div>
+                        <div class="stepper">
+                            <button class="t-btn" onclick="pasKmAan(${index}, -1)">-</button>
+                            <div style="flex:1; background:white;"><input type="number" id="km-${index}" class="km-field" placeholder="KM stand" oninput="berekenAlles()"></div>
+                            <button class="t-btn" onclick="pasKmAan(${index}, 1)">+</button>
+                        </div>
                     </div>
                 </div>`;
             });
@@ -159,6 +144,25 @@
             berekenAlles();
         }
 
+        function pasKmAan(id, delta) {
+            let el = document.getElementById(`km-${id}`);
+            let val = parseInt(el.value) || 0;
+            // Alleen kilometers verlagen als het de eerste stand is, anders moet het oplopend zijn
+            if (id > 0 && delta < 0) {
+                let prevVal = parseInt(document.getElementById(`km-${id-1}`).value) || 0;
+                if (val + delta < prevVal) return;
+            }
+            el.value = val + delta;
+            // Zorg dat volgende velden ook oplopen
+            for (let i = id + 1; i < 6; i++) {
+                let nextEl = document.getElementById(`km-${i}`);
+                if (nextEl.value && parseInt(nextEl.value) < parseInt(el.value)) {
+                    nextEl.value = el.value;
+                }
+            }
+            berekenAlles();
+        }
+
         function berekenAlles() {
             let standen = [];
             for(let i=0; i<6; i++) {
@@ -167,61 +171,37 @@
             }
             if(standen.length >= 2) {
                 document.getElementById('totaalKm').innerText = (Math.max(...standen) - Math.min(...standen)) + " km";
-            } else {
-                document.getElementById('totaalKm').innerText = "0 km";
             }
 
-            let tStart = document.getElementById('tijd-0').innerText.split(":");
-            let tEind = document.getElementById('tijd-5').innerText.split(":");
-            let diff = ((parseInt(tEind[0])*60)+parseInt(tEind[1])) - ((parseInt(tStart[0])*60)+parseInt(tStart[1]));
+            let startMin = tijdNaarMinuten(document.getElementById('tijd-0').innerText);
+            let eindMin = tijdNaarMinuten(document.getElementById('tijd-5').innerText);
             
             const d1 = new Date(document.getElementById('rit-datum').value);
             const d2 = new Date(document.getElementById('rit-einddatum').value);
-            if (d2 > d1) {
-                const dagenVerschil = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
-                diff += (dagenVerschil * 1440);
-            } else if(diff < 0) {
-                diff += 1440;
-            }
+            let dagVerschil = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+            
+            let totaalMin = (eindMin + (dagVerschil * 1440)) - startMin;
+            if (totaalMin < 0) totaalMin = 0;
 
-            document.getElementById('totaalTijd').innerText = Math.floor(diff/60) + "u " + (diff%60) + "m";
+            document.getElementById('totaalTijd').innerText = Math.floor(totaalMin / 60) + "u " + (totaalMin % 60) + "m";
+        }
+
+        function tijdNaarMinuten(tijdStr) {
+            let [h, m] = tijdStr.split(":").map(Number);
+            return (h * 60) + m;
         }
 
         function verstuurMail() {
-            const chauffeur = document.getElementById('chauffeur-naam').value || "Niet geselecteerd";
+            const chauffeur = document.getElementById('chauffeur-naam').value || "Onbekend";
             const d1 = document.getElementById('rit-datum').value;
-            const bus = document.getElementById('bus-nummer').value || "Onbekend";
-            const klant = document.getElementById('klant-naam').value || "Geen opgave";
-            const van = document.getElementById('van-plaats').value || "---";
-            const naar = document.getElementById('naar-plaats').value || "---";
-            const stremming = document.getElementById('stremming').checked ? "JA (Treinstremming)" : "Nee";
-
-            let body = `RITREGISTRATIE BERKHOUT\n`;
-            body += `----------------------\n`;
-            body += `Chauffeur: ${chauffeur}\n`;
-            body += `Stremming: ${stremming}\n`;
-            body += `Bus: ${bus} | Datum: ${d1}\n`;
-            body += `Klant: ${klant}\n`;
-            body += `Traject: ${van} - ${naar}\n\n`;
-            
-            locaties.forEach((loc, i) => {
-                body += `${loc}: ${document.getElementById('tijd-'+i).innerText} | KM: ${document.getElementById('km-'+i).value || '---'}\n`;
-            });
-
-            body += `\nTotaal tijd: ${document.getElementById('totaalTijd').innerText}\n`;
-            body += `Totaal KM: ${document.getElementById('totaalKm').innerText}\n`;
-            
-            if(document.getElementById('stremming').checked) body += `\nLET OP: Stremming-tarief toepassen!`;
-
-            window.location.href = `mailto:info@taxiberkhout.nl?subject=Ritregistratie ${chauffeur} (${d1})&body=${encodeURIComponent(body)}`;
+            const bus = document.getElementById('bus-nummer').value || "---";
+            const body = `RITREGISTRATIE BERKHOUT\nChauffeur: ${chauffeur}\nBus: ${bus}\nDatum: ${d1}\n\n` + 
+                locaties.map((l, i) => `${l}: ${document.getElementById('tijd-'+i).innerText} | KM: ${document.getElementById('km-'+i).value || '---'}`).join('\n') +
+                `\n\nTotaal tijd: ${document.getElementById('totaalTijd').innerText}\nTotaal KM: ${document.getElementById('totaalKm').innerText}`;
+            window.location.href = `mailto:info@taxiberkhout.nl?subject=Ritregistratie ${chauffeur}&body=${encodeURIComponent(body)}`;
         }
 
-        function wisAlles() {
-            if(confirm("Alle velden leegmaken voor een nieuwe rit?")) {
-                location.reload();
-            }
-        }
-
+        function wisAlles() { if(confirm("Alle velden leegmaken?")) location.reload(); }
         initApp();
     </script>
 </body>
