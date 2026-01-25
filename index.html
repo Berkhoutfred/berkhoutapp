@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
     <title>Berkhout Ritregistratie</title>
     <style>
         body { font-family: sans-serif; background: #f0f0f5; margin: 0; padding: 15px; color: #333; }
@@ -64,6 +68,7 @@
             <option value="53">53</option>
             <option value="60">60</option>
             <option value="62">62</option>
+            <option value="BZ-TX-98">BZ-TX-98</option>
         </select>
 
         <label>Klant</label>
@@ -88,16 +93,17 @@
         </div>
 
         <div class="totaal-sectie">
-            <div id="totaalTijd" style="font-weight: bold;">Diensttijd: 0u 0m</div>
-            <div id="totaalKm" style="font-weight: bold;">Totaal KM: 0 km</div>
+            <div id="totaalTijd" style="font-weight: bold; font-size: 18px;">Diensttijd: 0u 0m</div>
+            <div id="totaalKm" style="font-weight: bold; font-size: 18px;">Totaal KM: 0 km</div>
         </div>
         <div id="foutmelding" class="warning-msg">⚠️ Let op: Tijden of KM-standen lopen niet op!</div>
     </div>
 
-    <button id="verzendKnop" class="btn-verzend" onclick="verstuurMail()">VERSTUUR RITDATA</button>
+    <button id="verzendKnop" class="btn-verzend" onclick="valideerEnVerstuur()">VERSTUUR RITDATA</button>
     <button class="btn-wis" onclick="wisAlles()">WIS ALLE VELDEN</button>
 
     <script>
+        // ... (rest van de script-logica blijft gelijk) ...
         const locaties = ["Vertrek garage", "Vertrek klant", "Aankomst bestemming", "Vertrek bestemming", "Retour klant", "Retour garage"];
         const standaardTijden = ["08:00", "08:15", "10:00", "16:00", "16:30", "17:00"];
 
@@ -177,7 +183,6 @@
             }
 
             document.getElementById('foutmelding').style.display = heeftFout ? 'block' : 'none';
-            document.getElementById('verzendKnop').disabled = heeftFout;
             document.getElementById('verzendKnop').style.opacity = heeftFout ? '0.5' : '1';
 
             let maxKm = Math.max(...kmStanden);
@@ -189,7 +194,7 @@
             document.getElementById('totaalTijd').innerText = `Diensttijd: ${Math.max(0, Math.floor(totaalMin/60))}u ${Math.max(0, totaalMin%60)}m`;
         }
 
-        function verstuurMail() {
+        function valideerEnVerstuur() {
             const chauffeur = document.getElementById('chauffeur-naam').value;
             if (!chauffeur) {
                 alert("⚠️ Selecteer eerst je naam onder 'Chauffeur'.");
@@ -199,15 +204,7 @@
             const tTijd = document.getElementById('totaalTijd').innerText;
             const tKm = document.getElementById('totaalKm').innerText;
 
-            const bevestiging = confirm(
-                `Gegevens controleren:\n\n` +
-                `Chauffeur: ${chauffeur}\n` +
-                `${tTijd}\n` +
-                `${tKm}\n\n` +
-                `Klopt dit? Klik OK om de mail te openen.`
-            );
-
-            if (bevestiging) {
+            if (confirm(`Controleren voor verzenden:\n\nChauffeur: ${chauffeur}\n${tTijd}\n${tKm}\n\nKlopt dit?`)) {
                 const d1 = document.getElementById('rit-datum').value;
                 const bus = document.getElementById('bus-nummer').value || "---";
                 const klant = document.getElementById('klant-naam').value || "---";
@@ -216,18 +213,16 @@
                 const stremming = document.getElementById('stremming').checked ? "JA" : "Nee";
 
                 let body = `RITREGISTRATIE BERKHOUT\n----------------------\n`;
-                body += `Chauffeur: ${chauffeur}\nStremming: ${stremming}\nBus: ${bus}\nDatum: ${d1}\nKlant: ${klant}\nTraject: ${van} - ${naar}\n\n`;
-                
+                body += `Chauffeur: ${chauffeur}\nBus: ${bus}\nDatum: ${d1}\nStremming: ${stremming}\nKlant: ${klant}\nTraject: ${van} - ${naar}\n\n`;
                 locaties.forEach((loc, i) => {
                     body += `${loc}: ${document.getElementById('tijd-'+i).innerText} | KM: ${document.getElementById('km-'+i).value || '0'}\n`;
                 });
-
                 body += `\n${tTijd}\n${tKm}`;
                 window.location.href = `mailto:info@taxiberkhout.nl?subject=Ritregistratie ${chauffeur}&body=${encodeURIComponent(body)}`;
             }
         }
 
-        function wisAlles() { if(confirm("Alle velden leegmaken voor een nieuwe rit?")) location.reload(); }
+        function wisAlles() { if(confirm("Alle velden leegmaken?")) location.reload(); }
         initApp();
     </script>
 </body>
