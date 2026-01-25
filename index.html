@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Berkhout Ritregistratie</title>
     <style>
-        /* Universele styling voor Android & iPhone */
         body { font-family: sans-serif; background: #f0f0f5; margin: 0; padding: 15px; color: #333; }
         .card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         h2 { font-size: 18px; margin: 0 0 15px 0; color: #0056b3; border-bottom: 2px solid #f0f0f5; padding-bottom: 5px; }
@@ -15,8 +14,15 @@
             width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; background: #fff; margin-bottom: 12px;
         }
 
+        /* Treinstremming Switch */
+        .stremming-box {
+            display: flex; align-items: center; justify-content: space-between;
+            background: #fff3cd; padding: 12px; border-radius: 8px; border: 1px solid #ffeeba; margin-bottom: 15px;
+        }
+        .stremming-box label { margin: 0; color: #856404; font-size: 15px; }
+        input[type="checkbox"] { width: 24px; height: 24px; cursor: pointer; }
+
         .rit-rij { padding: 10px 0; border-bottom: 1px solid #eee; }
-        .rit-rij:last-child { border: none; }
         .locatie-naam { font-weight: bold; margin-bottom: 6px; }
         
         .input-groep { display: flex; gap: 8px; align-items: center; }
@@ -38,8 +44,22 @@
 
     <div class="card">
         <h2>Ritgegevens</h2>
-        <label>Datum</label>
-        <input type="date" id="rit-datum">
+        
+        <div class="stremming-box">
+            <label for="stremming">⚠️ Treinstremming (NS)</label>
+            <input type="checkbox" id="stremming">
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label>Begindatum</label>
+                <input type="date" id="rit-datum">
+            </div>
+            <div style="flex: 1;">
+                <label>Einddatum</label>
+                <input type="date" id="rit-einddatum">
+            </div>
+        </div>
 
         <label>Bus nummer</label>
         <select id="bus-nummer">
@@ -52,8 +72,8 @@
             <option value="62">62</option>
         </select>
 
-        <label>Klant</label>
-        <input type="text" id="klant-naam" placeholder="Naam klant">
+        <label>Klant / Opdrachtgever</label>
+        <input type="text" id="klant-naam" placeholder="Bijv. NS of CV de Gorsselnarren">
 
         <div style="display: flex; gap: 10px;">
             <div style="flex: 1;">
@@ -84,14 +104,17 @@
     </div>
 
     <button class="btn-verzend" onclick="verstuurMail()">VERSTUUR RITDATA</button>
-    <button class="btn-wis" onclick="wisAlles()">WIS VELDEN VOOR NIEUWE RIT</button>
+    <button class="btn-wis" onclick="wisAlles()">WIS VELDEN</button>
 
     <script>
         const locaties = ["Vertrek garage", "Vertrek klant", "Aankomst bestemming", "Vertrek bestemming", "Retour klant", "Retour garage"];
         const standaardTijden = ["08:00", "08:30", "10:00", "16:00", "17:30", "18:00"];
 
         function initApp() {
-            document.getElementById('rit-datum').valueAsDate = new Date();
+            const vandaag = new Date();
+            document.getElementById('rit-datum').valueAsDate = vandaag;
+            document.getElementById('rit-einddatum').valueAsDate = vandaag;
+            
             let html = "";
             locaties.forEach((loc, index) => {
                 html += `
@@ -135,38 +158,52 @@
             let tStart = document.getElementById('tijd-0').innerText.split(":");
             let tEind = document.getElementById('tijd-5').innerText.split(":");
             let diff = ((parseInt(tEind[0])*60)+parseInt(tEind[1])) - ((parseInt(tStart[0])*60)+parseInt(tStart[1]));
-            if(diff < 0) diff += 1440;
+            
+            // Check of einddatum later is dan begindatum voor nachtritten
+            const d1 = new Date(document.getElementById('rit-datum').value);
+            const d2 = new Date(document.getElementById('rit-einddatum').value);
+            if (d2 > d1) diff += 1440; 
+            else if(diff < 0) diff += 1440; // Veiligheidshalve als ze datum vergeten
+
             document.getElementById('totaalTijd').innerText = Math.floor(diff/60) + "u " + (diff%60) + "m";
         }
 
         function wisAlles() {
-            if(confirm("Weet u zeker dat u alle velden wilt leegmaken?")) {
+            if(confirm("Alle velden leegmaken?")) {
                 document.getElementById('bus-nummer').value = "";
                 document.getElementById('klant-naam').value = "";
                 document.getElementById('van-plaats').value = "";
                 document.getElementById('naar-plaats').value = "";
-                for(let i=0; i<6; i++) {
-                    document.getElementById(`km-${i}`).value = "";
-                }
+                document.getElementById('stremming').checked = false;
+                for(let i=0; i<6; i++) { document.getElementById(`km-${i}`).value = ""; }
                 berekenAlles();
             }
         }
 
         function verstuurMail() {
-            let datum = document.getElementById('rit-datum').value;
-            let bus = document.getElementById('bus-nummer').value || "Onbekend";
-            let klant = document.getElementById('klant-naam').value || "Geen klant";
-            let van = document.getElementById('van-plaats').value || "?";
-            let naar = document.getElementById('naar-plaats').value || "?";
+            const d1 = document.getElementById('rit-datum').value;
+            const d2 = document.getElementById('rit-einddatum').value;
+            const bus = document.getElementById('bus-nummer').value || "Onbekend";
+            const stremming = document.getElementById('stremming').checked ? "JA (Treinstremming)" : "Nee";
+            const klant = document.getElementById('klant-naam').value || "Geen opgave";
 
-            let body = `RITREGISTRATIE%0ADatum: ${datum}%0ABus: ${bus}%0AKlant: ${klant}%0ATraject: ${van} - ${naar}%0A%0A`;
+            let body = `RITREGISTRATIE%0A----------------------%0A`;
+            body += `Treinstremming: ${stremming}%0A`;
+            body += `Datum: ${d1} t/m ${d2}%0A`;
+            body += `Bus: ${bus}%0AKlant: ${klant}%0A%0A`;
+            
             locaties.forEach((loc, i) => {
                 body += `${loc}: ${document.getElementById('tijd-'+i).innerText} | KM: ${document.getElementById('km-'+i).value || '---'}%0A`;
             });
-            body += `%0ATotaal tijd: ${document.getElementById('totaalTijd').innerText}`;
-            body += `%0ATotaal KM: ${document.getElementById('totaalKm').innerText}`;
 
-            window.location.href = `mailto:info@taxiberkhout.nl?subject=Ritregistratie Bus ${bus}&body=${body}`;
+            body += `%0ATotaal tijd: ${document.getElementById('totaalTijd').innerText}`;
+            body += `%0ATotaal KM: ${document.getElementById('totaalKm').innerText}%0A`;
+            
+            if(document.getElementById('stremming').checked) {
+                body += `%0AALERTE: Afwijkende verloning toepassen voor stremming!`;
+            }
+
+            window.location.href = `mailto:info@taxiberkhout.nl?subject=Ritregistratie Bus ${bus} (${d1})&body=${body}`;
         }
 
         initApp();
