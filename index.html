@@ -88,8 +88,8 @@
         </div>
 
         <div class="totaal-sectie">
-            <div id="totaalTijd">Diensttijd: 0u 0m</div>
-            <div id="totaalKm">Totaal KM: 0 km</div>
+            <div id="totaalTijd" style="font-weight: bold;">Diensttijd: 0u 0m</div>
+            <div id="totaalKm" style="font-weight: bold;">Totaal KM: 0 km</div>
         </div>
         <div id="foutmelding" class="warning-msg">⚠️ Let op: Tijden of KM-standen lopen niet op!</div>
     </div>
@@ -151,7 +151,6 @@
             let kmStanden = [];
             let tijdMinuten = [];
 
-            // Verzamel data
             for(let i=0; i<6; i++) {
                 kmStanden.push(parseInt(document.getElementById(`km-${i}`).value) || 0);
                 let [h, m] = document.getElementById(`tijd-${i}`).innerText.split(":").map(Number);
@@ -162,18 +161,14 @@
             const d2 = new Date(document.getElementById('rit-einddatum').value);
             const isNachtrit = d2 > d1;
 
-            // Validatie
             for(let i=0; i<6; i++) {
                 document.getElementById(`box-km-${i}`).classList.remove('error-input');
                 document.getElementById(`box-tijd-${i}`).classList.remove('error-input');
-
                 if(i > 0) {
-                    // Check KM (moet altijd oplopen)
                     if(kmStanden[i] > 0 && kmStanden[i] < kmStanden[i-1]) {
                         document.getElementById(`box-km-${i}`).classList.add('error-input');
                         heeftFout = true;
                     }
-                    // Check Tijd (alleen oplopen op dezelfde dag)
                     if(!isNachtrit && tijdMinuten[i] < tijdMinuten[i-1]) {
                         document.getElementById(`box-tijd-${i}`).classList.add('error-input');
                         heeftFout = true;
@@ -181,12 +176,10 @@
                 }
             }
 
-            // Toon/verberg foutmelding en blokkeer knop
             document.getElementById('foutmelding').style.display = heeftFout ? 'block' : 'none';
             document.getElementById('verzendKnop').disabled = heeftFout;
             document.getElementById('verzendKnop').style.opacity = heeftFout ? '0.5' : '1';
 
-            // Bereken Totalen
             let maxKm = Math.max(...kmStanden);
             let minKm = kmStanden.find(k => k > 0) || 0;
             document.getElementById('totaalKm').innerText = `Totaal KM: ${maxKm - minKm} km`;
@@ -197,16 +190,44 @@
         }
 
         function verstuurMail() {
-            const chauffeur = document.getElementById('chauffeur-naam').value || "Onbekend";
-            const d1 = document.getElementById('rit-datum').value;
-            const bus = document.getElementById('bus-nummer').value || "---";
-            const body = `RITREGISTRATIE BERKHOUT\nChauffeur: ${chauffeur}\nBus: ${bus}\nDatum: ${d1}\n\n` + 
-                locaties.map((l, i) => `${l}: ${document.getElementById('tijd-'+i).innerText} | KM: ${document.getElementById('km-'+i).value || '0'}`).join('\n') +
-                `\n\n${document.getElementById('totaalTijd').innerText}\n${document.getElementById('totaalKm').innerText}`;
-            window.location.href = `mailto:info@taxiberkhout.nl?subject=Ritregistratie ${chauffeur}&body=${encodeURIComponent(body)}`;
+            const chauffeur = document.getElementById('chauffeur-naam').value;
+            if (!chauffeur) {
+                alert("⚠️ Selecteer eerst je naam onder 'Chauffeur'.");
+                return;
+            }
+
+            const tTijd = document.getElementById('totaalTijd').innerText;
+            const tKm = document.getElementById('totaalKm').innerText;
+
+            const bevestiging = confirm(
+                `Gegevens controleren:\n\n` +
+                `Chauffeur: ${chauffeur}\n` +
+                `${tTijd}\n` +
+                `${tKm}\n\n` +
+                `Klopt dit? Klik OK om de mail te openen.`
+            );
+
+            if (bevestiging) {
+                const d1 = document.getElementById('rit-datum').value;
+                const bus = document.getElementById('bus-nummer').value || "---";
+                const klant = document.getElementById('klant-naam').value || "---";
+                const van = document.getElementById('van-plaats').value || "---";
+                const naar = document.getElementById('naar-plaats').value || "---";
+                const stremming = document.getElementById('stremming').checked ? "JA" : "Nee";
+
+                let body = `RITREGISTRATIE BERKHOUT\n----------------------\n`;
+                body += `Chauffeur: ${chauffeur}\nStremming: ${stremming}\nBus: ${bus}\nDatum: ${d1}\nKlant: ${klant}\nTraject: ${van} - ${naar}\n\n`;
+                
+                locaties.forEach((loc, i) => {
+                    body += `${loc}: ${document.getElementById('tijd-'+i).innerText} | KM: ${document.getElementById('km-'+i).value || '0'}\n`;
+                });
+
+                body += `\n${tTijd}\n${tKm}`;
+                window.location.href = `mailto:info@taxiberkhout.nl?subject=Ritregistratie ${chauffeur}&body=${encodeURIComponent(body)}`;
+            }
         }
 
-        function wisAlles() { if(confirm("Alle velden leegmaken?")) location.reload(); }
+        function wisAlles() { if(confirm("Alle velden leegmaken voor een nieuwe rit?")) location.reload(); }
         initApp();
     </script>
 </body>
