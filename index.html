@@ -35,9 +35,8 @@
         .totaal-regel { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; }
         .totaal-waarde { color: #0056b3; font-size: 18px; }
 
-        .btn-verzend { background: #28a745; color: white; width: 100%; padding: 16px; font-size: 18px; font-weight: bold; border: none; border-radius: 8px; margin-top: 15px; }
-        .btn-wa { background: #25D366; color: white; width: 100%; padding: 16px; font-size: 18px; font-weight: bold; border: none; border-radius: 8px; margin-top: 10px; }
-        .btn-wis { background: #dc3545; color: white; width: 100%; padding: 10px; font-size: 14px; border: none; border-radius: 8px; margin-top: 20px; opacity: 0.7; }
+        .btn-verzend { background: #28a745; color: white; width: 100%; padding: 18px; font-size: 18px; font-weight: bold; border: none; border-radius: 8px; margin-top: 15px; }
+        .btn-wis { background: #dc3545; color: white; width: 100%; padding: 10px; font-size: 14px; border: none; border-radius: 8px; margin-top: 25px; opacity: 0.7; }
     </style>
 </head>
 <body>
@@ -100,9 +99,7 @@
         </div>
     </div>
 
-    <button class="btn-verzend" onclick="verstuurMail()">VERSTUUR VIA MAIL</button>
-    <button class="btn-wa" onclick="verstuurWA()">VERSTUUR VIA WHATSAPP</button>
-    
+    <button class="btn-verzend" onclick="verstuurMail()">VERSTUUR RITDATA VIA MAIL</button>
     <button class="btn-wis" onclick="wisAlles()">WIS ALLE VELDEN</button>
 
     <script>
@@ -187,4 +184,29 @@
                 t += `${loc}: ${document.getElementById('tijd-'+i).innerText} | KM: ${document.getElementById('km-'+i).value || '---'}\n`;
             });
 
-            t += `\nTotaal tijd: ${document.getElementById('totaal
+            t += `\nTotaal tijd: ${document.getElementById('totaalTijd').innerText}\n`;
+            t += `Totaal KM: ${document.getElementById('totaalKm').innerText}\n`;
+            
+            if(document.getElementById('stremming').checked) {
+                t += `\nLET OP: Stremming-tarief toepassen!`;
+            }
+            return t;
+        }
+
+        function verstuurMail() {
+            const bus = document.getElementById('bus-nummer').value || "Onbekend";
+            const datum = document.getElementById('rit-datum').value;
+            const tekst = encodeURIComponent(maakRapportTekst());
+            window.location.href = `mailto:info@taxiberkhout.nl?subject=Ritregistratie Bus ${bus} (${datum})&body=${tekst}`;
+        }
+
+        function wisAlles() {
+            if(confirm("Alle velden leegmaken voor een nieuwe rit?")) {
+                location.reload();
+            }
+        }
+
+        initApp();
+    </script>
+</body>
+</html>
