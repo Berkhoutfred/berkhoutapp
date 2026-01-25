@@ -1,411 +1,149 @@
+
 <!DOCTYPE html>
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Berkhout Totaal</title>
+    <title>Berkhout Ritregistratie</title>
     <style>
         body { font-family: -apple-system, sans-serif; background: #f2f2f7; margin: 0; padding: 15px; }
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        h2 { font-size: 18px; margin: 0 0 10px 0; color: #007aff; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px; margin-bottom: 10px; }
+        .info-label { color: #888; font-weight: bold; }
         
-        /* SCHERM WISSELAAR */
-        .nav-bar { display: flex; justify-content: center; margin-bottom: 20px; background: #fff; border-radius: 10px; padding: 5px; }
-        .nav-btn { flex: 1; padding: 10px; border: none; background: transparent; font-weight: bold; color: #999; cursor: pointer; }
-        .nav-btn.active { background: #e5e5ea; color: #000; border-radius: 8px; }
+        .rit-rij { display: flex; flex-direction: column; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .rit-rij:last-child { border: none; }
+        .locatie-naam { font-weight: bold; margin-bottom: 8px; color: #333; }
         
-        .page { display: none; }
-        .page.active { display: block; }
-
-        /* INVOER STIJL (Jouw wensen) */
-        label { display: block; font-weight: bold; margin-top: 15px; margin-bottom: 5px; color: #444; }
-        select { width: 100%; padding: 14px; font-size: 18px; border: 1px solid #ccc; border-radius: 10px; background: white; -webkit-appearance: none; }
+        .input-groep { display: flex; gap: 10px; align-items: center; }
+        .tijd-selector { display: flex; align-items: center; background: #f2f2f7; border-radius: 8px; padding: 2px; flex: 1; }
+        .t-btn { background: #007aff; color: white; border: none; width: 40px; height: 40px; border-radius: 6px; font-size: 20px; font-weight: bold; }
+        .tijd-val { flex: 1; text-align: center; font-weight: bold; font-size: 16px; }
         
-        .tijd-container { display: flex; align-items: center; background: white; border-radius: 10px; border: 1px solid #ccc; overflow: hidden; }
-        .tijd-btn { background: #007aff; color: white; border: none; width: 60px; height: 60px; font-size: 24px; font-weight: bold; }
-        .tijd-btn:active { opacity: 0.8; }
-        input[type="time"] { flex: 1; border: none; font-size: 28px; text-align: center; font-weight: bold; -webkit-appearance: none; }
+        input[type="number"] { width: 100px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; text-align: center; }
 
-        .btn-opslaan { background: #34c759; color: white; width: 100%; padding: 18px; font-size: 20px; font-weight: bold; border: none; border-radius: 12px; margin-top: 25px; }
+        .totaal-sectie { background: #e8f2ff; padding: 15px; border-radius: 10px; margin-top: 10px; border: 1px solid #007aff; }
+        .totaal-regel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .totaal-regel:last-child { margin-bottom: 0; }
+        .totaal-waarde { font-size: 18px; font-weight: 800; color: #007aff; }
 
-        /* TABEL STIJL */
-        .log-card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .dag-totaal { font-size: 18px; font-weight: bold; color: #007aff; border-top: 1px solid #eee; padding-top: 10px; margin-top: 10px; text-align: right; }
-        .rit-regel { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
-        .tijd-span { font-weight: bold; color: #333; }
-        .duur-span { color: #888; font-size: 0.9em; }
+        .btn-verzend { background: #34c759; color: white; width: 100%; padding: 18px; font-size: 18px; font-weight: bold; border: none; border-radius: 12px; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-    <div class="nav-bar">
-        <button class="nav-btn active" onclick="wisselPagina('invoer')">Nieuwe Melding</button>
-        <button class="nav-btn" onclick="wisselPagina('overzicht')">Dienstrapport</button>
-    </div>
-
-    <div id="invoer" class="page active">
-        <label>1. STATUS</label>
-        <select id="status">
-            <option value="Begin dienst">Begin dienst</option>
-            <option value="Begin nieuw tijdvak">Begin nieuw tijdvak</option>
-            <option value="Einde tijdvak">Einde tijdvak</option>
-            <option value="EINDE DIENST">EINDE DIENST</option>
-        </select>
-
-        <label>2. TIJD (+/- 15 min)</label>
-        <div class="tijd-container">
-            <button class="tijd-btn" onclick="pasTijdAan(-15)">-</button>
-            <input type="time" id="tijdVeld" readonly>
-            <button class="tijd-btn" onclick="pasTijdAan(15)">+</button>
+    <div class="card">
+        <h2>Ritgegevens #5835</h2>
+        <div class="info-grid">
+            <div><span class="info-label">Bus:</span> BZ-TX-98</div>
+            <div><span class="info-label">Klant:</span> Gorsselnarren</div>
+            <div><span class="info-label">Van:</span> Gorssel</div>
+            <div><span class="info-label">Naar:</span> Bocholt</div>
         </div>
-
-        <label>3. SOORT</label>
-        <select id="soort">
-            <option value="Normaal werk">Normaal werk</option>
-            <option value="Treinstremming">Treinstremming</option>
-        </select>
-
-        <button class="btn-opslaan" onclick="slaOp()">OPSLAAN IN LIJST</button>
-        <p style="text-align:center; color:#888; margin-top:10px;" id="melding"></p>
     </div>
 
-    <div id="overzicht" class="page">
-        <div id="rapportLijst">
+    <div class="card">
+        <h2>Tijden & KM-standen</h2>
+        <div id="ritLijst"></div>
+        
+        <div class="totaal-sectie">
+            <div class="totaal-regel">
+                <span>Totale diensttijd:</span>
+                <span class="totaal-waarde" id="totaalTijd">0u 0m</span>
             </div>
-        <button onclick="wisAlles()" style="width:100%; margin-top:20px; padding:10px; background:#ff3b30; color:white; border:none; border-radius:10px;">Alles Wissen</button>
+            <div class="totaal-regel">
+                <span>Totaal gereden KM:</span>
+                <span class="totaal-waarde" id="totaalKm">0 km</span>
+            </div>
+        </div>
     </div>
+
+    <button class="btn-verzend" onclick="verstuurMail()">VERSTUUR RITDATA</button>
 
     <script>
-        // --- DEEL 1: TIJD FUNCTIES (zoals eerder) ---
-        let nu = new Date();
-        let kwartier = 1000 * 60 * 15;
-        let afgerond = new Date(Math.round(nu.getTime() / kwartier) * kwartier);
-        zetTijdInVeld(afgerond);
+        const locaties = [
+            "Vertrek garage",
+            "Vertrek klant",
+            "Aankomst bestemming",
+            "Vertrek bestemming",
+            "Retour klant",
+            "Retour garage"
+        ];
 
-        function zetTijdInVeld(datum) {
-            let u = ("0" + datum.getHours()).slice(-2);
-            let m = ("0" + datum.getMinutes()).slice(-2);
-            document.getElementById('tijdVeld').value = u + ":" + m;
-        }
-
-        function pasTijdAan(minuten) {
-            let val = document.getElementById('tijdVeld').value.split(':');
-            let d = new Date();
-            d.setHours(parseInt(val[0]));
-            d.setMinutes(parseInt(val[1]) + minuten);
-            zetTijdInVeld(d);
-        }
-
-        // --- DEEL 2: OPSLAAN & DATABASE ---
-        function slaOp() {
-            let s = document.getElementById('status').value;
-            let t = document.getElementById('tijdVeld').value;
-            let type = document.getElementById('soort').value;
-            
-            // Maak een object van de melding
-            let melding = {
-                datum: new Date().toLocaleDateString('nl-NL'),
-                tijd: t,
-                status: s,
-                type: type,
-                timestamp: new Date().getTime() // voor sorteren
-            };
-
-            // Haal bestaande lijst op of maak nieuwe
-            let lijst = JSON.parse(localStorage.getItem('taxiLijst') || "[]");
-            lijst.push(melding);
-            localStorage.setItem('taxiLijst', JSON.stringify(lijst));
-
-            // Feedback
-            document.getElementById('melding').innerText = "Opgeslagen: " + t;
-            setTimeout(() => document.getElementById('melding').innerText = "", 2000);
-            genererRapport();
-        }
-
-        // --- DEEL 3: HET REKENWONDER (RAPPORT MAKEN) ---
-        function genererRapport() {
-            let lijst = JSON.parse(localStorage.getItem('taxiLijst') || "[]");
-            let container = document.getElementById('rapportLijst');
-            container.innerHTML = "";
-
-            if(lijst.length === 0) {
-                container.innerHTML = "<p style='text-align:center'>Nog geen ritten.</p>";
-                return;
-            }
-
-            // Simpele weergave van de ruwe data (voor nu even alles onder elkaar)
-            // In een echte app zou je hier sorteren op datum en 'Begin' koppelen aan 'Eind'
-            
+        function initApp() {
             let html = "";
-            let dagTotaalMinuten = 0;
-            let laatsteStartTijd = null;
-
-            // Sorteer op tijd
-            lijst.sort((a, b) => a.timestamp - b.timestamp);
-
-            // Groepeer per dag (versimpeld: we tonen nu alles in 1 kaart)
-            html += "<div class='log-card'><h3>Overzicht Vandaag</h3>";
-
-            lijst.forEach(item => {
-                let icoon = item.status.includes("Begin") ? "🟢" : "🔴";
-                
-                // REKENLOGICA PROBEREN
-                let berekendeTijd = "";
-                if (item.status.includes("Begin")) {
-                    laatsteStartTijd = item.tijd;
-                } else if (item.status.includes("Einde") && laatsteStartTijd) {
-                    // Bereken verschil
-                    let startDelen = laatsteStartTijd.split(":");
-                    let eindDelen = item.tijd.split(":");
-                    let startMin = (parseInt(startDelen[0]) * 60) + parseInt(startDelen[1]);
-                    let eindMin = (parseInt(eindDelen[0]) * 60) + parseInt(eindDelen[1]);
-                    
-                    let verschil = eindMin - startMin;
-                    dagTotaalMinuten += verschil;
-                    
-                    // Maak mooi uren/minuten
-                    let uren = Math.floor(verschil / 60);
-                    let min = verschil % 60;
-                    berekendeTijd = ` <span class='duur-span'>(${uren}u ${min}m)</span>`;
-                    laatsteStartTijd = null; // Reset voor volgend blok
-                }
-
-                html += `<div class='rit-regel'>
-                            <span>${icoon} ${item.tijd} - ${item.status}</span>
-                            ${berekendeTijd}
-                         </div>`;
+            locaties.forEach((loc, index) => {
+                // Stelt de initiële tijden in op basis van de planning in de PDF 
+                const startTijden = ["08:00", "08:30", "09:45", "17:00", "18:15", "18:45"];
+                html += `
+                <div class="rit-rij">
+                    <div class="locatie-naam">${loc}</div>
+                    <div class="input-groep">
+                        <div class="tijd-selector">
+                            <button class="t-btn" onclick="pasTijdAan(${index}, -15)">-</button>
+                            <div class="tijd-val" id="tijd-${index}">${startTijden[index]}</div>
+                            <button class="t-btn" onclick="pasTijdAan(${index}, 15)">+</button>
+                        </div>
+                        <input type="number" id="km-${index}" placeholder="KM stand" oninput="berekenAlles()">
+                    </div>
+                </div>`;
             });
-
-            // Totaal berekenen
-            let totUur = Math.floor(dagTotaalMinuten / 60);
-            let totMin = dagTotaalMinuten % 60;
-            html += `<div class='dag-totaal'>Totaal gewerkt: ${totUur} uur en ${totMin} minuten</div>`;
-            html += "</div>";
-
-            container.innerHTML = html;
+            document.getElementById('ritLijst').innerHTML = html;
+            berekenAlles();
         }
 
-        function wisselPagina(paginaId) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(paginaId).classList.add('active');
-            
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            if(paginaId === 'invoer') document.querySelectorAll('.nav-btn')[0].classList.add('active');
-            else {
-                document.querySelectorAll('.nav-btn')[1].classList.add('active');
-                genererRapport();
-            }
-        }
-
-        function wisAlles() {
-            if(confirm("Zeker weten? Alle historie wordt gewist.")) {
-                localStorage.removeItem('taxiLijst');
-                genererRapport();
-            }
-        }
-    </script>
-</body>
-</html><!DOCTYPE html>
-<html lang="nl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Berkhout Totaal</title>
-    <style>
-        body { font-family: -apple-system, sans-serif; background: #f2f2f7; margin: 0; padding: 15px; }
-        
-        /* SCHERM WISSELAAR */
-        .nav-bar { display: flex; justify-content: center; margin-bottom: 20px; background: #fff; border-radius: 10px; padding: 5px; }
-        .nav-btn { flex: 1; padding: 10px; border: none; background: transparent; font-weight: bold; color: #999; cursor: pointer; }
-        .nav-btn.active { background: #e5e5ea; color: #000; border-radius: 8px; }
-        
-        .page { display: none; }
-        .page.active { display: block; }
-
-        /* INVOER STIJL (Jouw wensen) */
-        label { display: block; font-weight: bold; margin-top: 15px; margin-bottom: 5px; color: #444; }
-        select { width: 100%; padding: 14px; font-size: 18px; border: 1px solid #ccc; border-radius: 10px; background: white; -webkit-appearance: none; }
-        
-        .tijd-container { display: flex; align-items: center; background: white; border-radius: 10px; border: 1px solid #ccc; overflow: hidden; }
-        .tijd-btn { background: #007aff; color: white; border: none; width: 60px; height: 60px; font-size: 24px; font-weight: bold; }
-        .tijd-btn:active { opacity: 0.8; }
-        input[type="time"] { flex: 1; border: none; font-size: 28px; text-align: center; font-weight: bold; -webkit-appearance: none; }
-
-        .btn-opslaan { background: #34c759; color: white; width: 100%; padding: 18px; font-size: 20px; font-weight: bold; border: none; border-radius: 12px; margin-top: 25px; }
-
-        /* TABEL STIJL */
-        .log-card { background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .dag-totaal { font-size: 18px; font-weight: bold; color: #007aff; border-top: 1px solid #eee; padding-top: 10px; margin-top: 10px; text-align: right; }
-        .rit-regel { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
-        .tijd-span { font-weight: bold; color: #333; }
-        .duur-span { color: #888; font-size: 0.9em; }
-    </style>
-</head>
-<body>
-
-    <div class="nav-bar">
-        <button class="nav-btn active" onclick="wisselPagina('invoer')">Nieuwe Melding</button>
-        <button class="nav-btn" onclick="wisselPagina('overzicht')">Dienstrapport</button>
-    </div>
-
-    <div id="invoer" class="page active">
-        <label>1. STATUS</label>
-        <select id="status">
-            <option value="Begin dienst">Begin dienst</option>
-            <option value="Begin nieuw tijdvak">Begin nieuw tijdvak</option>
-            <option value="Einde tijdvak">Einde tijdvak</option>
-            <option value="EINDE DIENST">EINDE DIENST</option>
-        </select>
-
-        <label>2. TIJD (+/- 15 min)</label>
-        <div class="tijd-container">
-            <button class="tijd-btn" onclick="pasTijdAan(-15)">-</button>
-            <input type="time" id="tijdVeld" readonly>
-            <button class="tijd-btn" onclick="pasTijdAan(15)">+</button>
-        </div>
-
-        <label>3. SOORT</label>
-        <select id="soort">
-            <option value="Normaal werk">Normaal werk</option>
-            <option value="Treinstremming">Treinstremming</option>
-        </select>
-
-        <button class="btn-opslaan" onclick="slaOp()">OPSLAAN IN LIJST</button>
-        <p style="text-align:center; color:#888; margin-top:10px;" id="melding"></p>
-    </div>
-
-    <div id="overzicht" class="page">
-        <div id="rapportLijst">
-            </div>
-        <button onclick="wisAlles()" style="width:100%; margin-top:20px; padding:10px; background:#ff3b30; color:white; border:none; border-radius:10px;">Alles Wissen</button>
-    </div>
-
-    <script>
-        // --- DEEL 1: TIJD FUNCTIES (zoals eerder) ---
-        let nu = new Date();
-        let kwartier = 1000 * 60 * 15;
-        let afgerond = new Date(Math.round(nu.getTime() / kwartier) * kwartier);
-        zetTijdInVeld(afgerond);
-
-        function zetTijdInVeld(datum) {
-            let u = ("0" + datum.getHours()).slice(-2);
-            let m = ("0" + datum.getMinutes()).slice(-2);
-            document.getElementById('tijdVeld').value = u + ":" + m;
-        }
-
-        function pasTijdAan(minuten) {
-            let val = document.getElementById('tijdVeld').value.split(':');
+        function pasTijdAan(id, min) {
+            let display = document.getElementById(`tijd-${id}`);
+            let t = display.innerText.split(":");
             let d = new Date();
-            d.setHours(parseInt(val[0]));
-            d.setMinutes(parseInt(val[1]) + minuten);
-            zetTijdInVeld(d);
+            d.setHours(parseInt(t[0]));
+            d.setMinutes(parseInt(t[1]) + min);
+            display.innerText = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+            berekenAlles();
         }
 
-        // --- DEEL 2: OPSLAAN & DATABASE ---
-        function slaOp() {
-            let s = document.getElementById('status').value;
-            let t = document.getElementById('tijdVeld').value;
-            let type = document.getElementById('soort').value;
-            
-            // Maak een object van de melding
-            let melding = {
-                datum: new Date().toLocaleDateString('nl-NL'),
-                tijd: t,
-                status: s,
-                type: type,
-                timestamp: new Date().getTime() // voor sorteren
-            };
-
-            // Haal bestaande lijst op of maak nieuwe
-            let lijst = JSON.parse(localStorage.getItem('taxiLijst') || "[]");
-            lijst.push(melding);
-            localStorage.setItem('taxiLijst', JSON.stringify(lijst));
-
-            // Feedback
-            document.getElementById('melding').innerText = "Opgeslagen: " + t;
-            setTimeout(() => document.getElementById('melding').innerText = "", 2000);
-            genererRapport();
-        }
-
-        // --- DEEL 3: HET REKENWONDER (RAPPORT MAKEN) ---
-        function genererRapport() {
-            let lijst = JSON.parse(localStorage.getItem('taxiLijst') || "[]");
-            let container = document.getElementById('rapportLijst');
-            container.innerHTML = "";
-
-            if(lijst.length === 0) {
-                container.innerHTML = "<p style='text-align:center'>Nog geen ritten.</p>";
-                return;
-            }
-
-            // Simpele weergave van de ruwe data (voor nu even alles onder elkaar)
-            // In een echte app zou je hier sorteren op datum en 'Begin' koppelen aan 'Eind'
-            
-            let html = "";
-            let dagTotaalMinuten = 0;
-            let laatsteStartTijd = null;
-
-            // Sorteer op tijd
-            lijst.sort((a, b) => a.timestamp - b.timestamp);
-
-            // Groepeer per dag (versimpeld: we tonen nu alles in 1 kaart)
-            html += "<div class='log-card'><h3>Overzicht Vandaag</h3>";
-
-            lijst.forEach(item => {
-                let icoon = item.status.includes("Begin") ? "🟢" : "🔴";
-                
-                // REKENLOGICA PROBEREN
-                let berekendeTijd = "";
-                if (item.status.includes("Begin")) {
-                    laatsteStartTijd = item.tijd;
-                } else if (item.status.includes("Einde") && laatsteStartTijd) {
-                    // Bereken verschil
-                    let startDelen = laatsteStartTijd.split(":");
-                    let eindDelen = item.tijd.split(":");
-                    let startMin = (parseInt(startDelen[0]) * 60) + parseInt(startDelen[1]);
-                    let eindMin = (parseInt(eindDelen[0]) * 60) + parseInt(eindDelen[1]);
-                    
-                    let verschil = eindMin - startMin;
-                    dagTotaalMinuten += verschil;
-                    
-                    // Maak mooi uren/minuten
-                    let uren = Math.floor(verschil / 60);
-                    let min = verschil % 60;
-                    berekendeTijd = ` <span class='duur-span'>(${uren}u ${min}m)</span>`;
-                    laatsteStartTijd = null; // Reset voor volgend blok
-                }
-
-                html += `<div class='rit-regel'>
-                            <span>${icoon} ${item.tijd} - ${item.status}</span>
-                            ${berekendeTijd}
-                         </div>`;
+        function berekenAlles() {
+            // Bereken KM
+            let standen = [];
+            locaties.forEach((_, index) => {
+                let val = document.getElementById(`km-${index}`).value;
+                if(val !== "") standen.push(parseInt(val));
             });
+            if(standen.length >= 2) {
+                document.getElementById('totaalKm').innerText = (Math.max(...standen) - Math.min(...standen)) + " km";
+            }
 
-            // Totaal berekenen
-            let totUur = Math.floor(dagTotaalMinuten / 60);
-            let totMin = dagTotaalMinuten % 60;
-            html += `<div class='dag-totaal'>Totaal gewerkt: ${totUur} uur en ${totMin} minuten</div>`;
-            html += "</div>";
-
-            container.innerHTML = html;
-        }
-
-        function wisselPagina(paginaId) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(paginaId).classList.add('active');
+            // Bereken Diensttijd (Eerste tijd vs Laatste tijd)
+            let tStart = document.getElementById('tijd-0').innerText.split(":");
+            let tEind = document.getElementById('tijd-5').innerText.split(":");
             
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            if(paginaId === 'invoer') document.querySelectorAll('.nav-btn')[0].classList.add('active');
-            else {
-                document.querySelectorAll('.nav-btn')[1].classList.add('active');
-                genererRapport();
-            }
+            let minStart = (parseInt(tStart[0]) * 60) + parseInt(tStart[1]);
+            let minEind = (parseInt(tEind[0]) * 60) + parseInt(tEind[1]);
+            
+            let verschil = minEind - minStart;
+            if(verschil < 0) verschil += 1440; // Voor ritten na middernacht
+
+            let h = Math.floor(verschil / 60);
+            let m = verschil % 60;
+            document.getElementById('totaalTijd').innerText = h + "u " + m + "m";
         }
 
-        function wisAlles() {
-            if(confirm("Zeker weten? Alle historie wordt gewist.")) {
-                localStorage.removeItem('taxiLijst');
-                genererRapport();
-            }
+        function verstuurMail() {
+            let tekst = "Ritgegevens Rit #5835%0A%0A";
+            locaties.forEach((loc, index) => {
+                let tijd = document.getElementById(`tijd-${index}`).innerText;
+                let km = document.getElementById(`km-${index}`).value || "---";
+                tekst += `${loc}: ${tijd} | KM: ${km}%0A`;
+            });
+            
+            tekst += "%0A" + "TOTALE DIENSTTIJD: " + document.getElementById('totaalTijd').innerText;
+            tekst += "%0A" + "TOTALE AFSTAND: " + document.getElementById('totaalKm').innerText;
+            
+            window.location.href = "mailto:info@taxiberkhout.nl?subject=Ritregistratie Hilbert&body=" + tekst;
         }
+
+        initApp();
     </script>
 </body>
 </html>
