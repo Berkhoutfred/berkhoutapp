@@ -14,6 +14,7 @@
         input[type="text"], input[type="date"], input[type="number"], select {
             width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; background: #fff; margin-bottom: 12px;
         }
+        .error-input { border: 2px solid #dc3545 !important; background: #fff8f8 !important; }
         .rit-rij { padding: 12px 0; border-bottom: 1px solid #eee; }
         .locatie-naam { font-weight: bold; margin-bottom: 8px; font-size: 14px; }
         .selector-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
@@ -21,12 +22,11 @@
         .stepper { display: flex; align-items: center; background: #eee; border-radius: 6px; flex: 1; overflow: hidden; border: 1px solid #ddd; }
         .t-btn { background: #0056b3; color: white; border: none; width: 45px; height: 42px; font-size: 18px; font-weight: bold; }
         .val-display { flex: 1; text-align: center; font-weight: bold; font-size: 15px; background: white; line-height: 42px; height: 42px; }
-        .km-field { border: none; width: 100%; text-align: center; font-size: 16px; font-weight: bold; padding: 10px 0; background: white; }
+        .km-field { border: none; width: 100%; text-align: center; font-size: 16px; font-weight: bold; padding: 10px 0; background: transparent; }
         .stremming-box { display: flex; align-items: center; justify-content: space-between; background: #fff3cd; padding: 12px; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 10px; }
         .stremming-box label { margin: 0; color: #856404; font-size: 14px; text-transform: none; }
         .totaal-sectie { background: #e7f3ff; padding: 15px; border-radius: 8px; border: 1px solid #b3d7ff; margin-top: 15px; }
-        .totaal-regel { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; }
-        .totaal-waarde { color: #0056b3; font-size: 18px; }
+        .warning-msg { color: #dc3545; font-size: 12px; font-weight: bold; margin-top: 10px; display: none; text-align: center; }
         .btn-verzend { background: #28a745; color: white; width: 100%; padding: 18px; font-size: 18px; font-weight: bold; border: none; border-radius: 12px; margin-top: 15px; }
         .btn-wis { background: #dc3545; color: white; width: 100%; padding: 10px; font-size: 14px; border: none; border-radius: 8px; margin-top: 25px; opacity: 0.7; }
     </style>
@@ -38,8 +38,7 @@
     </div>
 
     <div class="card">
-        <h2>Basisgegevens</h2>
-        <label>Chauffeur</label>
+        <h2>Chauffeur & Rit</h2>
         <select id="chauffeur-naam">
             <option value="">Kies chauffeur...</option>
             <option value="Fred Haan">Fred Haan</option>
@@ -68,7 +67,7 @@
         </select>
 
         <label>Klant</label>
-        <input type="text" id="klant-naam" placeholder="Naam van de klant">
+        <input type="text" id="klant-naam" placeholder="Naam klant">
 
         <div style="display: flex; gap: 10px;">
             <div style="flex: 1;"><label>Van</label><input type="text" id="van-plaats"></div>
@@ -80,10 +79,8 @@
         <h2>Tijden & KM-standen</h2>
         <div id="ritLijst"></div>
         
-        <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #f0f0f5;">
-            <label>Einddatum</label>
-            <input type="date" id="rit-einddatum" onchange="berekenAlles()">
-        </div>
+        <label>Einddatum</label>
+        <input type="date" id="rit-einddatum" onchange="berekenAlles()">
 
         <div class="stremming-box">
             <label for="stremming">⚠️ Treinstremming (NS)</label>
@@ -91,12 +88,13 @@
         </div>
 
         <div class="totaal-sectie">
-            <div class="totaal-regel"><span>Diensttijd:</span><span class="totaal-waarde" id="totaalTijd">0u 0m</span></div>
-            <div class="totaal-regel"><span>Totaal KM:</span><span class="totaal-waarde" id="totaalKm">0 km</span></div>
+            <div id="totaalTijd">Diensttijd: 0u 0m</div>
+            <div id="totaalKm">Totaal KM: 0 km</div>
         </div>
+        <div id="foutmelding" class="warning-msg">⚠️ Let op: Tijden of KM-standen lopen niet op!</div>
     </div>
 
-    <button class="btn-verzend" onclick="verstuurMail()">VERSTUUR RITDATA</button>
+    <button id="verzendKnop" class="btn-verzend" onclick="verstuurMail()">VERSTUUR RITDATA</button>
     <button class="btn-wis" onclick="wisAlles()">WIS ALLE VELDEN</button>
 
     <script>
@@ -107,15 +105,13 @@
             const vandaag = new Date();
             document.getElementById('rit-datum').valueAsDate = vandaag;
             document.getElementById('rit-einddatum').valueAsDate = vandaag;
-            
             let html = "";
             locaties.forEach((loc, index) => {
-                html += `
-                <div class="rit-rij">
+                html += `<div class="rit-rij">
                     <div class="locatie-naam">${loc}</div>
                     <div class="selector-row">
                         <div class="control-label">TIJD</div>
-                        <div class="stepper">
+                        <div class="stepper" id="box-tijd-${index}">
                             <button class="t-btn" onclick="pasTijdAan(${index}, -15)">-</button>
                             <div class="val-display" id="tijd-${index}">${standaardTijden[index]}</div>
                             <button class="t-btn" onclick="pasTijdAan(${index}, 15)">+</button>
@@ -123,9 +119,9 @@
                     </div>
                     <div class="selector-row">
                         <div class="control-label">KM</div>
-                        <div class="stepper">
+                        <div class="stepper" id="box-km-${index}">
                             <button class="t-btn" onclick="pasKmAan(${index}, -1)">-</button>
-                            <div style="flex:1; background:white;"><input type="number" id="km-${index}" class="km-field" placeholder="KM stand" oninput="berekenAlles()"></div>
+                            <input type="number" id="km-${index}" class="km-field" placeholder="0" oninput="berekenAlles()">
                             <button class="t-btn" onclick="pasKmAan(${index}, 1)">+</button>
                         </div>
                     </div>
@@ -146,49 +142,58 @@
 
         function pasKmAan(id, delta) {
             let el = document.getElementById(`km-${id}`);
-            let val = parseInt(el.value) || 0;
-            // Alleen kilometers verlagen als het de eerste stand is, anders moet het oplopend zijn
-            if (id > 0 && delta < 0) {
-                let prevVal = parseInt(document.getElementById(`km-${id-1}`).value) || 0;
-                if (val + delta < prevVal) return;
-            }
-            el.value = val + delta;
-            // Zorg dat volgende velden ook oplopen
-            for (let i = id + 1; i < 6; i++) {
-                let nextEl = document.getElementById(`km-${i}`);
-                if (nextEl.value && parseInt(nextEl.value) < parseInt(el.value)) {
-                    nextEl.value = el.value;
-                }
-            }
+            el.value = (parseInt(el.value) || 0) + delta;
             berekenAlles();
         }
 
         function berekenAlles() {
-            let standen = [];
+            let heeftFout = false;
+            let kmStanden = [];
+            let tijdMinuten = [];
+
+            // Verzamel data
             for(let i=0; i<6; i++) {
-                let v = document.getElementById(`km-${i}`).value;
-                if(v) standen.push(parseInt(v));
-            }
-            if(standen.length >= 2) {
-                document.getElementById('totaalKm').innerText = (Math.max(...standen) - Math.min(...standen)) + " km";
+                kmStanden.push(parseInt(document.getElementById(`km-${i}`).value) || 0);
+                let [h, m] = document.getElementById(`tijd-${i}`).innerText.split(":").map(Number);
+                tijdMinuten.push(h * 60 + m);
             }
 
-            let startMin = tijdNaarMinuten(document.getElementById('tijd-0').innerText);
-            let eindMin = tijdNaarMinuten(document.getElementById('tijd-5').innerText);
-            
             const d1 = new Date(document.getElementById('rit-datum').value);
             const d2 = new Date(document.getElementById('rit-einddatum').value);
+            const isNachtrit = d2 > d1;
+
+            // Validatie
+            for(let i=0; i<6; i++) {
+                document.getElementById(`box-km-${i}`).classList.remove('error-input');
+                document.getElementById(`box-tijd-${i}`).classList.remove('error-input');
+
+                if(i > 0) {
+                    // Check KM (moet altijd oplopen)
+                    if(kmStanden[i] > 0 && kmStanden[i] < kmStanden[i-1]) {
+                        document.getElementById(`box-km-${i}`).classList.add('error-input');
+                        heeftFout = true;
+                    }
+                    // Check Tijd (alleen oplopen op dezelfde dag)
+                    if(!isNachtrit && tijdMinuten[i] < tijdMinuten[i-1]) {
+                        document.getElementById(`box-tijd-${i}`).classList.add('error-input');
+                        heeftFout = true;
+                    }
+                }
+            }
+
+            // Toon/verberg foutmelding en blokkeer knop
+            document.getElementById('foutmelding').style.display = heeftFout ? 'block' : 'none';
+            document.getElementById('verzendKnop').disabled = heeftFout;
+            document.getElementById('verzendKnop').style.opacity = heeftFout ? '0.5' : '1';
+
+            // Bereken Totalen
+            let maxKm = Math.max(...kmStanden);
+            let minKm = kmStanden.find(k => k > 0) || 0;
+            document.getElementById('totaalKm').innerText = `Totaal KM: ${maxKm - minKm} km`;
+
             let dagVerschil = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
-            
-            let totaalMin = (eindMin + (dagVerschil * 1440)) - startMin;
-            if (totaalMin < 0) totaalMin = 0;
-
-            document.getElementById('totaalTijd').innerText = Math.floor(totaalMin / 60) + "u " + (totaalMin % 60) + "m";
-        }
-
-        function tijdNaarMinuten(tijdStr) {
-            let [h, m] = tijdStr.split(":").map(Number);
-            return (h * 60) + m;
+            let totaalMin = (tijdMinuten[5] + (dagVerschil * 1440)) - tijdMinuten[0];
+            document.getElementById('totaalTijd').innerText = `Diensttijd: ${Math.max(0, Math.floor(totaalMin/60))}u ${Math.max(0, totaalMin%60)}m`;
         }
 
         function verstuurMail() {
@@ -196,8 +201,8 @@
             const d1 = document.getElementById('rit-datum').value;
             const bus = document.getElementById('bus-nummer').value || "---";
             const body = `RITREGISTRATIE BERKHOUT\nChauffeur: ${chauffeur}\nBus: ${bus}\nDatum: ${d1}\n\n` + 
-                locaties.map((l, i) => `${l}: ${document.getElementById('tijd-'+i).innerText} | KM: ${document.getElementById('km-'+i).value || '---'}`).join('\n') +
-                `\n\nTotaal tijd: ${document.getElementById('totaalTijd').innerText}\nTotaal KM: ${document.getElementById('totaalKm').innerText}`;
+                locaties.map((l, i) => `${l}: ${document.getElementById('tijd-'+i).innerText} | KM: ${document.getElementById('km-'+i).value || '0'}`).join('\n') +
+                `\n\n${document.getElementById('totaalTijd').innerText}\n${document.getElementById('totaalKm').innerText}`;
             window.location.href = `mailto:info@taxiberkhout.nl?subject=Ritregistratie ${chauffeur}&body=${encodeURIComponent(body)}`;
         }
 
