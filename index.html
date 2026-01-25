@@ -14,30 +14,30 @@
             width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; background: #fff; margin-bottom: 12px;
         }
 
-        /* Treinstremming Switch */
         .stremming-box {
             display: flex; align-items: center; justify-content: space-between;
             background: #fff3cd; padding: 12px; border-radius: 8px; border: 1px solid #ffeeba; margin-bottom: 15px;
         }
-        .stremming-box label { margin: 0; color: #856404; font-size: 15px; }
-        input[type="checkbox"] { width: 24px; height: 24px; cursor: pointer; }
+        .stremming-box label { margin: 0; color: #856404; font-size: 15px; text-transform: none; }
+        input[type="checkbox"] { width: 24px; height: 24px; }
 
         .rit-rij { padding: 10px 0; border-bottom: 1px solid #eee; }
         .locatie-naam { font-weight: bold; margin-bottom: 6px; }
         
         .input-groep { display: flex; gap: 8px; align-items: center; }
         .tijd-selector { display: flex; align-items: center; background: #eee; border-radius: 6px; flex: 1; overflow: hidden; }
-        .t-btn { background: #0056b3; color: white; border: none; width: 45px; height: 45px; font-size: 20px; font-weight: bold; cursor: pointer; }
+        .t-btn { background: #0056b3; color: white; border: none; width: 45px; height: 45px; font-size: 20px; font-weight: bold; }
         .tijd-val { flex: 1; text-align: center; font-weight: bold; font-size: 16px; }
         
         .km-input { width: 110px !important; margin-bottom: 0 !important; }
 
-        .totaal-sectie { background: #e7f3ff; padding: 15px; border-radius: 8px; border: 1px solid #b3d7ff; margin-top: 5px; }
+        .totaal-sectie { background: #e7f3ff; padding: 15px; border-radius: 8px; border: 1px solid #b3d7ff; margin-top: 15px; }
         .totaal-regel { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; }
         .totaal-waarde { color: #0056b3; font-size: 18px; }
 
-        .btn-verzend { background: #28a745; color: white; width: 100%; padding: 16px; font-size: 18px; font-weight: bold; border: none; border-radius: 8px; margin-top: 15px; cursor: pointer; }
-        .btn-wis { background: #dc3545; color: white; width: 100%; padding: 10px; font-size: 14px; border: none; border-radius: 8px; margin-top: 10px; cursor: pointer; opacity: 0.8; }
+        .btn-verzend { background: #28a745; color: white; width: 100%; padding: 16px; font-size: 18px; font-weight: bold; border: none; border-radius: 8px; margin-top: 15px; }
+        .btn-wa { background: #25D366; color: white; width: 100%; padding: 16px; font-size: 18px; font-weight: bold; border: none; border-radius: 8px; margin-top: 10px; }
+        .btn-wis { background: #dc3545; color: white; width: 100%; padding: 10px; font-size: 14px; border: none; border-radius: 8px; margin-top: 20px; opacity: 0.7; }
     </style>
 </head>
 <body>
@@ -50,16 +50,8 @@
             <input type="checkbox" id="stremming">
         </div>
 
-        <div style="display: flex; gap: 10px;">
-            <div style="flex: 1;">
-                <label>Begindatum</label>
-                <input type="date" id="rit-datum">
-            </div>
-            <div style="flex: 1;">
-                <label>Einddatum</label>
-                <input type="date" id="rit-einddatum">
-            </div>
-        </div>
+        <label>Begindatum</label>
+        <input type="date" id="rit-datum">
 
         <label>Bus nummer</label>
         <select id="bus-nummer">
@@ -73,7 +65,7 @@
         </select>
 
         <label>Klant / Opdrachtgever</label>
-        <input type="text" id="klant-naam" placeholder="Bijv. NS of CV de Gorsselnarren">
+        <input type="text" id="klant-naam" placeholder="Bijv. NS of C.V. de Gorsselnarren">
 
         <div style="display: flex; gap: 10px;">
             <div style="flex: 1;">
@@ -91,6 +83,11 @@
         <h2>Tijden & KM-standen</h2>
         <div id="ritLijst"></div>
         
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #f0f0f5;">
+            <label>Einddatum (na retour garage)</label>
+            <input type="date" id="rit-einddatum" onchange="berekenAlles()">
+        </div>
+
         <div class="totaal-sectie">
             <div class="totaal-regel">
                 <span>Diensttijd:</span>
@@ -103,8 +100,10 @@
         </div>
     </div>
 
-    <button class="btn-verzend" onclick="verstuurMail()">VERSTUUR RITDATA</button>
-    <button class="btn-wis" onclick="wisAlles()">WIS VELDEN</button>
+    <button class="btn-verzend" onclick="verstuurMail()">VERSTUUR VIA MAIL</button>
+    <button class="btn-wa" onclick="verstuurWA()">VERSTUUR VIA WHATSAPP</button>
+    
+    <button class="btn-wis" onclick="wisAlles()">WIS ALLE VELDEN</button>
 
     <script>
         const locaties = ["Vertrek garage", "Vertrek klant", "Aankomst bestemming", "Vertrek bestemming", "Retour klant", "Retour garage"];
@@ -159,54 +158,33 @@
             let tEind = document.getElementById('tijd-5').innerText.split(":");
             let diff = ((parseInt(tEind[0])*60)+parseInt(tEind[1])) - ((parseInt(tStart[0])*60)+parseInt(tStart[1]));
             
-            // Check of einddatum later is dan begindatum voor nachtritten
             const d1 = new Date(document.getElementById('rit-datum').value);
             const d2 = new Date(document.getElementById('rit-einddatum').value);
-            if (d2 > d1) diff += 1440; 
-            else if(diff < 0) diff += 1440; // Veiligheidshalve als ze datum vergeten
+            if (d2 > d1) {
+                const dagenVerschil = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+                diff += (dagenVerschil * 1440);
+            } else if(diff < 0) {
+                diff += 1440;
+            }
 
             document.getElementById('totaalTijd').innerText = Math.floor(diff/60) + "u " + (diff%60) + "m";
         }
 
-        function wisAlles() {
-            if(confirm("Alle velden leegmaken?")) {
-                document.getElementById('bus-nummer').value = "";
-                document.getElementById('klant-naam').value = "";
-                document.getElementById('van-plaats').value = "";
-                document.getElementById('naar-plaats').value = "";
-                document.getElementById('stremming').checked = false;
-                for(let i=0; i<6; i++) { document.getElementById(`km-${i}`).value = ""; }
-                berekenAlles();
-            }
-        }
-
-        function verstuurMail() {
+        function maakRapportTekst() {
             const d1 = document.getElementById('rit-datum').value;
             const d2 = document.getElementById('rit-einddatum').value;
             const bus = document.getElementById('bus-nummer').value || "Onbekend";
             const stremming = document.getElementById('stremming').checked ? "JA (Treinstremming)" : "Nee";
             const klant = document.getElementById('klant-naam').value || "Geen opgave";
 
-            let body = `RITREGISTRATIE%0A----------------------%0A`;
-            body += `Treinstremming: ${stremming}%0A`;
-            body += `Datum: ${d1} t/m ${d2}%0A`;
-            body += `Bus: ${bus}%0AKlant: ${klant}%0A%0A`;
+            let t = `RITREGISTRATIE BERKHOUT\n`;
+            t += `----------------------\n`;
+            t += `Stremming: ${stremming}\n`;
+            t += `Datum: ${d1} t/m ${d2}\n`;
+            t += `Bus: ${bus}\nKlant: ${klant}\n\n`;
             
             locaties.forEach((loc, i) => {
-                body += `${loc}: ${document.getElementById('tijd-'+i).innerText} | KM: ${document.getElementById('km-'+i).value || '---'}%0A`;
+                t += `${loc}: ${document.getElementById('tijd-'+i).innerText} | KM: ${document.getElementById('km-'+i).value || '---'}\n`;
             });
 
-            body += `%0ATotaal tijd: ${document.getElementById('totaalTijd').innerText}`;
-            body += `%0ATotaal KM: ${document.getElementById('totaalKm').innerText}%0A`;
-            
-            if(document.getElementById('stremming').checked) {
-                body += `%0AALERTE: Afwijkende verloning toepassen voor stremming!`;
-            }
-
-            window.location.href = `mailto:info@taxiberkhout.nl?subject=Ritregistratie Bus ${bus} (${d1})&body=${body}`;
-        }
-
-        initApp();
-    </script>
-</body>
-</html>
+            t += `\nTotaal tijd: ${document.getElementById('totaal
