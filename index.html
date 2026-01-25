@@ -14,13 +14,6 @@
             width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; box-sizing: border-box; background: #fff; margin-bottom: 12px;
         }
 
-        .stremming-box {
-            display: flex; align-items: center; justify-content: space-between;
-            background: #fff3cd; padding: 12px; border-radius: 8px; border: 1px solid #ffeeba; margin-bottom: 15px;
-        }
-        .stremming-box label { margin: 0; color: #856404; font-size: 15px; text-transform: none; }
-        input[type="checkbox"] { width: 24px; height: 24px; }
-
         .rit-rij { padding: 10px 0; border-bottom: 1px solid #eee; }
         .locatie-naam { font-weight: bold; margin-bottom: 6px; }
         
@@ -30,6 +23,13 @@
         .tijd-val { flex: 1; text-align: center; font-weight: bold; font-size: 16px; }
         
         .km-input { width: 110px !important; margin-bottom: 0 !important; }
+
+        .stremming-box {
+            display: flex; align-items: center; justify-content: space-between;
+            background: #fff3cd; padding: 12px; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 15px;
+        }
+        .stremming-box label { margin: 0; color: #856404; font-size: 15px; text-transform: none; }
+        input[type="checkbox"] { width: 24px; height: 24px; }
 
         .totaal-sectie { background: #e7f3ff; padding: 15px; border-radius: 8px; border: 1px solid #b3d7ff; margin-top: 15px; }
         .totaal-regel { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; }
@@ -44,11 +44,6 @@
     <div class="card">
         <h2>Ritgegevens</h2>
         
-        <div class="stremming-box">
-            <label for="stremming">⚠️ Treinstremming (NS)</label>
-            <input type="checkbox" id="stremming">
-        </div>
-
         <label>Begindatum</label>
         <input type="date" id="rit-datum">
 
@@ -64,12 +59,12 @@
         </select>
 
         <label>Klant / Opdrachtgever</label>
-        <input type="text" id="klant-naam" placeholder="Bijv. NS of C.V. de Gorsselnarren">
+        <input type="text" id="klant-naam" placeholder="Naam van de klant">
 
         <div style="display: flex; gap: 10px;">
             <div style="flex: 1;">
                 <label>Van</label>
-                <input type="text" id="van-plaats" placeholder="Vertrek">
+                <input type="text" id="van-plaats" placeholder="Vertrekplaats">
             </div>
             <div style="flex: 1;">
                 <label>Naar</label>
@@ -87,13 +82,18 @@
             <input type="date" id="rit-einddatum" onchange="berekenAlles()">
         </div>
 
+        <div class="stremming-box">
+            <label for="stremming">⚠️ Treinstremming (NS)</label>
+            <input type="checkbox" id="stremming">
+        </div>
+
         <div class="totaal-sectie">
             <div class="totaal-regel">
-                <span>Diensttijd:</span>
+                <span>Totale diensttijd:</span>
                 <span class="totaal-waarde" id="totaalTijd">0u 0m</span>
             </div>
             <div class="totaal-regel">
-                <span>Totaal KM:</span>
+                <span>Totaal gereden KM:</span>
                 <span class="totaal-waarde" id="totaalKm">0 km</span>
             </div>
         </div>
@@ -104,7 +104,7 @@
 
     <script>
         const locaties = ["Vertrek garage", "Vertrek klant", "Aankomst bestemming", "Vertrek bestemming", "Retour klant", "Retour garage"];
-        const standaardTijden = ["08:00", "08:30", "10:00", "16:00", "17:30", "18:00"];
+        const standaardTijden = ["08:00", "08:15", "10:00", "16:00", "16:30", "17:00"];
 
         function initApp() {
             const vandaag = new Date();
@@ -167,37 +167,30 @@
             document.getElementById('totaalTijd').innerText = Math.floor(diff/60) + "u " + (diff%60) + "m";
         }
 
-        function maakRapportTekst() {
+        function verstuurMail() {
             const d1 = document.getElementById('rit-datum').value;
-            const d2 = document.getElementById('rit-einddatum').value;
             const bus = document.getElementById('bus-nummer').value || "Onbekend";
-            const stremming = document.getElementById('stremming').checked ? "JA (Treinstremming)" : "Nee";
             const klant = document.getElementById('klant-naam').value || "Geen opgave";
+            const van = document.getElementById('van-plaats').value || "---";
+            const naar = document.getElementById('naar-plaats').value || "---";
+            const stremming = document.getElementById('stremming').checked ? "JA (Treinstremming)" : "Nee";
 
-            let t = `RITREGISTRATIE BERKHOUT\n`;
-            t += `----------------------\n`;
-            t += `Stremming: ${stremming}\n`;
-            t += `Datum: ${d1} t/m ${d2}\n`;
-            t += `Bus: ${bus}\nKlant: ${klant}\n\n`;
+            let body = `RITREGISTRATIE BERKHOUT\n`;
+            body += `Stremming: ${stremming}\n`;
+            body += `Bus: ${bus} | Datum: ${d1}\n`;
+            body += `Klant: ${klant}\n`;
+            body += `Traject: ${van} - ${naar}\n\n`;
             
             locaties.forEach((loc, i) => {
-                t += `${loc}: ${document.getElementById('tijd-'+i).innerText} | KM: ${document.getElementById('km-'+i).value || '---'}\n`;
+                body += `${loc}: ${document.getElementById('tijd-'+i).innerText} | KM: ${document.getElementById('km-'+i).value || '---'}\n`;
             });
 
-            t += `\nTotaal tijd: ${document.getElementById('totaalTijd').innerText}\n`;
-            t += `Totaal KM: ${document.getElementById('totaalKm').innerText}\n`;
+            body += `\nTotaal tijd: ${document.getElementById('totaalTijd').innerText}\n`;
+            body += `Totaal KM: ${document.getElementById('totaalKm').innerText}\n`;
             
-            if(document.getElementById('stremming').checked) {
-                t += `\nLET OP: Stremming-tarief toepassen!`;
-            }
-            return t;
-        }
+            if(document.getElementById('stremming').checked) body += `\nLET OP: Stremming-tarief toepassen!`;
 
-        function verstuurMail() {
-            const bus = document.getElementById('bus-nummer').value || "Onbekend";
-            const datum = document.getElementById('rit-datum').value;
-            const tekst = encodeURIComponent(maakRapportTekst());
-            window.location.href = `mailto:info@taxiberkhout.nl?subject=Ritregistratie Bus ${bus} (${datum})&body=${tekst}`;
+            window.location.href = `mailto:info@taxiberkhout.nl?subject=Ritregistratie Bus ${bus} (${d1})&body=${encodeURIComponent(body)}`;
         }
 
         function wisAlles() {
