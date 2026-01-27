@@ -3,219 +3,381 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Berkhout Ritregistratie</title>
     
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
+    
+    <title>Berkhout Ritregistratie</title>
     <style>
-        /* --- BASIS STIJL --- */
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            background-color: #f0f0f5; 
-            margin: 0; 
-            padding: 15px; 
-            color: #333; 
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* --- MENU SCHERM --- */
-        #menu-scherm { 
-            display: block; 
-            max-width: 600px; 
-            margin: 0 auto; 
-            padding-top: 10px;
-        }
-
-        .logo-container { 
-            text-align: center; 
-            margin-bottom: 25px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        /* Basis instellingen */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f0f5; margin: 0; padding: 15px; color: #333; -webkit-tap-highlight-color: transparent; }
+        
+        /* -- MENU STIJLEN -- */
+        #menu-scherm { display: flex; flex-direction: column; gap: 20px; padding-top: 20px; max-width: 600px; margin: 0 auto; }
+        
+        .logo-container { text-align: center; margin-bottom: 10px; }
+        .logo-img { max-width: 100%; height: auto; max-height: 160px; }
+        
+        .menu-lijst { display: flex; flex-direction: column; gap: 20px; }
+        
+        .menu-blok {
+            background: white;
+            border-radius: 25px;
+            padding: 35px 30px;
+            text-align: left;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            border: 2px solid #e0e0e0;
+            font-size: 24px;
+            font-weight: 800; /* Dik gedrukt */
+            color: #0056b3;
+            transition: 0.2s;
+            display: flex; align-items: center; gap: 25px;
+            cursor: pointer; /* Handje bij mouseover */
+            user-select: none; /* Voorkomt tekst selecteren bij klikken */
+            -webkit-user-select: none;
         }
         
-        .bus-logo-svg { width: 120px; height: auto; margin-bottom: 10px; fill: #0056b3; }
-        .bedrijfsnaam { font-size: 24px; font-weight: 900; color: #0056b3; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
-        .ondertitel { color: #666; font-size: 14px; margin-top: 5px; }
-
-        .menu-knop {
-            background: white; border: 2px solid #e0e0e0; border-radius: 20px; padding: 30px 20px;
-            margin-bottom: 20px; color: #0056b3; font-size: 22px; font-weight: 800;
-            display: flex; align-items: center; gap: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer;
-            transition: transform 0.1s, background 0.1s;
-        }
-        .menu-knop:active { transform: scale(0.98); background-color: #e7f3ff; border-color: #0056b3; }
-        .knop-icoon { font-size: 35px; }
-
-        /* --- APP SCHERM --- */
+        .menu-blok:active { background: #e7f3ff; border-color: #0056b3; transform: scale(0.98); }
+        .menu-icon { font-size: 38px; }
+        
+        /* -- APP STIJLEN -- */
         #app-scherm { display: none; max-width: 600px; margin: 0 auto; }
-
-        .header-balk { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .btn-terug { background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; }
-        .rit-titel { font-size: 20px; font-weight: bold; color: #0056b3; text-transform: uppercase; }
-
-        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-
-        label { display: block; font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase; margin-bottom: 5px; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; background: #fafafa; margin-bottom: 12px; box-sizing: border-box; }
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         
-        /* --- TIJD EN KM RIJEN (Hersteld) --- */
-        .rit-rij { padding: 15px 0; border-bottom: 1px solid #eee; }
+        .header-balk { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+        .btn-terug { background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .rit-titel { font-size: 18px; font-weight: bold; color: #0056b3; text-transform: uppercase; }
+
+        label { display: block; font-size: 11px; font-weight: 700; color: #666; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; }
+        input, select {
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; background: #f9f9f9; margin-bottom: 12px; appearance: none;
+        }
+        input:focus, select:focus { border-color: #0056b3; background: #fff; outline: none; }
+
+        .rit-rij { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
         .rit-rij:last-child { border-bottom: none; }
+        .locatie-naam { font-weight: 700; margin-bottom: 8px; font-size: 15px; color: #222; }
         
-        .locatie-naam { font-weight: bold; font-size: 15px; margin-bottom: 8px; color: #333; display: flex; justify-content: space-between; }
-        .rij-opties { display: flex; gap: 10px; margin-bottom: 5px; }
-        
-        /* Tijd input styling */
-        .tijd-input { width: 110px !important; margin-bottom: 0 !important; text-align: center; }
+        .tussenkop {
+            background: #e7f3ff; color: #0056b3; padding: 8px 12px; border-radius: 6px; 
+            font-weight: bold; margin: 20px -15px 10px -15px; text-align: center; border-top: 1px solid #b3d7ff; border-bottom: 1px solid #b3d7ff;
+        }
 
-        /* Plus en Min knoppen (Stepper) */
-        .stepper { display: flex; flex: 1; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; background: #f0f0f5; height: 46px; }
-        .stepper-btn { width: 40px; border: none; background: white; color: #0056b3; font-size: 24px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .stepper-btn:active { background: #e7f3ff; }
-        .stepper-val { flex: 1; display: flex; align-items: center; justify-content: center; background: white; border-left: 1px solid #eee; border-right: 1px solid #eee; }
-        .km-input { width: 100% !important; border: none !important; text-align: center; font-weight: bold; font-size: 16px; background: transparent !important; padding: 0 !important; margin: 0 !important; height: 100%; -moz-appearance: textfield; }
+        .selector-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
+        .control-label { min-width: 35px; font-size: 10px; color: #999; font-weight: bold; }
         
-        .stremming-box { display: none; background: #fff3cd; padding: 10px; border-radius: 8px; border: 1px solid #ffeeba; align-items: center; justify-content: space-between; margin-top: 10px;}
-        .btn-groen { background: #28a745; color: white; width: 100%; padding: 15px; font-size: 18px; font-weight: bold; border: none; border-radius: 10px; margin-top: 10px; cursor: pointer; }
+        .stepper { display: flex; align-items: center; background: #f0f0f5; border-radius: 8px; flex: 1; overflow: hidden; border: 1px solid #e0e0e0; }
+        .t-btn { background: white; color: #0056b3; border: none; width: 45px; height: 44px; font-size: 22px; font-weight: bold; border-right: 1px solid #e0e0e0; cursor: pointer; }
+        .t-btn:last-child { border-right: none; border-left: 1px solid #e0e0e0; }
+        .t-btn:active { background: #e7f3ff; }
+        
+        .val-display { flex: 1; text-align: center; font-weight: 600; font-size: 16px; line-height: 44px; }
+        .km-field { border: none; background: transparent; text-align: center; font-weight: 600; font-size: 16px; width: 100%; padding: 0; margin: 0; height: 44px; }
+
+        .totaal-sectie { background: #f8fbff; padding: 15px; border-radius: 8px; border: 1px solid #d0e5ff; margin-top: 15px; }
+        .totaal-waarde { font-size: 18px; font-weight: bold; color: #0056b3; display: block; margin-bottom: 4px; }
+        
+        .error-input { border: 2px solid #dc3545 !important; background: #fff5f5 !important; }
+        
+        .stremming-box { display: none; align-items: center; justify-content: space-between; background: #fff3cd; padding: 12px; border-radius: 8px; border: 1px solid #ffeeba; margin-top: 10px; }
+        .stremming-box label { margin: 0; color: #856404; text-transform: none; font-size: 14px; }
+        
+        .btn-verzend { background: #28a745; color: white; width: 100%; padding: 16px; font-size: 18px; font-weight: bold; border: none; border-radius: 10px; margin-top: 15px; box-shadow: 0 2px 5px rgba(40,167,69,0.3); cursor: pointer; }
+        .btn-wis { background: #dc3545; color: white; width: 100%; padding: 12px; font-size: 14px; border: none; border-radius: 8px; margin-top: 30px; opacity: 0.8; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="menu-scherm">
         <div class="logo-container">
-            <svg class="bus-logo-svg" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-                <path d="M48 160C48 142.3 62.33 128 80 128H432C449.7 128 464 142.3 464 160V352C464 369.7 449.7 384 432 384H422C422 419.3 393.3 448 358 448C322.7 448 294 419.3 294 384H218C218 419.3 189.3 448 154 448C118.7 448 90 419.3 90 384H80C62.33 384 48 369.7 48 352V160zM154 400C162.8 400 170 392.8 170 384H138C138 392.8 145.2 400 154 400zM358 400C366.8 400 374 392.8 374 384H342C342 392.8 349.2 400 358 400zM136 288H186C190.4 288 194 284.4 194 280V192C194 187.6 190.4 184 186 184H136C131.6 184 128 187.6 128 192V280C128 284.4 131.6 288 136 288zM230 288H282C286.4 288 290 284.4 290 280V192C290 187.6 286.4 184 282 184H230C225.6 184 222 187.6 222 192V280C222 284.4 225.6 288 230 288zM326 288H376C380.4 288 384 284.4 384 280V192C384 187.6 380.4 184 376 184H326C321.6 184 318 187.6 318 192V280C318 284.4 321.6 288 326 288z"/>
-            </svg>
-            <h1 class="bedrijfsnaam">BERKHOUT REIZEN</h1>
-            <p class="ondertitel">RITREGISTRATIE</p>
+            <img src="bus-header.png" alt="Berkhout Busreizen" class="logo-img">
         </div>
-
-        <div class="menu-knop" onclick="openApp('Dagrit')"><span class="knop-icoon">☀️</span> Dagrit</div>
-        <div class="menu-knop" onclick="openApp('Enkele rit')"><span class="knop-icoon">➡️</span> Enkele rit</div>
-        <div class="menu-knop" onclick="openApp('Breng en haal')"><span class="knop-icoon">🔄</span> Breng & Haal</div>
-        <div class="menu-knop" onclick="openApp('Treinstremming')"><span class="knop-icoon">🚂</span> Treinstremming</div>
+        <div class="menu-lijst">
+            <div class="menu-blok" onclick="kiesRit('Dagrit')">
+                <span class="menu-icon">☀️</span> Dagrit
+            </div>
+            <div class="menu-blok" onclick="kiesRit('Enkele rit')">
+                <span class="menu-icon">➡️</span> Enkele rit
+            </div>
+            <div class="menu-blok" onclick="kiesRit('Breng en haal')">
+                <span class="menu-icon">🔄</span> Breng & Haal
+            </div>
+            <div class="menu-blok" onclick="kiesRit('Treinstremming')">
+                <span class="menu-icon">🚂</span> Treinstremming
+            </div>
+        </div>
     </div>
 
     <div id="app-scherm">
         <div class="header-balk">
             <button class="btn-terug" onclick="terugNaarMenu()">❮ Menu</button>
-            <span class="rit-titel" id="titel-label">RIT TYPE</span>
+            <span class="rit-titel" id="titel-weergave">Dagrit</span>
         </div>
 
         <div class="card">
             <label>Chauffeur</label>
-            <select id="chauffeur">
+            <select id="chauffeur-naam">
                 <option value="">Kies naam...</option>
                 <option value="Fred Haan">Fred Haan</option>
                 <option value="Fred Stravers">Fred Stravers</option>
+                <option value="Gerard Hellewegen">Gerard Hellewegen</option>
+                <option value="Hans Roordink">Hans Roordink</option>
+                <option value="Hilbert van Dam">Hilbert van Dam</option>
+                <option value="Jan Jolink">Jan Jolink</option>
                 <option value="Jesse Berkhout">Jesse Berkhout</option>
+                <option value="Monique Westerholt">Monique Westerholt</option>
                 <option value="Niek Berkhout">Niek Berkhout</option>
-                </select>
-            <label>Datum</label>
-            <input type="date" id="datum">
-            <label>Bus nummer</label>
-            <select id="bus">
-                <option value="">Kies bus...</option>
-                <option value="19">19</option><option value="23">23</option><option value="50">50</option>
-                <option value="53">53</option><option value="60">60</option><option value="62">62</option>
             </select>
-            <label>Klant / Opdracht</label>
-            <input type="text" id="klant" placeholder="Bijv. Schoolreisje">
-        </div>
 
-        <div class="card" id="lijst-container">
+            <label>Datum</label>
+            <input type="date" id="rit-datum" onchange="berekenAlles()">
+
+            <label>Bus nummer</label>
+            <select id="bus-nummer">
+                <option value="">Kies bus...</option>
+                <option value="19">19</option>
+                <option value="23">23</option>
+                <option value="50">50</option>
+                <option value="53">53</option>
+                <option value="60">60</option>
+                <option value="62">62</option>
+                <option value="BZ-TX-98">BZ-TX-98</option>
+            </select>
+
+            <label>Klant / Opdracht</label>
+            <input type="text" id="klant-naam" placeholder="Naam klant">
+            
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1"><label>Van</label><input type="text" id="van-plaats"></div>
+                <div style="flex:1"><label>Naar</label><input type="text" id="naar-plaats"></div>
             </div>
+        </div>
 
         <div class="card">
-            <label>Opmerkingen</label>
-            <input type="text" id="opmerking" placeholder="Bijzonderheden...">
-            <div class="stremming-box" id="stremming-rij">
-                <label style="margin:0; color:#856404; text-transform:none;">⚠️ NS Stremming Tarief</label>
+            <div id="ritLijst"></div>
+
+            <label style="margin-top:15px;">Einddatum</label>
+            <input type="date" id="rit-einddatum" onchange="berekenAlles()">
+
+            <div class="stremming-box" id="stremmingContainer">
+                <label>⚠️ NS Stremming Tarief</label>
+                <input type="checkbox" id="stremming">
             </div>
+
+            <div class="totaal-sectie">
+                <span class="totaal-waarde" id="totaalTijd">Diensttijd: 0u 0m</span>
+                <span class="totaal-waarde" id="totaalKm">Totaal KM: 0 km</span>
+            </div>
+            <div id="foutmelding" style="color:#dc3545; font-weight:bold; text-align:center; margin-top:10px; display:none;">⚠️ Controleer tijden of kilometers!</div>
         </div>
 
-        <button class="btn-groen" onclick="verzendRit()">Verzenden</button>
+        <button id="verzendKnop" class="btn-verzend" onclick="verstuurMail()">VERSTUUR RITDATA</button>
+        <button class="btn-wis" onclick="wisAlles()">WIS ALLE VELDEN</button>
     </div>
 
     <script>
-        window.onload = function() {
-            const vandaag = new Date().toISOString().split('T')[0];
-            document.getElementById('datum').value = vandaag;
+        // CONFIGURATIE
+        const rittenConfig = {
+            'Dagrit': [
+                "Vertrek garage", "Vertrek klant", "Aankomst bestemming", 
+                "Vertrek bestemming", "Retour klant", "Retour garage"
+            ],
+            'Enkele rit': [
+                "Vertrek garage", "Vertrek klant", "Aankomst bestemming", "Retour garage"
+            ],
+            'Treinstremming': [
+                "Vertrek zaak", "1e station", "Laatste station", "Retour zaak"
+            ],
+            'Breng en haal': [
+                "Vertrek garage (Heen)", "Vertrek klant", "Aankomst bestemming", "Retour garage",
+                "DIVIDER:Deel 2: Ophalen", 
+                "Vertrek garage (Terug)", "Vertrek bestemming", "Retour klant", "Retour garage"
+            ]
         };
 
-        function openApp(type) {
+        const standaardtijden = ["08:00", "08:15", "10:00", "16:00", "16:30", "17:00", "22:00", "23:00"];
+        let huidigType = "";
+        let huidigeRegels = [];
+
+        function init() {
+            const vandaag = new Date();
+            const dateInput = document.getElementById('rit-datum');
+            const eindInput = document.getElementById('rit-einddatum');
+            if(dateInput) dateInput.valueAsDate = vandaag;
+            if(eindInput) eindInput.valueAsDate = vandaag;
+        }
+
+        function kiesRit(type) {
+            huidigType = type;
+            huidigeRegels = rittenConfig[type];
+            document.getElementById('titel-weergave').innerText = type;
+            
             document.getElementById('menu-scherm').style.display = 'none';
             document.getElementById('app-scherm').style.display = 'block';
-            document.getElementById('titel-label').innerText = type;
 
-            const stremmingBox = document.getElementById('stremming-rij');
-            if (type === 'Treinstremming') stremmingBox.style.display = 'flex';
-            else stremmingBox.style.display = 'none';
+            const isStremming = (type === 'Treinstremming');
+            const stremmingCont = document.getElementById('stremmingContainer');
+            if(stremmingCont) stremmingCont.style.display = isStremming ? 'flex' : 'none';
+            
+            const stremmingBox = document.getElementById('stremming');
+            if(stremmingBox) stremmingBox.checked = isStremming;
 
-            // Genereer de juiste invulvelden
-            bouwLijst(type);
+            bouwFormulier();
+            berekenAlles();
             window.scrollTo(0,0);
         }
 
         function terugNaarMenu() {
-            document.getElementById('app-scherm').style.display = 'none';
-            document.getElementById('menu-scherm').style.display = 'block';
+            if(confirm("Terug naar menu? Je ingevulde gegevens blijven staan.")) {
+                document.getElementById('app-scherm').style.display = 'none';
+                document.getElementById('menu-scherm').style.display = 'flex'; 
+            }
         }
 
-        // --- FUNCTIE OM DE RIJEN TE MAKEN ---
-        function bouwLijst(type) {
-            const container = document.getElementById('lijst-container');
-            container.innerHTML = ""; // Maak leeg
+        function bouwFormulier() {
+            let html = "";
+            let indexTeller = 0;
 
-            // Wat voor rijen moeten we tonen?
-            let rijen = [];
-            
-            if (type === 'Dagrit' || type === 'Treinstremming') {
-                rijen = ["Vertrek Garage", "Aankomst Adres", "Vertrek Adres", "Terug Garage"];
-            } else if (type === 'Enkele rit') {
-                rijen = ["Vertrek", "Aankomst"];
-            } else if (type === 'Breng en haal') {
-                rijen = ["Heen: Vertrek", "Heen: Aankomst", "Terug: Vertrek", "Terug: Aankomst"];
+            huidigeRegels.forEach((label) => {
+                if (label.startsWith("DIVIDER:")) {
+                    let tekst = label.split(":")[1];
+                    html += `<div class="tussenkop">${tekst}</div>`;
+                } else {
+                    let tijd = standaardtijden[indexTeller] || "00:00";
+                    html += `
+                    <div class="rit-rij">
+                        <div class="locatie-naam">${label}</div>
+                        <div class="selector-row">
+                            <div class="control-label">TIJD</div>
+                            <div class="stepper" id="box-tijd-${indexTeller}">
+                                <button class="t-btn" onclick="pasTijdAan(${indexTeller}, -15)">-</button>
+                                <div class="val-display" id="tijd-${indexTeller}">${tijd}</div>
+                                <button class="t-btn" onclick="pasTijdAan(${indexTeller}, 15)">+</button>
+                            </div>
+                        </div>
+                        <div class="selector-row">
+                            <div class="control-label">KM</div>
+                            <div class="stepper" id="box-km-${indexTeller}">
+                                <button class="t-btn" onclick="pasKmAan(${indexTeller}, -1)">-</button>
+                                <input type="number" id="km-${indexTeller}" class="km-field" placeholder="0" oninput="berekenAlles()">
+                                <button class="t-btn" onclick="pasKmAan(${indexTeller}, 1)">+</button>
+                            </div>
+                        </div>
+                    </div>`;
+                    indexTeller++;
+                }
+            });
+            document.getElementById('ritLijst').innerHTML = html;
+        }
+
+        function pasTijdAan(id, min) {
+            let el = document.getElementById(`tijd-${id}`);
+            let [u, m] = el.innerText.split(":").map(Number);
+            let d = new Date(); d.setHours(u, m + min);
+            el.innerText = ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+            berekenAlles();
+        }
+
+        function pasKmAan(id, delta) {
+            let el = document.getElementById(`km-${id}`);
+            el.value = (parseInt(el.value) || 0) + delta;
+            berekenAlles();
+        }
+
+        function berekenAlles() {
+            let aantalVelden = document.querySelectorAll('.km-field').length;
+            let kmStanden = [];
+            let tijdMinuten = [];
+            let fout = false;
+
+            for(let i=0; i < aantalVelden; i++) {
+                document.getElementById(`box-km-${i}`).classList.remove('error-input');
+                let kmVal = parseInt(document.getElementById(`km-${i}`).value) || 0;
+                kmStanden.push(kmVal);
+                let [u, m] = document.getElementById(`tijd-${i}`).innerText.split(":").map(Number);
+                tijdMinuten.push(u * 60 + m);
+
+                // Controleer of KM oploopt (behalve bij 0 of lege start)
+                if (i > 0 && kmVal > 0 && kmVal < kmStanden[i-1]) {
+                    document.getElementById(`box-km-${i}`).classList.add('error-input');
+                    fout = true;
+                }
             }
 
-            // Maak voor elke stap een rij in HTML
-            rijen.forEach((naam, index) => {
-                const rijHTML = `
-                <div class="rit-rij">
-                    <div class="locatie-naam">
-                        ${naam} <span>📍</span>
-                    </div>
-                    <div class="rij-opties">
-                        <input type="time" class="tijd-input">
-                        
-                        <div class="stepper">
-                            <button class="stepper-btn" onclick="pasKmAan(this, -1)">−</button>
-                            <div class="stepper-val">
-                                <input type="number" class="km-input" placeholder="KM">
-                            </div>
-                            <button class="stepper-btn" onclick="pasKmAan(this, 1)">+</button>
-                        </div>
-                    </div>
-                </div>`;
-                container.innerHTML += rijHTML;
-            });
+            let maxKm = Math.max(...kmStanden);
+            let minKm = kmStanden.find(k => k > 0) || 0;
+            let totaalKm = (maxKm > 0 && minKm > 0) ? (maxKm - minKm) : 0;
+            document.getElementById('totaalKm').innerText = `Totaal KM: ${totaalKm} km`;
+
+            const d1 = new Date(document.getElementById('rit-datum').value);
+            const d2 = new Date(document.getElementById('rit-einddatum').value);
+            let dagVerschil = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+            
+            if (tijdMinuten.length > 0) {
+                let startT = tijdMinuten[0];
+                let eindT = tijdMinuten[tijdMinuten.length - 1];
+                let totaalMin = (eindT + (dagVerschil * 1440)) - startT;
+                if (totaalMin < 0) totaalMin = 0;
+                let uren = Math.floor(totaalMin / 60);
+                let min = totaalMin % 60;
+                document.getElementById('totaalTijd').innerText = `Diensttijd: ${uren}u ${min}m`;
+            }
+
+            document.getElementById('foutmelding').style.display = fout ? 'block' : 'none';
+            document.getElementById('verzendKnop').style.opacity = fout ? 0.5 : 1;
         }
 
-        // Functie voor de plus en min knoppen
-        function pasKmAan(knop, aantal) {
-            const input = knop.parentElement.querySelector('.km-input');
-            let waarde = parseInt(input.value) || 0;
-            waarde += aantal;
-            if(waarde < 0) waarde = 0;
-            input.value = waarde;
+        function verstuurMail() {
+            const chauffeur = document.getElementById('chauffeur-naam').value;
+            if (!chauffeur) { alert("⚠️ Kies eerst een chauffeur!"); return; }
+
+            const totaalTijd = document.getElementById('totaalTijd').innerText;
+            const totaalKm = document.getElementById('totaalKm').innerText;
+
+            if(confirm(`Bevestig verzenden:\n\nType: ${huidigType}\nChauffeur: ${chauffeur}\n${totaalTijd}\n${totaalKm}\n\nKlopt dit?`)) {
+                let body = `RITREGISTRATIE BERKHOUT\n----------------------\n`;
+                body += `Type: ${huidigType.toUpperCase()}\n`;
+                body += `Chauffeur: ${chauffeur}\n`;
+                body += `Datum: ${document.getElementById('rit-datum').value}\n`;
+                body += `Bus: ${document.getElementById('bus-nummer').value || '-'}\n`;
+                body += `Klant: ${document.getElementById('klant-naam').value || '-'}\n`;
+                body += `Traject: ${document.getElementById('van-plaats').value || '-'}  ->  ${document.getElementById('naar-plaats').value || '-'}\n`;
+                
+                if(huidigType === 'Treinstremming') {
+                     body += `Stremming: JA\n\n`;
+                } else {
+                     body += `\n`;
+                }
+                
+                let veldTeller = 0;
+                huidigeRegels.forEach(regel => {
+                    if(regel.startsWith("DIVIDER:")) {
+                        body += `\n--- ${regel.split(":")[1]} ---\n`;
+                    } else {
+                        let tijd = document.getElementById(`tijd-${veldTeller}`).innerText;
+                        let km = document.getElementById(`km-${veldTeller}`).value || '-';
+                        body += `${regel}: ${tijd} | KM: ${km}\n`;
+                        veldTeller++;
+                    }
+                });
+
+                body += `\n----------------------\n`;
+                body += `${totaalTijd}\n`;
+                body += `${totaalKm}`;
+
+                window.location.href = `mailto:info@taxiberkhout.nl?subject=Ritregistratie ${huidigType} - ${chauffeur}&body=${encodeURIComponent(body)}`;
+            }
         }
 
-        function verzendRit() {
-            alert("Rit opgeslagen! Alle tijden en km's zijn verwerkt.");
-            terugNaarMenu();
+        function wisAlles() {
+            if(confirm("Alles wissen en opnieuw beginnen?")) {
+                location.reload();
+            }
         }
+
+        // Start de app
+        init();
     </script>
 </body>
 </html>
