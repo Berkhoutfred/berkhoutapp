@@ -31,7 +31,6 @@
 
         .pac-container { border-radius: 10px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); border: none; margin-top: 5px; z-index: 10000 !important; }
         .pac-item { padding: 12px; font-size: 14px; color: #000; background-color: #fff; cursor: pointer; }
-        .pac-item-query { font-size: 15px; color: #000; }
 
         .radio-group { display: flex; gap: 10px; margin-bottom: 15px; }
         .radio-option { flex: 1; text-align: center; }
@@ -43,7 +42,7 @@
         
         .rit-rij { border-bottom: 1px solid #f0f0f0; padding: 12px 0; }
         .selector-row { display: flex; gap: 10px; align-items: center; margin-top: 5px; }
-        .stepper { display: flex; flex: 1; background: #f0f0f5; border-radius: 10px; overflow: hidden; border: 1px solid #e0e0e0; }
+        .stepper { display: flex; flex: 1; background: #f0f0f5; border-radius: 10px; border: 1px solid #e0e0e0; }
         .t-btn { width: 45px; height: 45px; border: none; background: white; font-size: 22px; font-weight: bold; color: #0056b3; cursor: pointer; }
         .val-display { flex: 1; text-align: center; line-height: 45px; font-weight: bold; }
         .km-input-small { border: none; background: transparent; width: 100%; text-align: center; font-weight: 700; font-size: 16px; outline: none; }
@@ -82,9 +81,7 @@
             </div>
             <label>Voertuig</label>
             <select id="bus-nummer">
-                <option value="">Kies voertuig...</option>
-                <option value="19">19</option><option value="23">23</option><option value="50">50</option><option value="53">53</option><option value="60">60</option><option value="62">62</option><option value="Taxi 1">Taxi 1</option><option value="Taxi 2">Taxi 2</option>
-            </select>
+                </select>
             <label>Van</label>
             <input type="text" id="van-plaats" placeholder="Typ beginadres...">
             <label>Naar</label>
@@ -96,7 +93,7 @@
             <div class="radio-group">
                 <div class="radio-option"><input type="radio" name="betaal" id="b1" value="Contant" checked><label for="b1" class="radio-label">Contant</label></div>
                 <div class="radio-option"><input type="radio" name="betaal" id="b2" value="Pin"><label for="b2" class="radio-label">Pin</label></div>
-                <div class="radio-option"><input type="radio" name="betaal" id="b3" value="Rekening"><label for="b3" class="radio-label">Rekening</label></div>
+                <div class="radio-option"><input type="radio" name="betaal" id="b3" value="Rekening" checked><label for="b3" class="radio-label">Rekening</label></div>
             </div>
             <label>Bedrag (€)</label>
             <input type="number" id="taxi-bedrag" placeholder="0.00" step="0.01" inputmode="decimal">
@@ -115,6 +112,11 @@
     </div>
 
     <script>
+        const voertuigen = {
+            'taxi': ["17", "18", "19", "23"],
+            'volledig': ["17", "18", "19", "23", "50", "53", "60", "62"]
+        };
+
         const rittenConfig = {
             'Taxirit': [],
             'Dagrit': ["Vertrek garage", "Vertrek klant", "Aankomst bestemming", "Vertrek bestemming", "Retour klant", "Retour garage"],
@@ -122,8 +124,6 @@
             'Treinstremming': ["Vertrek zaak", "1e station", "Laatste station", "Retour zaak"],
             'Breng en haal': ["Vertrek garage (Heen)", "Vertrek klant", "Aankomst bestemming", "Retour garage", "DIVIDER:Deel 2", "Vertrek garage (Terug)", "Vertrek bestemming", "Retour klant", "Retour garage"]
         };
-
-        let huidigType = "";
 
         function initAutocomplete() {
             if (typeof google === 'undefined') return;
@@ -134,12 +134,27 @@
             naarInput.addListener('place_changed', () => document.getElementById('naar-plaats').blur());
         }
 
+        function vulVoertuigen(type) {
+            const select = document.getElementById('bus-nummer');
+            select.innerHTML = '<option value="">Kies voertuig...</option>';
+            const lijst = (type === 'Taxirit') ? voertuigen.taxi : voertuigen.volledig;
+            lijst.forEach(nr => {
+                const opt = document.createElement('option');
+                opt.value = nr;
+                opt.innerText = nr;
+                select.appendChild(opt);
+            });
+        }
+
         function kiesRit(type) {
             huidigType = type;
             document.getElementById('menu-scherm').style.display = 'none';
             document.getElementById('app-scherm').style.display = 'block';
             document.getElementById('rit-datum').valueAsDate = new Date();
             document.getElementById('titel-weergave').innerText = type.toUpperCase();
+            
+            vulVoertuigen(type);
+
             const isTaxi = (type === 'Taxirit');
             document.getElementById('taxi-extra').style.display = isTaxi ? 'block' : 'none';
             document.getElementById('taxi-tijd-box').style.display = isTaxi ? 'block' : 'none';
@@ -184,7 +199,7 @@
             let body = `RITREGISTRATIE - ${huidigType}\nChauffeur: ${chauffeur}\nDatum: ${document.getElementById('rit-datum').value}\nVoertuig: ${document.getElementById('bus-nummer').value}\nTraject: ${document.getElementById('van-plaats').value} naar ${document.getElementById('naar-plaats').value}\n\n`;
             if (huidigType === 'Taxirit') {
                 const betaal = document.querySelector('input[name="betaal"]:checked').value;
-                body += `Tijd: ${document.getElementById('taxi-tijd').value}\nBedrag: € ${document.getElementById('taxi-bedrag').value} (${betaal})\nBijzonderheden: ${document.getElementById('bijzonderheden').value}`;
+                body += `Tijd: ${document.getElementById('taxi-tijd').value}\nBedrag: € ${document.getElementById('taxi-bedrag').value || '0.00'} (${betaal})\nBijzonderheden: ${document.getElementById('bijzonderheden').value || 'Geen'}`;
             } else {
                 let v = 0;
                 rittenConfig[huidigType].forEach(r => {
