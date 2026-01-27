@@ -32,7 +32,7 @@
         .menu-icon { font-size: 32px; }
         
         #app-scherm { display: none; max-width: 600px; margin: 0 auto; }
-        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; }
         
         .header-balk { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
         .btn-terug { background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; }
@@ -41,6 +41,18 @@
         label { display: block; font-size: 11px; font-weight: 700; color: #666; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; }
         input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; background: #f9f9f9; margin-bottom: 12px; appearance: none; font-family: inherit; }
         textarea { height: 80px; resize: none; }
+
+        /* AUTOCOMPLETE STIJLEN */
+        .autocomplete-container { position: relative; flex: 1; }
+        .autocomplete-results { 
+            position: absolute; top: 45px; left: 0; right: 0; 
+            background: white; border: 1px solid #ddd; border-radius: 8px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 999; 
+            max-height: 200px; overflow-y: auto; display: none;
+        }
+        .autocomplete-item { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; cursor: pointer; }
+        .autocomplete-item:last-child { border-bottom: none; }
+        .autocomplete-item:active { background: #e7f3ff; }
 
         .rit-rij { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
         .rit-rij:last-child { border-bottom: none; }
@@ -135,41 +147,36 @@
             </select>
 
             <div style="display: flex; gap: 10px;">
-                <div style="flex:1"><label>Van</label><input type="text" id="van-plaats"></div>
-                <div style="flex:1"><label>Naar</label><input type="text" id="naar-plaats"></div>
+                <div class="autocomplete-container">
+                    <label>Van</label>
+                    <input type="text" id="van-plaats" placeholder="Vertrekadres" oninput="zoekAdres(this, 'van-results')">
+                    <div id="van-results" class="autocomplete-results"></div>
+                </div>
+                <div class="autocomplete-container">
+                    <label>Naar</label>
+                    <input type="text" id="naar-plaats" placeholder="Bestemming" oninput="zoekAdres(this, 'naar-results')">
+                    <div id="naar-results" class="autocomplete-results"></div>
+                </div>
             </div>
         </div>
 
         <div id="taxi-betaal-sectie" class="card" style="display:none;">
             <label>Betaalwijze</label>
             <div class="radio-group">
-                <div class="radio-option">
-                    <input type="radio" name="betaalwijze" id="p-contant" value="Contant" checked>
-                    <label for="p-contant" class="radio-label">Contant</label>
-                </div>
-                <div class="radio-option">
-                    <input type="radio" name="betaalwijze" id="p-pin" value="Pin">
-                    <label for="p-pin" class="radio-label">Pin</label>
-                </div>
-                <div class="radio-option">
-                    <input type="radio" name="betaalwijze" id="p-rekening" value="Rekening">
-                    <label for="p-rekening" class="radio-label">Rekening</label>
-                </div>
+                <div class="radio-option"><input type="radio" name="betaalwijze" id="p-contant" value="Contant" checked><label for="p-contant" class="radio-label">Contant</label></div>
+                <div class="radio-option"><input type="radio" name="betaalwijze" id="p-pin" value="Pin"><label for="p-pin" class="radio-label">Pin</label></div>
+                <div class="radio-option"><input type="radio" name="betaalwijze" id="p-rekening" value="Rekening"><label for="p-rekening" class="radio-label">Rekening</label></div>
             </div>
-            
             <label>Bedrag (€)</label>
             <input type="number" id="taxi-bedrag" placeholder="0.00" inputmode="decimal">
-
             <label>Bijzonderheden</label>
             <textarea id="bijzonderheden" placeholder="Optionele opmerkingen..."></textarea>
         </div>
 
         <div id="bus-ritten-sectie" class="card">
             <div id="ritLijst"></div>
-
             <label style="margin-top:15px;">Einddatum (indien nachtrit)</label>
             <input type="date" id="rit-einddatum" onchange="sluitDatumKiezer(this)">
-
             <div class="cash-sectie">
                 <input type="checkbox" id="contant-betaald" onchange="toggleCashInput()">
                 <label for="contant-betaald">Contant bedrag ontvangen?</label>
@@ -178,7 +185,6 @@
                 <label>Ontvangen bedrag (€)</label>
                 <input type="number" id="cash-waarde" placeholder="0.00" inputmode="decimal">
             </div>
-
             <div class="totaal-sectie">
                 <span class="totaal-waarde" id="totaalTijd">Diensttijd: 0u 0m</span>
                 <span class="totaal-waarde" id="totaalKm">Totaal KM: 0 km</span>
@@ -200,8 +206,7 @@
         };
 
         const standaardtijden = ["08:00", "08:15", "10:00", "16:00", "16:30", "17:00", "22:00", "23:00"];
-        let huidigType = "";
-        let huidigeRegels = [];
+        let huidigType = ""; let huidigeRegels = []; let searchTimeout = null;
 
         function init() {
             const vandaag = new Date().toISOString().split('T')[0];
@@ -211,14 +216,49 @@
 
         function sluitDatumKiezer(el) { el.blur(); berekenAlles(); }
 
+        async function zoekAdres(input, resultId) {
+            const query = input.value;
+            const resDiv = document.getElementById(resultId);
+            if (query.length < 3) { resDiv.style.display = 'none'; return; }
+            
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                try {
+                    // We filteren op Nederland (lon=5.2, lat=52.1) voor betere resultaten
+                    const response = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=nl&bbox=3.2,50.7,7.2,53.5`);
+                    const data = await response.json();
+                    
+                    resDiv.innerHTML = '';
+                    if (data.features.length > 0) {
+                        resDiv.style.display = 'block';
+                        data.features.forEach(f => {
+                            const p = f.properties;
+                            const adres = `${p.name || ''} ${p.street || ''} ${p.housenumber || ''}, ${p.city || ''}`.replace(/undefined/g, '').trim().replace(/^ ,/, '').replace(/,$/, '');
+                            const item = document.createElement('div');
+                            item.className = 'autocomplete-item';
+                            item.innerText = adres;
+                            item.onclick = () => { input.value = adres; resDiv.style.display = 'none'; };
+                            resDiv.appendChild(item);
+                        });
+                    } else { resDiv.style.display = 'none'; }
+                } catch (e) { console.error(e); }
+            }, 300);
+        }
+
+        // Sluit resultaten als je buiten het veld klikt
+        document.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('autocomplete-item')) {
+                document.querySelectorAll('.autocomplete-results').forEach(r => r.style.display = 'none');
+            }
+        });
+
         function toggleCashInput() {
             const checked = document.getElementById('contant-betaald').checked;
             document.getElementById('contant-bedrag-input').style.display = checked ? 'block' : 'none';
         }
 
         function kiesRit(type) {
-            huidigType = type;
-            huidigeRegels = rittenConfig[type];
+            huidigType = type; huidigeRegels = rittenConfig[type];
             document.getElementById('titel-weergave').innerText = type;
             document.getElementById('menu-scherm').style.display = 'none';
             document.getElementById('app-scherm').style.display = 'block';
@@ -233,9 +273,7 @@
                 document.getElementById('bus-ritten-sectie').style.display = 'block';
                 bouwFormulier();
             }
-            
-            berekenAlles();
-            window.scrollTo(0,0);
+            berekenAlles(); window.scrollTo(0,0);
         }
 
         function terugNaarMenu() { document.getElementById('app-scherm').style.display = 'none'; document.getElementById('menu-scherm').style.display = 'flex'; }
@@ -274,7 +312,6 @@
                 document.getElementById('foutmelding').style.display = 'none';
                 return;
             }
-
             let kmFields = document.querySelectorAll('.km-field');
             let standen = []; let tijden = []; let fout = false;
 
@@ -286,7 +323,6 @@
                 standen.push(val);
                 let [u, m] = document.getElementById(`tijd-${i}`).innerText.split(":").map(Number);
                 tijden.push(u * 60 + m);
-
                 if (i > 0) {
                     if (val > 0) {
                         let prevKm = standen.slice(0, i).reverse().find(k => k > 0);
