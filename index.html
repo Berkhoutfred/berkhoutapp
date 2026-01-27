@@ -11,19 +11,19 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <style>
-        /* Basis instellingen voor de hele app */
+        /* Basis instellingen */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             background-color: #f0f0f5; 
             margin: 0; 
             padding: 15px; 
             color: #333; 
-            -webkit-tap-highlight-color: transparent; /* Verwijdert grijze klik-box op iPhone */
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* --- STIJL VOOR HET MENU (START PAGINA) --- */
+        /* --- STIJL VOOR HET MENU --- */
         #menu-scherm { 
-            display: block; /* Dit scherm is zichtbaar bij start */
+            display: block; 
             max-width: 600px; 
             margin: 0 auto; 
             padding-top: 10px;
@@ -37,7 +37,7 @@
         .logo-img { 
             max-width: 100%; 
             height: auto; 
-            max-height: 150px; /* Zorgt dat de bus niet te groot wordt */
+            max-height: 150px; 
         }
 
         .menu-knop {
@@ -46,36 +46,28 @@
             border-radius: 20px;
             padding: 30px 20px;
             margin-bottom: 20px;
-            
-            /* Tekst Stijl */
             color: #0056b3;
             font-size: 22px;
-            font-weight: 800; /* Lekker dik gedrukt */
-            
-            /* Flexbox voor icoon en tekst naast elkaar */
+            font-weight: 800;
             display: flex; 
             align-items: center; 
             gap: 20px;
-            
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
             cursor: pointer;
             transition: transform 0.1s, background 0.1s;
         }
 
-        /* Effect als je op de knop drukt */
         .menu-knop:active {
             transform: scale(0.98);
             background-color: #e7f3ff;
             border-color: #0056b3;
         }
 
-        .knop-icoon {
-            font-size: 35px;
-        }
+        .knop-icoon { font-size: 35px; }
 
-        /* --- STIJL VOOR DE INVUL APP (VERBORGEN BIJ START) --- */
+        /* --- STIJL VOOR DE INVUL APP --- */
         #app-scherm { 
-            display: none; /* Standaard verborgen */
+            display: none; 
             max-width: 600px; 
             margin: 0 auto; 
         }
@@ -95,6 +87,7 @@
             border-radius: 8px;
             font-weight: bold;
             font-size: 14px;
+            cursor: pointer;
         }
 
         .rit-titel {
@@ -104,7 +97,6 @@
             text-transform: uppercase;
         }
 
-        /* De witte kaarten */
         .card { 
             background: white; 
             border-radius: 12px; 
@@ -113,42 +105,22 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
         }
 
-        /* Invulvelden */
         label { display: block; font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase; margin-bottom: 5px; }
         input, select {
             width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; background: #fafafa; margin-bottom: 12px; box-sizing: border-box;
         }
         
-        /* Rijtjes met Tijden en KM */
-        .rit-rij { padding: 12px 0; border-bottom: 1px solid #eee; }
-        .locatie-naam { font-weight: bold; font-size: 15px; margin-bottom: 8px; }
+        /* Stremming box */
+        .stremming-box { display: none; background: #fff3cd; padding: 10px; border-radius: 8px; border: 1px solid #ffeeba; align-items: center; justify-content: space-between; margin-top: 10px;}
         
-        .rij-opties { display: flex; gap: 10px; margin-bottom: 5px; }
-        
-        /* Plus en Min knoppen */
-        .stepper { display: flex; flex: 1; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #f0f0f5; }
-        .stepper-btn { width: 40px; border: none; background: white; color: #0056b3; font-size: 20px; font-weight: bold; }
-        .stepper-val { flex: 1; text-align: center; line-height: 40px; font-weight: bold; font-size: 16px; background: white; border-left: 1px solid #eee; border-right: 1px solid #eee; }
-        .km-input { width: 100%; border: none; text-align: center; font-weight: bold; font-size: 16px; background: transparent; padding: 0; margin: 0; height: 40px; }
-
-        /* Tussenkopje voor Breng en Haal */
-        .tussenkop {
-            background: #e7f3ff; color: #0056b3; padding: 10px; border-radius: 8px; font-weight: bold; text-align: center; margin: 15px 0;
-        }
-
-        /* Knoppen onderaan */
-        .btn-groen { background: #28a745; color: white; width: 100%; padding: 15px; font-size: 18px; font-weight: bold; border: none; border-radius: 10px; margin-top: 10px; }
-        .btn-rood { background: #dc3545; color: white; width: 100%; padding: 12px; font-size: 14px; border: none; border-radius: 8px; margin-top: 20px; opacity: 0.8; }
-
-        .stremming-box { display: none; background: #fff3cd; padding: 10px; border-radius: 8px; border: 1px solid #ffeeba; align-items: center; justify-content: space-between; }
-        .error { border: 2px solid red !important; background: #ffe6e6 !important; }
+        .btn-groen { background: #28a745; color: white; width: 100%; padding: 15px; font-size: 18px; font-weight: bold; border: none; border-radius: 10px; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="menu-scherm">
         <div class="logo-container">
-            <img src="bus-header.png" alt="Busreizen Berkhout" class="logo-img" onerror="this.style.display='none'">
+            <h2 style="color:#0056b3;">BERKHOUT REIZEN</h2>
         </div>
 
         <div class="menu-knop" onclick="openApp('Dagrit')">
@@ -185,39 +157,4 @@
                 <option value="Hilbert van Dam">Hilbert van Dam</option>
                 <option value="Jan Jolink">Jan Jolink</option>
                 <option value="Jesse Berkhout">Jesse Berkhout</option>
-                <option value="Monique Westerholt">Monique Westerholt</option>
-                <option value="Niek Berkhout">Niek Berkhout</option>
-            </select>
-
-            <label>Datum</label>
-            <input type="date" id="datum">
-
-            <label>Bus nummer</label>
-            <select id="bus">
-                <option value="">Kies bus...</option>
-                <option value="19">19</option>
-                <option value="23">23</option>
-                <option value="50">50</option>
-                <option value="53">53</option>
-                <option value="60">60</option>
-                <option value="62">62</option>
-                <option value="BZ-TX-98">BZ-TX-98</option>
-            </select>
-
-            <label>Klant / Opdracht</label>
-            <input type="text" id="klant" placeholder="Bijv. Schoolreisje">
-            
-            <div style="display:flex; gap:10px;">
-                <div style="flex:1"><label>Van</label><input type="text" id="van"></div>
-                <div style="flex:1"><label>Naar</label><input type="text" id="naar"></div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div id="lijst-container"></div>
-            
-            <label style="margin-top:15px">Einddatum</label>
-            <input type="date" id="einddatum">
-
-            <div class="stremming-box" id="stremming-rij">
-                <label style="margin:0; color:#856404; text-transform:none;">⚠️ NS Stremming Tarief</label>
+                <option value="Monique Westerholt">Monique Westerholt
