@@ -29,46 +29,43 @@
         }
         
         .menu-blok:active { background: #e7f3ff; transform: scale(0.98); }
-        .menu-icon { font-size: 32px; }
         
         #app-scherm { display: none; max-width: 600px; margin: 0 auto; }
         .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; }
         
         .header-balk { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
-        .btn-terug { background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; }
-        .rit-titel { font-size: 18px; font-weight: bold; color: #0056b3; text-transform: uppercase; }
-
-        label { display: block; font-size: 11px; font-weight: 700; color: #666; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; background: #f9f9f9; margin-bottom: 12px; appearance: none; font-family: inherit; }
+        .btn-terug { background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
         
-        /* ADRES AUTOCOMPLETE FIX */
-        .autocomplete-container { position: relative; width: 100%; }
+        label { display: block; font-size: 11px; font-weight: 700; color: #666; text-transform: uppercase; margin-bottom: 5px; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; background: #f9f9f9; margin-bottom: 12px; }
+
+        /* AUTOCOMPLETE STIJLEN */
+        .autocomplete-container { position: relative; width: 100%; margin-bottom: 10px; }
         .autocomplete-results { 
             position: absolute; 
-            top: 100%; 
+            top: 65px; 
             left: 0; 
             right: 0; 
-            background: white; 
+            background: #ffffff; 
             border: 2px solid #0056b3; 
-            border-radius: 8px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
-            z-index: 9999; 
-            max-height: 250px; 
+            border-radius: 10px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3); 
+            z-index: 99999; 
+            max-height: 220px; 
             overflow-y: auto; 
             display: none;
-            margin-top: -10px;
         }
         .autocomplete-item { 
-            padding: 14px; 
+            padding: 15px; 
             border-bottom: 1px solid #eee; 
-            font-size: 15px; 
-            color: #333;
-            background: white;
+            font-size: 14px; 
+            color: #000;
+            background: #fff;
         }
         .autocomplete-item:active { background: #e7f3ff; }
 
         .totaal-sectie { background: #f8fbff; padding: 15px; border-radius: 8px; border: 1px solid #d0e5ff; margin-top: 15px; }
-        .totaal-waarde { font-size: 18px; font-weight: bold; color: #0056b3; display: block; }
+        .totaal-waarde { font-size: 18px; font-weight: bold; color: #0056b3; }
         
         .radio-group { display: flex; gap: 10px; margin-bottom: 15px; }
         .radio-option { flex: 1; position: relative; }
@@ -76,8 +73,16 @@
         .radio-label { display: block; text-align: center; padding: 12px 5px; background: #f0f0f5; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-weight: bold; color: #666; }
         .radio-option input:checked + .radio-label { background: #0056b3; color: white; border-color: #0056b3; }
 
-        .btn-verzend { background: #28a745; color: white; width: 100%; padding: 16px; font-size: 18px; font-weight: bold; border: none; border-radius: 10px; margin-top: 15px; }
+        .btn-verzend { background: #28a745; color: white; width: 100%; padding: 18px; font-size: 18px; font-weight: bold; border: none; border-radius: 10px; margin-top: 15px; }
         .btn-wis { background: #dc3545; color: white; width: 100%; padding: 12px; border: none; border-radius: 8px; margin-top: 30px; opacity: 0.7; }
+
+        .rit-rij { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+        .locatie-naam { font-weight: 700; margin-bottom: 8px; font-size: 15px; }
+        .selector-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
+        .stepper { display: flex; align-items: center; background: #f0f0f5; border-radius: 8px; flex: 1; border: 1px solid #e0e0e0; }
+        .t-btn { background: white; color: #0056b3; border: none; width: 45px; height: 44px; font-size: 22px; font-weight: bold; }
+        .val-display { flex: 1; text-align: center; font-weight: 600; }
+        .km-field { border: none; background: transparent; text-align: center; font-weight: 600; width: 100%; height: 44px; outline: none; }
     </style>
 </head>
 <body>
@@ -88,37 +93,29 @@
             <div class="logo-tekst">BERKHOUT <span>RITREGISTRATIE</span></div>
         </div>
         <div class="menu-lijst">
-            <div class="menu-blok" onclick="kiesRit('Taxirit')"><span class="menu-icon">🚕</span> Taxirit</div>
-            <div class="menu-blok" onclick="kiesRit('Dagrit')"><span class="menu-icon">☀️</span> Dagrit</div>
-            <div class="menu-blok" onclick="kiesRit('Enkele rit')"><span class="menu-icon">➡️</span> Enkele rit</div>
-            <div class="menu-blok" onclick="kiesRit('Breng en haal')"><span class="menu-icon">🔄</span> Breng & Haal</div>
-            <div class="menu-blok" onclick="kiesRit('Treinstremming')"><span class="menu-icon">🚂</span> Treinstremming</div>
+            <div class="menu-blok" onclick="kiesRit('Taxirit')">🚕 Taxirit</div>
+            <div class="menu-blok" onclick="kiesRit('Dagrit')">☀️ Dagrit</div>
+            <div class="menu-blok" onclick="kiesRit('Enkele rit')">➡️ Enkele rit</div>
+            <div class="menu-blok" onclick="kiesRit('Breng en haal')">🔄 Breng & Haal</div>
+            <div class="menu-blok" onclick="kiesRit('Treinstremming')">🚂 Treinstremming</div>
         </div>
     </div>
 
     <div id="app-scherm">
         <div class="header-balk">
             <button class="btn-terug" onclick="terugNaarMenu()">❮ Menu</button>
-            <span class="rit-titel" id="titel-weergave">RITDATA</span>
+            <span id="titel-weergave" style="font-weight:bold; color:#0056b3;">RITDATA</span>
         </div>
 
         <div class="card">
             <label>Chauffeur</label>
             <select id="chauffeur-naam">
                 <option value="">Kies naam...</option>
-                <option value="Fred Haan">Fred Haan</option>
-                <option value="Fred Stravers">Fred Stravers</option>
-                <option value="Gerard Hellewegen">Gerard Hellewegen</option>
-                <option value="Hans Roordink">Hans Roordink</option>
-                <option value="Hilbert van Dam">Hilbert van Dam</option>
-                <option value="Jan Jolink">Jan Jolink</option>
-                <option value="Jesse Berkhout">Jesse Berkhout</option>
-                <option value="Monique Westerholt">Monique Westerholt</option>
-                <option value="Niek Berkhout">Niek Berkhout</option>
+                <option value="Fred Haan">Fred Haan</option><option value="Fred Stravers">Fred Stravers</option><option value="Gerard Hellewegen">Gerard Hellewegen</option><option value="Hans Roordink">Hans Roordink</option><option value="Hilbert van Dam">Hilbert van Dam</option><option value="Jan Jolink">Jan Jolink</option><option value="Jesse Berkhout">Jesse Berkhout</option><option value="Monique Westerholt">Monique Westerholt</option><option value="Niek Berkhout">Niek Berkhout</option>
             </select>
 
             <label>Datum</label>
-            <input type="date" id="rit-datum" onchange="sluitDatumKiezer(this)">
+            <input type="date" id="rit-datum" onchange="this.blur()">
             
             <div id="extra-taxi-velden" style="display:none;">
                 <label>Tijd</label>
@@ -128,25 +125,18 @@
             <label>Voertuig</label>
             <select id="bus-nummer">
                 <option value="">Kies voertuig...</option>
-                <option value="19">19</option>
-                <option value="23">23</option>
-                <option value="50">50</option>
-                <option value="53">53</option>
-                <option value="60">60</option>
-                <option value="62">62</option>
-                <option value="Taxi 1">Taxi 1</option>
-                <option value="Taxi 2">Taxi 2</option>
+                <option value="19">19</option><option value="23">23</option><option value="50">50</option><option value="53">53</option><option value="60">60</option><option value="62">62</option><option value="Taxi 1">Taxi 1</option><option value="Taxi 2">Taxi 2</option>
             </select>
 
             <div class="autocomplete-container">
                 <label>Van</label>
-                <input type="text" id="van-plaats" placeholder="Typ adres..." onkeyup="zoekAdres(this, 'van-results')" autocomplete="off">
+                <input type="text" id="van-plaats" placeholder="Vertrekadres" oninput="zoekAdres(this, 'van-results')">
                 <div id="van-results" class="autocomplete-results"></div>
             </div>
 
             <div class="autocomplete-container">
                 <label>Naar</label>
-                <input type="text" id="naar-plaats" placeholder="Typ adres..." onkeyup="zoekAdres(this, 'naar-results')" autocomplete="off">
+                <input type="text" id="naar-plaats" placeholder="Bestemming" oninput="zoekAdres(this, 'naar-results')">
                 <div id="naar-results" class="autocomplete-results"></div>
             </div>
         </div>
@@ -167,9 +157,9 @@
         <div id="bus-ritten-sectie" class="card">
             <div id="ritLijst"></div>
             <label style="margin-top:15px;">Einddatum (nachtrit)</label>
-            <input type="date" id="rit-einddatum" onchange="sluitDatumKiezer(this)">
+            <input type="date" id="rit-einddatum" onchange="this.blur()">
             <div class="totaal-sectie">
-                <span class="totaal-waarde" id="totaalTijd">Diensttijd: 0u 0m</span>
+                <span class="totaal-waarde" id="totaalTijd">Diensttijd: 0u 0m</span><br>
                 <span class="totaal-waarde" id="totaalKm">Totaal KM: 0 km</span>
             </div>
         </div>
@@ -184,7 +174,7 @@
             'Dagrit': ["Vertrek garage", "Vertrek klant", "Aankomst bestemming", "Vertrek bestemming", "Retour klant", "Retour garage"],
             'Enkele rit': ["Vertrek garage", "Vertrek klant", "Aankomst bestemming", "Retour garage"],
             'Treinstremming': ["Vertrek zaak", "1e station", "Laatste station", "Retour zaak"],
-            'Breng en haal': ["Vertrek garage (Heen)", "Vertrek klant", "Aankomst bestemming", "Retour garage", "DIVIDER:Deel 2: Ophalen", "Vertrek garage (Terug)", "Vertrek bestemming", "Retour klant", "Retour garage"]
+            'Breng en haal': ["Vertrek garage (Heen)", "Vertrek klant", "Aankomst bestemming", "Retour garage", "DIVIDER:Ophalen", "Vertrek garage (Terug)", "Vertrek bestemming", "Retour klant", "Retour garage"]
         };
 
         let huidigType = ""; let searchTimeout = null;
@@ -195,55 +185,35 @@
             document.getElementById('rit-einddatum').value = vandaag;
         }
 
-        function sluitDatumKiezer(el) { el.blur(); berekenAlles(); }
-
-        // DE VERBETERDE ADRESZOEKER
         async function zoekAdres(input, resultId) {
             const query = input.value;
             const resDiv = document.getElementById(resultId);
-            
             if (query.length < 3) { resDiv.style.display = 'none'; return; }
             
             clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(async () => {
-                try {
-                    // Gebruik HTTPS en voeg een NL filter toe
-                    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=nl&bbox=3.2,50.7,7.2,53.5`;
-                    const response = await fetch(url);
-                    const data = await response.json();
-                    
+            searchTimeout = setTimeout(() => {
+                fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=6&lang=nl`)
+                .then(response => response.json())
+                .then(data => {
                     if (data.features && data.features.length > 0) {
                         resDiv.innerHTML = '';
                         resDiv.style.display = 'block';
                         data.features.forEach(f => {
                             const p = f.properties;
-                            // Bouw een mooi adres
-                            let parts = [];
-                            if (p.name && p.name !== p.street) parts.push(p.name);
-                            if (p.street) parts.push(p.street + (p.housenumber ? ' ' + p.housenumber : ''));
-                            if (p.city) parts.push(p.city);
-                            
-                            const fullAdres = parts.join(', ');
+                            const d = [p.street, p.housenumber, p.city].filter(Boolean).join(' ');
+                            const full = (p.name && p.name !== p.street) ? p.name + ', ' + d : d;
                             const item = document.createElement('div');
                             item.className = 'autocomplete-item';
-                            item.innerText = fullAdres;
-                            item.onclick = function() {
-                                input.value = fullAdres;
-                                resDiv.style.display = 'none';
-                            };
+                            item.innerText = full;
+                            item.onclick = function() { input.value = full; resDiv.style.display = 'none'; };
                             resDiv.appendChild(item);
                         });
-                    } else {
-                        resDiv.style.display = 'none';
                     }
-                } catch (e) {
-                    console.error("Zoekfout:", e);
-                }
-            }, 400);
+                }).catch(err => console.log("Fout:", err));
+            }, 500);
         }
 
-        // Sluit lijst bij klikken buiten veld
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', (e) => {
             if (!e.target.closest('.autocomplete-container')) {
                 document.querySelectorAll('.autocomplete-results').forEach(r => r.style.display = 'none');
             }
@@ -254,28 +224,23 @@
             document.getElementById('titel-weergave').innerText = type;
             document.getElementById('menu-scherm').style.display = 'none';
             document.getElementById('app-scherm').style.display = 'block';
-
             const isTaxi = (type === 'Taxirit');
             document.getElementById('taxi-betaal-sectie').style.display = isTaxi ? 'block' : 'none';
             document.getElementById('extra-taxi-velden').style.display = isTaxi ? 'block' : 'none';
             document.getElementById('bus-ritten-sectie').style.display = isTaxi ? 'none' : 'block';
-
             if (!isTaxi) bouwFormulier();
             berekenAlles();
-            window.scrollTo(0,0);
         }
 
         function terugNaarMenu() { document.getElementById('app-scherm').style.display = 'none'; document.getElementById('menu-scherm').style.display = 'flex'; }
 
         function bouwFormulier() {
             let html = ""; let v = 0;
-            const regels = rittenConfig[huidigType];
-            regels.forEach((label) => {
-                if (label.startsWith("DIVIDER:")) {
-                    html += `<div class="tussenkop">${label.split(":")[1]}</div>`;
-                } else {
+            rittenConfig[huidigType].forEach((label) => {
+                if (label.startsWith("DIVIDER:")) html += `<div style="background:#e7f3ff;padding:8px;text-align:center;font-weight:bold;margin:10px -15px;">${label.split(":")[1]}</div>`;
+                else {
                     let t = ["08:00", "08:15", "10:00", "16:00", "16:30", "17:00", "22:00"][v] || "00:00";
-                    html += `<div class="rit-rij"><div class="locatie-naam">${label}</div><div class="selector-row"><div class="control-label">TIJD</div><div class="stepper"><button class="t-btn" onclick="pasTijdAan(${v}, -15)">-</button><div class="val-display" id="tijd-${v}">${t}</div><button class="t-btn" onclick="pasTijdAan(${v}, 15)">+</button></div></div><div class="selector-row"><div class="control-label">KM</div><div class="stepper" id="box-km-${v}"><button class="t-btn" onclick="pasKmAan(${v}, -1)">-</button><input type="number" id="km-${v}" class="km-field" placeholder="0" oninput="berekenAlles()" inputmode="numeric"><button class="t-btn" onclick="pasKmAan(${v}, 1)">+</button></div></div></div>`;
+                    html += `<div class="rit-rij"><div>${label}</div><div class="selector-row"><div class="stepper"><button class="t-btn" onclick="pasTijdAan(${v},-15)">-</button><div class="val-display" id="tijd-${v}">${t}</div><button class="t-btn" onclick="pasTijdAan(${v},15)">+</button></div><div class="stepper"><button class="t-btn" onclick="pasKmAan(${v},-1)">-</button><input type="number" id="km-${v}" class="km-field" placeholder="KM" oninput="berekenAlles()" inputmode="numeric"><button class="t-btn" onclick="pasKmAan(${v},1)">+</button></div></div></div>`;
                     v++;
                 }
             });
@@ -307,26 +272,17 @@
             let gevuld = standen.filter(s => s > 0);
             let totKm = gevuld.length > 1 ? (Math.max(...gevuld) - Math.min(...gevuld)) : 0;
             document.getElementById('totaalKm').innerText = `Totaal KM: ${totKm} km`;
-            
-            const d1 = new Date(document.getElementById('rit-datum').value);
-            const d2 = new Date(document.getElementById('rit-einddatum').value);
-            let dagVerschil = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
-            let totaalMin = (tijden[tijden.length-1] + (dagVerschil * 1440)) - tijden[0];
+            let totaalMin = (tijden[tijden.length-1]) - tijden[0];
             document.getElementById('totaalTijd').innerText = `Diensttijd: ${Math.floor(Math.max(0, totaalMin)/60)}u ${Math.max(0, totaalMin)%60}m`;
         }
 
         function verstuurMail() {
             const chauffeur = document.getElementById('chauffeur-naam').value;
             if (!chauffeur) { alert("Selecteer chauffeur!"); return; }
-
             let body = `RITREGISTRATIE - ${huidigType.toUpperCase()}\nChauffeur: ${chauffeur}\nDatum: ${document.getElementById('rit-datum').value}\n`;
-            
             if (huidigType === 'Taxirit') {
-                const betaalwijze = document.querySelector('input[name="betaalwijze"]:checked').value;
-                body += `Tijd: ${document.getElementById('taxi-tijd').value}\n`;
-                body += `Traject: ${document.getElementById('van-plaats').value} naar ${document.getElementById('naar-plaats').value}\n`;
-                body += `Bedrag: € ${document.getElementById('taxi-bedrag').value || '0.00'} (${betaalwijze})\n`;
-                body += `Bijzonderheden: ${document.getElementById('bijzonderheden').value || 'Geen'}\n`;
+                const betaal = document.querySelector('input[name="betaalwijze"]:checked').value;
+                body += `Tijd: ${document.getElementById('taxi-tijd').value}\nTraject: ${document.getElementById('van-plaats').value} naar ${document.getElementById('naar-plaats').value}\nBedrag: € ${document.getElementById('taxi-bedrag').value || '0.00'} (${betaal})\nBijzonderheden: ${document.getElementById('bijzonderheden').value || 'Geen'}`;
             } else {
                 let v = 0;
                 rittenConfig[huidigType].forEach(r => {
@@ -337,7 +293,6 @@
                 });
                 body += `\n${document.getElementById('totaalTijd').innerText}\n${document.getElementById('totaalKm').innerText}`;
             }
-
             window.location.href = `mailto:info@taxiberkhout.nl?subject=Ritregistratie ${huidigType} - ${chauffeur}&body=${encodeURIComponent(body)}`;
         }
 
