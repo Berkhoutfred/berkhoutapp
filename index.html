@@ -13,12 +13,13 @@
         /* Basis instellingen */
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f0f5; margin: 0; padding: 15px; color: #333; -webkit-tap-highlight-color: transparent; }
         
-        /* -- MENU STIJLEN -- */
+        /* -- LOGO & MENU -- */
+        .logo-container { text-align: center; margin-bottom: 25px; padding-top: 10px; }
+        .logo-svg { width: 100px; height: auto; margin-bottom: 5px; }
+        .logo-tekst { font-size: 22px; font-weight: 900; color: #0056b3; letter-spacing: 1px; }
+        .logo-tekst span { font-weight: 300; color: #666; }
+
         #menu-scherm { display: flex; flex-direction: column; gap: 20px; padding-top: 20px; max-width: 600px; margin: 0 auto; }
-        
-        .logo-container { text-align: center; margin-bottom: 10px; }
-        .logo-img { max-width: 100%; height: auto; max-height: 160px; }
-        
         .menu-lijst { display: flex; flex-direction: column; gap: 20px; }
         
         .menu-blok {
@@ -29,12 +30,12 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.08);
             border: 2px solid #e0e0e0;
             font-size: 24px;
-            font-weight: 800; /* Dik gedrukt */
+            font-weight: 800;
             color: #0056b3;
             transition: 0.2s;
             display: flex; align-items: center; gap: 25px;
-            cursor: pointer; /* Handje bij mouseover */
-            user-select: none; /* Voorkomt tekst selecteren bij klikken */
+            cursor: pointer;
+            user-select: none;
             -webkit-user-select: none;
         }
         
@@ -73,7 +74,8 @@
         .t-btn:active { background: #e7f3ff; }
         
         .val-display { flex: 1; text-align: center; font-weight: 600; font-size: 16px; line-height: 44px; }
-        .km-field { border: none; background: transparent; text-align: center; font-weight: 600; font-size: 16px; width: 100%; padding: 0; margin: 0; height: 44px; }
+        .km-field { border: none; background: transparent; text-align: center; font-weight: 600; font-size: 16px; width: 100%; padding: 0; margin: 0; height: 44px; -moz-appearance: textfield; }
+        .km-field::-webkit-inner-spin-button, .km-field::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
         .totaal-sectie { background: #f8fbff; padding: 15px; border-radius: 8px; border: 1px solid #d0e5ff; margin-top: 15px; }
         .totaal-waarde { font-size: 18px; font-weight: bold; color: #0056b3; display: block; margin-bottom: 4px; }
@@ -84,6 +86,7 @@
         .stremming-box label { margin: 0; color: #856404; text-transform: none; font-size: 14px; }
         
         .btn-verzend { background: #28a745; color: white; width: 100%; padding: 16px; font-size: 18px; font-weight: bold; border: none; border-radius: 10px; margin-top: 15px; box-shadow: 0 2px 5px rgba(40,167,69,0.3); cursor: pointer; }
+        .btn-verzend:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; opacity: 0.6; }
         .btn-wis { background: #dc3545; color: white; width: 100%; padding: 12px; font-size: 14px; border: none; border-radius: 8px; margin-top: 30px; opacity: 0.8; cursor: pointer; }
     </style>
 </head>
@@ -91,8 +94,20 @@
 
     <div id="menu-scherm">
         <div class="logo-container">
-            <img src="bus-header.png" alt="Berkhout Busreizen" class="logo-img">
+            <svg class="logo-svg" viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+                <rect x="10" y="15" width="100" height="40" rx="6" fill="#0056b3" />
+                <rect x="15" y="20" width="22" height="12" rx="2" fill="#e7f3ff" />
+                <rect x="42" y="20" width="22" height="12" rx="2" fill="#e7f3ff" />
+                <rect x="69" y="20" width="36" height="12" rx="2" fill="#e7f3ff" />
+                <circle cx="30" cy="55" r="7" fill="#333" />
+                <circle cx="30" cy="55" r="3" fill="#999" />
+                <circle cx="90" cy="55" r="7" fill="#333" />
+                <circle cx="90" cy="55" r="3" fill="#999" />
+                <rect x="106" y="42" width="4" height="8" fill="#ffcc00" rx="1" />
+            </svg>
+            <div class="logo-tekst">BERKHOUT <span>BUSREIZEN</span></div>
         </div>
+
         <div class="menu-lijst">
             <div class="menu-blok" onclick="kiesRit('Dagrit')">
                 <span class="menu-icon">☀️</span> Dagrit
@@ -169,7 +184,7 @@
                 <span class="totaal-waarde" id="totaalTijd">Diensttijd: 0u 0m</span>
                 <span class="totaal-waarde" id="totaalKm">Totaal KM: 0 km</span>
             </div>
-            <div id="foutmelding" style="color:#dc3545; font-weight:bold; text-align:center; margin-top:10px; display:none;">⚠️ Controleer tijden of kilometers!</div>
+            <div id="foutmelding" style="color:#dc3545; font-weight:bold; text-align:center; margin-top:10px; display:none;">⚠️ Kilometerstand loopt niet op!</div>
         </div>
 
         <button id="verzendKnop" class="btn-verzend" onclick="verstuurMail()">VERSTUUR RITDATA</button>
@@ -177,23 +192,11 @@
     </div>
 
     <script>
-        // CONFIGURATIE
         const rittenConfig = {
-            'Dagrit': [
-                "Vertrek garage", "Vertrek klant", "Aankomst bestemming", 
-                "Vertrek bestemming", "Retour klant", "Retour garage"
-            ],
-            'Enkele rit': [
-                "Vertrek garage", "Vertrek klant", "Aankomst bestemming", "Retour garage"
-            ],
-            'Treinstremming': [
-                "Vertrek zaak", "1e station", "Laatste station", "Retour zaak"
-            ],
-            'Breng en haal': [
-                "Vertrek garage (Heen)", "Vertrek klant", "Aankomst bestemming", "Retour garage",
-                "DIVIDER:Deel 2: Ophalen", 
-                "Vertrek garage (Terug)", "Vertrek bestemming", "Retour klant", "Retour garage"
-            ]
+            'Dagrit': ["Vertrek garage", "Vertrek klant", "Aankomst bestemming", "Vertrek bestemming", "Retour klant", "Retour garage"],
+            'Enkele rit': ["Vertrek garage", "Vertrek klant", "Aankomst bestemming", "Retour garage"],
+            'Treinstremming': ["Vertrek zaak", "1e station", "Laatste station", "Retour zaak"],
+            'Breng en haal': ["Vertrek garage (Heen)", "Vertrek klant", "Aankomst bestemming", "Retour garage", "DIVIDER:Deel 2: Ophalen", "Vertrek garage (Terug)", "Vertrek bestemming", "Retour klant", "Retour garage"]
         };
 
         const standaardtijden = ["08:00", "08:15", "10:00", "16:00", "16:30", "17:00", "22:00", "23:00"];
@@ -201,27 +204,23 @@
         let huidigeRegels = [];
 
         function init() {
-            const vandaag = new Date();
+            const vandaag = new Date().toISOString().split('T')[0];
             const dateInput = document.getElementById('rit-datum');
             const eindInput = document.getElementById('rit-einddatum');
-            if(dateInput) dateInput.valueAsDate = vandaag;
-            if(eindInput) eindInput.valueAsDate = vandaag;
+            if(dateInput) dateInput.value = vandaag;
+            if(eindInput) eindInput.value = vandaag;
         }
 
         function kiesRit(type) {
             huidigType = type;
             huidigeRegels = rittenConfig[type];
             document.getElementById('titel-weergave').innerText = type;
-            
             document.getElementById('menu-scherm').style.display = 'none';
             document.getElementById('app-scherm').style.display = 'block';
 
             const isStremming = (type === 'Treinstremming');
-            const stremmingCont = document.getElementById('stremmingContainer');
-            if(stremmingCont) stremmingCont.style.display = isStremming ? 'flex' : 'none';
-            
-            const stremmingBox = document.getElementById('stremming');
-            if(stremmingBox) stremmingBox.checked = isStremming;
+            document.getElementById('stremmingContainer').style.display = isStremming ? 'flex' : 'none';
+            document.getElementById('stremming').checked = isStremming;
 
             bouwFormulier();
             berekenAlles();
@@ -238,11 +237,9 @@
         function bouwFormulier() {
             let html = "";
             let indexTeller = 0;
-
             huidigeRegels.forEach((label) => {
                 if (label.startsWith("DIVIDER:")) {
-                    let tekst = label.split(":")[1];
-                    html += `<div class="tussenkop">${tekst}</div>`;
+                    html += `<div class="tussenkop">${label.split(":")[1]}</div>`;
                 } else {
                     let tijd = standaardtijden[indexTeller] || "00:00";
                     html += `
@@ -260,7 +257,7 @@
                             <div class="control-label">KM</div>
                             <div class="stepper" id="box-km-${indexTeller}">
                                 <button class="t-btn" onclick="pasKmAan(${indexTeller}, -1)">-</button>
-                                <input type="number" id="km-${indexTeller}" class="km-field" placeholder="0" oninput="berekenAlles()">
+                                <input type="number" id="km-${indexTeller}" class="km-field" placeholder="0" oninput="berekenAlles()" inputmode="numeric">
                                 <button class="t-btn" onclick="pasKmAan(${indexTeller}, 1)">+</button>
                             </div>
                         </div>
@@ -286,28 +283,31 @@
         }
 
         function berekenAlles() {
-            let aantalVelden = document.querySelectorAll('.km-field').length;
+            let kmInputs = document.querySelectorAll('.km-field');
             let kmStanden = [];
             let tijdMinuten = [];
             let fout = false;
 
-            for(let i=0; i < aantalVelden; i++) {
-                document.getElementById(`box-km-${i}`).classList.remove('error-input');
-                let kmVal = parseInt(document.getElementById(`km-${i}`).value) || 0;
-                kmStanden.push(kmVal);
+            kmInputs.forEach((input, i) => {
+                let box = document.getElementById(`box-km-${i}`);
+                let val = parseInt(input.value) || 0;
+                box.classList.remove('error-input');
+                kmStanden.push(val);
+
                 let [u, m] = document.getElementById(`tijd-${i}`).innerText.split(":").map(Number);
                 tijdMinuten.push(u * 60 + m);
 
-                // Controleer of KM oploopt (behalve bij 0 of lege start)
-                if (i > 0 && kmVal > 0 && kmVal < kmStanden[i-1]) {
-                    document.getElementById(`box-km-${i}`).classList.add('error-input');
-                    fout = true;
+                if (i > 0 && val > 0) {
+                    let vorigeKm = kmStanden.slice(0, i).reverse().find(k => k > 0);
+                    if (vorigeKm && val < vorigeKm) {
+                        box.classList.add('error-input');
+                        fout = true;
+                    }
                 }
-            }
+            });
 
-            let maxKm = Math.max(...kmStanden);
-            let minKm = kmStanden.find(k => k > 0) || 0;
-            let totaalKm = (maxKm > 0 && minKm > 0) ? (maxKm - minKm) : 0;
+            let ingevuldeKms = kmStanden.filter(k => k > 0);
+            let totaalKm = ingevuldeKms.length > 1 ? (Math.max(...ingevuldeKms) - Math.min(...ingevuldeKms)) : 0;
             document.getElementById('totaalKm').innerText = `Totaal KM: ${totaalKm} km`;
 
             const d1 = new Date(document.getElementById('rit-datum').value);
@@ -315,68 +315,37 @@
             let dagVerschil = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
             
             if (tijdMinuten.length > 0) {
-                let startT = tijdMinuten[0];
-                let eindT = tijdMinuten[tijdMinuten.length - 1];
-                let totaalMin = (eindT + (dagVerschil * 1440)) - startT;
-                if (totaalMin < 0) totaalMin = 0;
-                let uren = Math.floor(totaalMin / 60);
-                let min = totaalMin % 60;
-                document.getElementById('totaalTijd').innerText = `Diensttijd: ${uren}u ${min}m`;
+                let totaalMin = (tijdMinuten[tijdMinuten.length-1] + (dagVerschil * 1440)) - tijdMinuten[0];
+                let u = Math.floor(Math.max(0, totaalMin) / 60);
+                let m = Math.max(0, totaalMin) % 60;
+                document.getElementById('totaalTijd').innerText = `Diensttijd: ${u}u ${m}m`;
             }
 
             document.getElementById('foutmelding').style.display = fout ? 'block' : 'none';
-            document.getElementById('verzendKnop').style.opacity = fout ? 0.5 : 1;
+            document.getElementById('verzendKnop').disabled = fout;
         }
 
         function verstuurMail() {
             const chauffeur = document.getElementById('chauffeur-naam').value;
             if (!chauffeur) { alert("⚠️ Kies eerst een chauffeur!"); return; }
 
-            const totaalTijd = document.getElementById('totaalTijd').innerText;
-            const totaalKm = document.getElementById('totaalKm').innerText;
-
-            if(confirm(`Bevestig verzenden:\n\nType: ${huidigType}\nChauffeur: ${chauffeur}\n${totaalTijd}\n${totaalKm}\n\nKlopt dit?`)) {
-                let body = `RITREGISTRATIE BERKHOUT\n----------------------\n`;
-                body += `Type: ${huidigType.toUpperCase()}\n`;
-                body += `Chauffeur: ${chauffeur}\n`;
-                body += `Datum: ${document.getElementById('rit-datum').value}\n`;
-                body += `Bus: ${document.getElementById('bus-nummer').value || '-'}\n`;
-                body += `Klant: ${document.getElementById('klant-naam').value || '-'}\n`;
-                body += `Traject: ${document.getElementById('van-plaats').value || '-'}  ->  ${document.getElementById('naar-plaats').value || '-'}\n`;
-                
-                if(huidigType === 'Treinstremming') {
-                     body += `Stremming: JA\n\n`;
-                } else {
-                     body += `\n`;
+            let body = `RITREGISTRATIE BERKHOUT\n----------------------\n`;
+            body += `Type: ${huidigType.toUpperCase()}\nChauffeur: ${chauffeur}\nDatum: ${document.getElementById('rit-datum').value}\nBus: ${document.getElementById('bus-nummer').value || '-'}\nKlant: ${document.getElementById('klant-naam').value || '-'}\nTraject: ${document.getElementById('van-plaats').value || '-'} -> ${document.getElementById('naar-plaats').value || '-'}\n\n`;
+            
+            let v = 0;
+            huidigeRegels.forEach(r => {
+                if(r.startsWith("DIVIDER:")) body += `\n--- ${r.split(":")[1]} ---\n`;
+                else {
+                    body += `${r}: ${document.getElementById(`tijd-${v}`).innerText} | KM: ${document.getElementById(`km-${v}`).value || '-'}\n`;
+                    v++;
                 }
-                
-                let veldTeller = 0;
-                huidigeRegels.forEach(regel => {
-                    if(regel.startsWith("DIVIDER:")) {
-                        body += `\n--- ${regel.split(":")[1]} ---\n`;
-                    } else {
-                        let tijd = document.getElementById(`tijd-${veldTeller}`).innerText;
-                        let km = document.getElementById(`km-${veldTeller}`).value || '-';
-                        body += `${regel}: ${tijd} | KM: ${km}\n`;
-                        veldTeller++;
-                    }
-                });
+            });
 
-                body += `\n----------------------\n`;
-                body += `${totaalTijd}\n`;
-                body += `${totaalKm}`;
-
-                window.location.href = `mailto:info@taxiberkhout.nl?subject=Ritregistratie ${huidigType} - ${chauffeur}&body=${encodeURIComponent(body)}`;
-            }
+            body += `\n----------------------\n${document.getElementById('totaalTijd').innerText}\n${document.getElementById('totaalKm').innerText}`;
+            window.location.href = `mailto:info@taxiberkhout.nl?subject=Ritregistratie ${huidigType} - ${chauffeur}&body=${encodeURIComponent(body)}`;
         }
 
-        function wisAlles() {
-            if(confirm("Alles wissen en opnieuw beginnen?")) {
-                location.reload();
-            }
-        }
-
-        // Start de app
+        function wisAlles() { if(confirm("Alles wissen?")) location.reload(); }
         init();
     </script>
 </body>
