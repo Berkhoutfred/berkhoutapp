@@ -37,8 +37,7 @@
         .radio-option input:checked + .radio-label { background: #0056b3; color: white; border-color: #0056b3; }
 
         .klantnaam-veld { display: none; margin-top: 10px; }
-
-        .btn-voeg-toe { background: #007bff; color: white; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; border: none; margin-bottom: 20px; font-size: 14px; }
+        .btn-voeg-toe { background: #007bff; color: white; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; border: none; margin-bottom: 20px; }
         .btn-verzend { background: #28a745; color: white; width: 100%; padding: 18px; font-size: 18px; font-weight: bold; border: none; border-radius: 12px; }
 
         .totaal-overzicht { font-size: 14px; color: #555; line-height: 1.6; }
@@ -49,8 +48,7 @@
         .stepper { display: flex; flex: 1; background: #f0f0f5; border-radius: 10px; border: 1px solid #e0e0e0; }
         .t-btn { width: 45px; height: 45px; border: none; background: white; font-size: 22px; font-weight: bold; color: #0056b3; }
         .val-display { flex: 1; text-align: center; line-height: 45px; font-weight: bold; }
-        .km-field { border: none; background: transparent; width: 100%; text-align: center; font-weight: 700; font-size: 16px; }
-
+        .km-field { border: none; background: transparent; width: 100%; text-align: center; font-weight: 700; font-size: 16px; outline: none; }
         .pac-container { z-index: 10000 !important; border-radius: 8px; }
     </style>
 </head>
@@ -75,21 +73,21 @@
 
         <div class="card">
             <label>Chauffeur</label>
-            <select id="chauffeur-naam">
+            <select id="chauffeur-naam" onchange="bewaarData()">
                 <option value="">Kies naam...</option>
                 <option value="Fred Haan">Fred Haan</option><option value="Fred Stravers">Fred Stravers</option><option value="Gerard Hellewegen">Gerard Hellewegen</option><option value="Hans Roordink">Hans Roordink</option><option value="Hilbert van Dam">Hilbert van Dam</option><option value="Jan Jolink">Jan Jolink</option><option value="Jesse Berkhout">Jesse Berkhout</option><option value="Monique Westerholt">Monique Westerholt</option><option value="Niek Berkhout">Niek Berkhout</option>
             </select>
             <label>Begindatum Dienst</label>
-            <input type="date" id="rit-datum">
+            <input type="date" id="rit-datum" onchange="bewaarData()">
             <label>Voertuig</label>
-            <select id="bus-nummer"></select>
+            <select id="bus-nummer" onchange="bewaarData()"></select>
         </div>
 
         <div id="ritten-container"></div>
 
         <div id="bus-footer" class="card" style="display:none;">
             <label>Einddatum Dienst</label>
-            <input type="date" id="rit-einddatum">
+            <input type="date" id="rit-einddatum" onchange="bewaarData()">
             <div style="font-weight:bold; color:#0056b3; border-top:1px solid #eee; padding-top:10px;">
                 <span id="totaalKm">Totaal KM: 0 km</span>
             </div>
@@ -101,114 +99,138 @@
                 <div>Contant: <b>€ <span id="som-contant">0.00</span></b></div>
                 <div>Pin: <b>€ <span id="som-pin">0.00</span></b></div>
                 <div>Rekening: <b>€ <span id="som-rekening">0.00</span></b></div>
-                <div class="eindtotaal">TOTAAL GENEGEERD: <b>€ <span id="som-totaal">0.00</span></b></div>
+                <div class="eindtotaal">TOTAAL GENEREERD: <b>€ <span id="som-totaal">0.00</span></b></div>
             </div>
         </div>
 
         <button class="btn-verzend" onclick="verstuurMail()">VERSTUUR NAAR KANTOOR</button>
-        <button style="background:transparent; color:#dc3545; border:none; width:100%; padding:15px;" onclick="location.reload()">WIS ALLES</button>
+        <button style="background:transparent; color:#dc3545; border:none; width:100%; padding:15px;" onclick="wisAlles()">WIS ALLES</button>
     </div>
 
     <script>
-        const voertuigen = {
-            'taxi': ["17", "18", "19", "23"],
-            'volledig': ["17", "18", "19", "23", "50", "53", "60", "62"]
-        };
-
+        const voertuigen = {'taxi': ["17", "18", "19", "23"], 'volledig': ["17", "18", "19", "23", "50", "53", "60", "62"]};
         const rittenConfig = {
             'Dagrit': ["Vertrek garage", "Vertrek klant", "Aankomst bestemming", "Vertrek bestemming", "Retour klant", "Retour garage"],
             'Enkele rit': ["Vertrek garage", "Vertrek klant", "Aankomst bestemming", "Retour garage"],
             'Treinstremming': ["Vertrek zaak", "1e station", "Laatste station", "Retour zaak"],
             'Breng en haal': ["Vertrek garage (Heen)", "Vertrek klant", "Aankomst bestemming", "Retour garage", "DIVIDER:Deel 2", "Vertrek garage (Terug)", "Vertrek bestemming", "Retour klant", "Retour garage"]
         };
+        let taxiRitTeller = 0; let huidigType = "";
 
-        let taxiRitTeller = 0;
-        let huidigType = "";
+        // OPSLAAN DATA
+        function bewaarData() {
+            const data = {
+                type: huidigType,
+                chauffeur: document.getElementById('chauffeur-naam').value,
+                datum: document.getElementById('rit-datum').value,
+                voertuig: document.getElementById('bus-nummer').value,
+                eindDatum: document.getElementById('rit-einddatum').value,
+                taxiRitten: []
+            };
+            if(huidigType === 'Taxirit') {
+                document.querySelectorAll('.taxi-rit-blok').forEach((blok, i) => {
+                    const id = i+1;
+                    data.taxiRitten.push({
+                        tijd: blok.querySelector('.t-tijd').value,
+                        van: blok.querySelector('.t-van').value,
+                        naar: blok.querySelector('.t-naar').value,
+                        bedrag: blok.querySelector('.t-bedrag').value,
+                        betaal: blok.querySelector(`input[name="bet-${id}"]:checked`).value,
+                        klant: blok.querySelector('.t-klant').value
+                    });
+                });
+            }
+            localStorage.setItem('berkhout_backup', JSON.stringify(data));
+        }
 
-        function kiesRit(type) {
+        // HERSTELLEN DATA
+        function herstelData() {
+            const backup = localStorage.getItem('berkhout_backup');
+            if(!backup) return;
+            const data = JSON.parse(backup);
+            if(data.type) {
+                kiesRit(data.type, true);
+                document.getElementById('chauffeur-naam').value = data.chauffeur;
+                document.getElementById('rit-datum').value = data.datum;
+                document.getElementById('bus-nummer').value = data.voertuig;
+                document.getElementById('rit-einddatum').value = data.eindDatum;
+                if(data.type === 'Taxirit' && data.taxiRitten.length > 0) {
+                    document.getElementById('ritten-container').innerHTML = ""; taxiRitTeller = 0;
+                    data.taxiRitten.forEach(rit => {
+                        voegTaxiRitToe(rit);
+                    });
+                }
+            }
+        }
+
+        function kiesRit(type, herstelMode = false) {
             huidigType = type;
             document.getElementById('menu-scherm').style.display = 'none';
             document.getElementById('app-scherm').style.display = 'block';
-            document.getElementById('rit-datum').valueAsDate = new Date();
             document.getElementById('titel-weergave').innerText = type.toUpperCase();
-            
             const select = document.getElementById('bus-nummer');
             select.innerHTML = '<option value="">Kies voertuig...</option>';
             const lijst = (type === 'Taxirit') ? voertuigen.taxi : voertuigen.volledig;
             lijst.forEach(nr => { select.innerHTML += `<option value="${nr}">${nr}</option>`; });
 
-            document.getElementById('ritten-container').innerHTML = "";
-            taxiRitTeller = 0;
-
-            if (type === 'Taxirit') {
-                document.getElementById('taxi-footer').style.display = 'block';
-                document.getElementById('bus-footer').style.display = 'none';
-                voegTaxiRitToe();
-            } else {
-                document.getElementById('taxi-footer').style.display = 'none';
-                document.getElementById('bus-footer').style.display = 'block';
-                bouwBusLijst();
+            if(!herstelMode) {
+                document.getElementById('ritten-container').innerHTML = ""; taxiRitTeller = 0;
+                document.getElementById('rit-datum').valueAsDate = new Date();
+                document.getElementById('rit-einddatum').valueAsDate = new Date();
+                if (type === 'Taxirit') voegTaxiRitToe(); else bouwBusLijst();
             }
-            window.scrollTo(0,0);
+            document.getElementById('taxi-footer').style.display = (type === 'Taxirit') ? 'block' : 'none';
+            document.getElementById('bus-footer').style.display = (type === 'Taxirit') ? 'none' : 'block';
+            bewaarData(); window.scrollTo(0,0);
         }
 
-        function voegTaxiRitToe() {
-            taxiRitTeller++;
-            const id = taxiRitTeller;
-            const html = `
-                <div class="taxi-rit-blok" id="taxi-blok-${id}">
-                    <div class="taxi-rit-nummer">Rit ${id}</div>
-                    <label>Tijd</label>
-                    <input type="time" class="t-tijd" value="12:00">
-                    <label>Van</label>
-                    <input type="text" class="t-van" id="van-${id}" placeholder="Vertrekadres">
-                    <label>Naar</label>
-                    <input type="text" class="t-naar" id="naar-${id}" placeholder="Bestemming">
-                    <label>Betaalwijze</label>
-                    <div class="radio-group">
-                        <div class="radio-option"><input type="radio" name="bet-${id}" id="c-${id}" value="Contant" checked onchange="toggleKlant(${id})"><label for="c-${id}" class="radio-label">Contant</label></div>
-                        <div class="radio-option"><input type="radio" name="bet-${id}" id="p-${id}" value="Pin" onchange="toggleKlant(${id})"><label for="p-${id}" class="radio-label">Pin</label></div>
-                        <div class="radio-option"><input type="radio" name="bet-${id}" id="r-${id}" value="Rekening" onchange="toggleKlant(${id})"><label for="r-${id}" class="radio-label">Rekening</label></div>
-                    </div>
-                    <div id="klant-box-${id}" class="klantnaam-veld">
-                        <label>Klantnaam</label>
-                        <input type="text" class="t-klant" placeholder="Naam van de klant">
-                    </div>
-                    <label>Bedrag (€)</label>
-                    <input type="number" class="t-bedrag" placeholder="0.00" step="0.01" inputmode="decimal" oninput="updateTotaalTaxi()">
-                </div>`;
+        function voegTaxiRitToe(ritData = null) {
+            taxiRitTeller++; const id = taxiRitTeller;
+            const html = `<div class="taxi-rit-blok">
+                <div class="taxi-rit-nummer">Rit ${id}</div>
+                <label>Tijd</label><input type="time" class="t-tijd" value="${ritData ? ritData.tijd : '12:00'}" onchange="bewaarData()">
+                <label>Van</label><input type="text" class="t-van" id="van-${id}" value="${ritData ? ritData.van : ''}" onchange="bewaarData()">
+                <label>Naar</label><input type="text" class="t-naar" id="naar-${id}" value="${ritData ? ritData.naar : ''}" onchange="bewaarData()">
+                <label>Betaalwijze</label>
+                <div class="radio-group">
+                    <div class="radio-option"><input type="radio" name="bet-${id}" id="c-${id}" value="Contant" ${(!ritData || ritData.betaal=='Contant')?'checked':''} onchange="toggleKlant(${id})"><label for="c-${id}" class="radio-label">Contant</label></div>
+                    <div class="radio-option"><input type="radio" name="bet-${id}" id="p-${id}" value="Pin" ${(ritData && ritData.betaal=='Pin')?'checked':''} onchange="toggleKlant(${id})"><label for="p-${id}" class="radio-label">Pin</label></div>
+                    <div class="radio-option"><input type="radio" name="bet-${id}" id="r-${id}" value="Rekening" ${(ritData && ritData.betaal=='Rekening')?'checked':''} onchange="toggleKlant(${id})"><label for="r-${id}" class="radio-label">Rekening</label></div>
+                </div>
+                <div id="klant-box-${id}" class="klantnaam-veld" style="display:${(ritData && ritData.betaal=='Rekening')?'block':'none'}">
+                    <label>Klantnaam</label><input type="text" class="t-klant" value="${ritData ? ritData.klant : ''}" onchange="bewaarData()">
+                </div>
+                <label>Bedrag (€)</label><input type="number" class="t-bedrag" value="${ritData ? ritData.bedrag : ''}" step="0.01" inputmode="decimal" oninput="updateTotaalTaxi()">
+            </div>`;
             document.getElementById('ritten-container').insertAdjacentHTML('beforeend', html);
-            
             const options = { componentRestrictions: { country: "nl" }, fields: ["formatted_address"], types: ["geocode"] };
             new google.maps.places.Autocomplete(document.getElementById(`van-${id}`), options);
             new google.maps.places.Autocomplete(document.getElementById(`naar-${id}`), options);
+            updateTotaalTaxi();
         }
 
         function toggleKlant(id) {
-            const isRekening = document.getElementById(`r-${id}`).checked;
-            document.getElementById(`klant-box-${id}`).style.display = isRekening ? 'block' : 'none';
-            updateTotaalTaxi();
+            document.getElementById(`klant-box-${id}`).style.display = document.getElementById(`r-${id}`).checked ? 'block' : 'none';
+            updateTotaalTaxi(); bewaarData();
         }
 
         function updateTotaalTaxi() {
             let contant = 0, pin = 0, rekening = 0;
-            document.querySelectorAll('.taxi-rit-blok').forEach((blok, index) => {
-                const id = index + 1;
-                const bedrag = parseFloat(blok.querySelector('.t-bedrag').value) || 0;
-                const type = blok.querySelector(`input[name="bet-${id}"]:checked`).value;
-                if (type === 'Contant') contant += bedrag;
-                else if (type === 'Pin') pin += bedrag;
-                else if (type === 'Rekening') rekening += bedrag;
+            document.querySelectorAll('.taxi-rit-blok').forEach((blok, i) => {
+                const id = i + 1;
+                const b = parseFloat(blok.querySelector('.t-bedrag').value) || 0;
+                const t = blok.querySelector(`input[name="bet-${id}"]:checked`).value;
+                if (t === 'Contant') contant += b; else if (t === 'Pin') pin += b; else rekening += b;
             });
             document.getElementById('som-contant').innerText = contant.toFixed(2);
             document.getElementById('som-pin').innerText = pin.toFixed(2);
             document.getElementById('som-rekening').innerText = rekening.toFixed(2);
             document.getElementById('som-totaal').innerText = (contant + pin + rekening).toFixed(2);
+            bewaarData();
         }
 
         function bouwBusLijst() {
-            let html = '<div class="card">';
-            let v = 0;
+            let html = '<div class="card">'; let v = 0;
             rittenConfig[huidigType].forEach(label => {
                 if (label.startsWith("DIVIDER")) html += `<div style="background:#e7f3ff; text-align:center; padding:8px; font-weight:bold; margin:10px -15px;">${label.split(":")[1]}</div>`;
                 else {
@@ -216,45 +238,35 @@
                     v++;
                 }
             });
-            html += '</div>';
-            document.getElementById('ritten-container').innerHTML = html;
+            document.getElementById('ritten-container').innerHTML = html + '</div>';
         }
 
         function pasT(id, m) {
-            let el = document.getElementById(`tijd-${id}`);
-            let [h, min] = el.innerText.split(':').map(Number);
+            let el = document.getElementById(`tijd-${id}`); let [h, min] = el.innerText.split(':').map(Number);
             let d = new Date(); d.setHours(h, min + m);
             el.innerText = d.getHours().toString().padStart(2,'0') + ":" + d.getMinutes().toString().padStart(2,'0');
+            bewaarData();
         }
 
         function rekenBus() {
             let kms = []; document.querySelectorAll('.km-field').forEach(i => kms.push(parseInt(i.value)||0));
             let gevuld = kms.filter(k => k > 0);
-            let tot = gevuld.length > 1 ? Math.max(...gevuld) - Math.min(...gevuld) : 0;
-            document.getElementById('totaalKm').innerText = `Totaal KM: ${tot} km`;
+            document.getElementById('totaalKm').innerText = `Totaal KM: ${gevuld.length > 1 ? Math.max(...gevuld) - Math.min(...gevuld) : 0} km`;
+            bewaarData();
         }
 
         function verstuurMail() {
             const chauffeur = document.getElementById('chauffeur-naam').value;
             if(!chauffeur) { alert("Kies een chauffeur"); return; }
-            
             let body = `RITREGISTRATIE - ${huidigType}\nChauffeur: ${chauffeur}\nDatum: ${document.getElementById('rit-datum').value}\nVoertuig: ${document.getElementById('bus-nummer').value}\n\n`;
-            
             if (huidigType === 'Taxirit') {
-                document.querySelectorAll('.taxi-rit-blok').forEach((blok, index) => {
-                    const id = index + 1;
-                    const tijd = blok.querySelector('.t-tijd').value;
-                    const van = blok.querySelector('.t-van').value;
-                    const naar = blok.querySelector('.t-naar').value;
-                    const bedrag = blok.querySelector('.t-bedrag').value || '0.00';
-                    const type = blok.querySelector(`input[name="bet-${id}"]:checked`).value;
-                    const klant = type === 'Rekening' ? ` | Klant: ${blok.querySelector('.t-klant').value || 'Onbekend'}` : '';
-                    body += `RIT ${id}:\n- Tijd: ${tijd}\n- Traject: ${van} naar ${naar}\n- Bedrag: € ${bedrag} (${type}${klant})\n\n`;
+                document.querySelectorAll('.taxi-rit-blok').forEach((blok, i) => {
+                    const id = i+1; const type = blok.querySelector(`input[name="bet-${id}"]:checked`).value;
+                    body += `RIT ${id}:\n- Tijd: ${blok.querySelector('.t-tijd').value}\n- Traject: ${blok.querySelector('.t-van').value} naar ${blok.querySelector('.t-naar').value}\n- Bedrag: € ${blok.querySelector('.t-bedrag').value || '0.00'} (${type}${type==='Rekening'?' | Klant: '+blok.querySelector('.t-klant').value:''})\n\n`;
                 });
-                body += `----------------------\nOVERZICHT DIENST:\nContant: € ${document.getElementById('som-contant').innerText}\nPin: € ${document.getElementById('som-pin').innerText}\nRekening: € ${document.getElementById('som-rekening').innerText}\n----------------------\nTOTAAL: € ${document.getElementById('som-totaal').innerText}`;
+                body += `----------------------\nOVERZICHT DIENST:\nContant: € ${document.getElementById('som-contant').innerText}\nPin: € ${document.getElementById('som-pin').innerText}\nRekening: € ${document.getElementById('som-rekening').innerText}\nTOTAAL: € ${document.getElementById('som-totaal').innerText}`;
             } else {
-                let v = 0;
-                rittenConfig[huidigType].forEach(r => {
+                let v = 0; rittenConfig[huidigType].forEach(r => {
                     if(!r.startsWith("DIVIDER")) { body += `${r}: ${document.getElementById(`tijd-${v}`).innerText} | KM: ${document.getElementById(`km-${v}`).value || '-'}\n`; v++; }
                 });
                 body += `\nEinddatum: ${document.getElementById('rit-einddatum').value}\n${document.getElementById('totaalKm').innerText}`;
@@ -262,8 +274,9 @@
             window.location.href = `mailto:info@taxiberkhout.nl?subject=Dienst ${huidigType} - ${chauffeur}&body=${encodeURIComponent(body)}`;
         }
 
+        function wisAlles() { if(confirm("Alle gegevens van deze dag wissen?")) { localStorage.removeItem('berkhout_backup'); location.reload(); } }
         function terugNaarMenu() { document.getElementById('app-scherm').style.display = 'none'; document.getElementById('menu-scherm').style.display = 'flex'; }
-        window.onload = () => { document.getElementById('rit-datum').valueAsDate = new Date(); };
+        window.onload = herstelData;
     </script>
 </body>
 </html>
