@@ -10,18 +10,10 @@
     
     <title>Berkhout Ritregistratie</title>
     <style>
-        /* Basis instellingen */
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f0f5; margin: 0; padding: 15px; color: #333; -webkit-tap-highlight-color: transparent; }
         
-        /* -- LOGO SECTIE -- */
         .logo-container { text-align: center; margin-bottom: 25px; padding-top: 20px; }
-        .app-icon-img { 
-            width: 80px; 
-            height: 80px; 
-            border-radius: 18px; /* De bekende iPhone icon curve */
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            margin-bottom: 10px;
-        }
+        .app-icon-img { width: 80px; height: 80px; border-radius: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 10px; }
         .logo-tekst { font-size: 20px; font-weight: 900; color: #0056b3; letter-spacing: 0.5px; text-transform: uppercase; }
         .logo-tekst span { font-weight: 300; color: #666; }
 
@@ -29,26 +21,16 @@
         .menu-lijst { display: flex; flex-direction: column; gap: 15px; }
         
         .menu-blok {
-            background: white;
-            border-radius: 20px;
-            padding: 25px 20px;
-            text-align: left;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            border: 1px solid #e0e0e0;
-            font-size: 22px;
-            font-weight: 800;
-            color: #0056b3;
-            transition: 0.2s;
-            display: flex; align-items: center; gap: 20px;
-            cursor: pointer;
-            user-select: none;
-            -webkit-user-select: none;
+            background: white; border-radius: 20px; padding: 25px 20px; text-align: left;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05); border: 1px solid #e0e0e0;
+            font-size: 22px; font-weight: 800; color: #0056b3; transition: 0.2s;
+            display: flex; align-items: center; gap: 20px; cursor: pointer;
+            user-select: none; -webkit-user-select: none;
         }
         
         .menu-blok:active { background: #e7f3ff; transform: scale(0.98); }
         .menu-icon { font-size: 32px; }
         
-        /* -- APP STIJLEN -- */
         #app-scherm { display: none; max-width: 600px; margin: 0 auto; }
         .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         
@@ -57,18 +39,13 @@
         .rit-titel { font-size: 18px; font-weight: bold; color: #0056b3; text-transform: uppercase; }
 
         label { display: block; font-size: 11px; font-weight: 700; color: #666; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; }
-        input, select {
-            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; background: #f9f9f9; margin-bottom: 12px; appearance: none;
-        }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; background: #f9f9f9; margin-bottom: 12px; appearance: none; }
 
         .rit-rij { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
         .rit-rij:last-child { border-bottom: none; }
         .locatie-naam { font-weight: 700; margin-bottom: 8px; font-size: 15px; color: #222; }
         
-        .tussenkop {
-            background: #e7f3ff; color: #0056b3; padding: 8px 12px; border-radius: 6px; 
-            font-weight: bold; margin: 20px -15px 10px -15px; text-align: center;
-        }
+        .tussenkop { background: #e7f3ff; color: #0056b3; padding: 8px 12px; border-radius: 6px; font-weight: bold; margin: 20px -15px 10px -15px; text-align: center; }
 
         .selector-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
         .control-label { min-width: 35px; font-size: 10px; color: #999; font-weight: bold; }
@@ -82,8 +59,11 @@
         .totaal-sectie { background: #f8fbff; padding: 15px; border-radius: 8px; border: 1px solid #d0e5ff; margin-top: 15px; }
         .totaal-waarde { font-size: 18px; font-weight: bold; color: #0056b3; display: block; }
         
+        .cash-sectie { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 10px; background: #f1fff1; border-radius: 8px; border: 1px solid #c3e6cb; }
+        .cash-sectie label { margin: 0; color: #155724; font-size: 14px; text-transform: none; }
+        #contant-bedrag-input { display: none; margin-top: 10px; }
+
         .error-input { border: 2px solid #dc3545 !important; background: #fff5f5 !important; }
-        
         .btn-verzend { background: #28a745; color: white; width: 100%; padding: 16px; font-size: 18px; font-weight: bold; border: none; border-radius: 10px; margin-top: 15px; cursor: pointer; }
         .btn-verzend:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-wis { background: #dc3545; color: white; width: 100%; padding: 12px; border: none; border-radius: 8px; margin-top: 30px; opacity: 0.7; cursor: pointer; width: 100%; }
@@ -96,20 +76,11 @@
             <img src="apple-touch-icon.png" alt="Icon" class="app-icon-img" onerror="this.style.display='none'">
             <div class="logo-tekst">BERKHOUT <span>RITREGISTRATIE</span></div>
         </div>
-
         <div class="menu-lijst">
-            <div class="menu-blok" onclick="kiesRit('Dagrit')">
-                <span class="menu-icon">☀️</span> Dagrit
-            </div>
-            <div class="menu-blok" onclick="kiesRit('Enkele rit')">
-                <span class="menu-icon">➡️</span> Enkele rit
-            </div>
-            <div class="menu-blok" onclick="kiesRit('Breng en haal')">
-                <span class="menu-icon">🔄</span> Breng & Haal
-            </div>
-            <div class="menu-blok" onclick="kiesRit('Treinstremming')">
-                <span class="menu-icon">🚂</span> Treinstremming
-            </div>
+            <div class="menu-blok" onclick="kiesRit('Dagrit')"><span class="menu-icon">☀️</span> Dagrit</div>
+            <div class="menu-blok" onclick="kiesRit('Enkele rit')"><span class="menu-icon">➡️</span> Enkele rit</div>
+            <div class="menu-blok" onclick="kiesRit('Breng en haal')"><span class="menu-icon">🔄</span> Breng & Haal</div>
+            <div class="menu-blok" onclick="kiesRit('Treinstremming')"><span class="menu-icon">🚂</span> Treinstremming</div>
         </div>
     </div>
 
@@ -135,7 +106,7 @@
             </select>
 
             <label>Datum</label>
-            <input type="date" id="rit-datum" onchange="berekenAlles()">
+            <input type="date" id="rit-datum" onchange="sluitDatumKiezer(this)">
 
             <label>Bus nummer</label>
             <select id="bus-nummer">
@@ -146,7 +117,6 @@
                 <option value="53">53</option>
                 <option value="60">60</option>
                 <option value="62">62</option>
-                <option value="BZ-TX-98">BZ-TX-98</option>
             </select>
 
             <label>Klant / Opdracht</label>
@@ -162,13 +132,22 @@
             <div id="ritLijst"></div>
 
             <label style="margin-top:15px;">Einddatum (indien nachtrit)</label>
-            <input type="date" id="rit-einddatum" onchange="berekenAlles()">
+            <input type="date" id="rit-einddatum" onchange="sluitDatumKiezer(this)">
+
+            <div class="cash-sectie">
+                <input type="checkbox" id="contant-betaald" onchange="toggleCashInput()">
+                <label for="contant-betaald">Contant bedrag ontvangen?</label>
+            </div>
+            <div id="contant-bedrag-input">
+                <label>Ontvangen bedrag (€)</label>
+                <input type="number" id="cash-waarde" placeholder="0.00" inputmode="decimal">
+            </div>
 
             <div class="totaal-sectie">
                 <span class="totaal-waarde" id="totaalTijd">Diensttijd: 0u 0m</span>
                 <span class="totaal-waarde" id="totaalKm">Totaal KM: 0 km</span>
             </div>
-            <div id="foutmelding" style="color:#dc3545; font-weight:bold; text-align:center; margin-top:10px; display:none;">⚠️ KM-stand klopt niet!</div>
+            <div id="foutmelding" style="color:#dc3545; font-weight:bold; text-align:center; margin-top:10px; display:none;">⚠️ Controleer tijden of KM-stand!</div>
         </div>
 
         <button id="verzendKnop" class="btn-verzend" onclick="verstuurMail()">VERSTUUR NAAR KANTOOR</button>
@@ -193,6 +172,16 @@
             document.getElementById('rit-einddatum').value = vandaag;
         }
 
+        function sluitDatumKiezer(el) {
+            el.blur();
+            berekenAlles();
+        }
+
+        function toggleCashInput() {
+            const checked = document.getElementById('contant-betaald').checked;
+            document.getElementById('contant-bedrag-input').style.display = checked ? 'block' : 'none';
+        }
+
         function kiesRit(type) {
             huidigType = type;
             huidigeRegels = rittenConfig[type];
@@ -204,10 +193,7 @@
             window.scrollTo(0,0);
         }
 
-        function terugNaarMenu() {
-            document.getElementById('app-scherm').style.display = 'none';
-            document.getElementById('menu-scherm').style.display = 'flex'; 
-        }
+        function terugNaarMenu() { document.getElementById('app-scherm').style.display = 'none'; document.getElementById('menu-scherm').style.display = 'flex'; }
 
         function bouwFormulier() {
             let html = "";
@@ -222,7 +208,7 @@
                         <div class="locatie-naam">${label}</div>
                         <div class="selector-row">
                             <div class="control-label">TIJD</div>
-                            <div class="stepper">
+                            <div class="stepper" id="box-tijd-${v}">
                                 <button class="t-btn" onclick="pasTijdAan(${v}, -15)">-</button>
                                 <div class="val-display" id="tijd-${v}">${t}</div>
                                 <button class="t-btn" onclick="pasTijdAan(${v}, 15)">+</button>
@@ -260,16 +246,30 @@
         function berekenAlles() {
             let kmFields = document.querySelectorAll('.km-field');
             let standen = [];
+            let tijden = [];
             let fout = false;
 
             kmFields.forEach((el, i) => {
                 let val = parseInt(el.value) || 0;
-                let box = document.getElementById(`box-km-${i}`);
-                box.classList.remove('error-input');
+                let boxKm = document.getElementById(`box-km-${i}`);
+                let boxTijd = document.getElementById(`box-tijd-${i}`);
+                boxKm.classList.remove('error-input');
+                boxTijd.classList.remove('error-input');
+                
                 standen.push(val);
-                if (i > 0 && val > 0) {
-                    let prev = standen.slice(0, i).reverse().find(k => k > 0);
-                    if (prev && val < prev) { box.classList.add('error-input'); fout = true; }
+                let [u, m] = document.getElementById(`tijd-${i}`).innerText.split(":").map(Number);
+                tijden.push(u * 60 + m);
+
+                if (i > 0) {
+                    // Check KM
+                    if (val > 0) {
+                        let prevKm = standen.slice(0, i).reverse().find(k => k > 0);
+                        if (prevKm && val < prevKm) { boxKm.classList.add('error-input'); fout = true; }
+                    }
+                    // Check Tijd (alleen fout als zelfde dag)
+                    if (document.getElementById('rit-datum').value === document.getElementById('rit-einddatum').value) {
+                        if (tijden[i] < tijden[i-1]) { boxTijd.classList.add('error-input'); fout = true; }
+                    }
                 }
             });
 
@@ -277,6 +277,14 @@
             let totKm = gevuld.length > 1 ? (Math.max(...gevuld) - Math.min(...gevuld)) : 0;
             document.getElementById('totaalKm').innerText = `Totaal KM: ${totKm} km`;
             
+            const d1 = new Date(document.getElementById('rit-datum').value);
+            const d2 = new Date(document.getElementById('rit-einddatum').value);
+            let dagVerschil = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+            let totaalMin = (tijden[tijden.length-1] + (dagVerschil * 1440)) - tijden[0];
+            let u = Math.floor(Math.max(0, totaalMin) / 60);
+            let m = Math.max(0, totaalMin) % 60;
+            document.getElementById('totaalTijd').innerText = `Diensttijd: ${u}u ${m}m`;
+
             document.getElementById('foutmelding').style.display = fout ? 'block' : 'none';
             document.getElementById('verzendKnop').disabled = fout;
         }
@@ -285,7 +293,11 @@
             const chauffeur = document.getElementById('chauffeur-naam').value;
             if (!chauffeur) { alert("Selecteer chauffeur!"); return; }
 
-            let body = `RITREGISTRATIE\nChauffeur: ${chauffeur}\nDatum: ${document.getElementById('rit-datum').value}\n\n`;
+            let body = `RITREGISTRATIE\nChauffeur: ${chauffeur}\nDatum: ${document.getElementById('rit-datum').value}\n`;
+            if (document.getElementById('contant-betaald').checked) {
+                body += `CONTANT ONTVANGEN: € ${document.getElementById('cash-waarde').value || '0.00'}\n`;
+            }
+            body += `\n`;
             let v = 0;
             huidigeRegels.forEach(r => {
                 if(!r.startsWith("DIVIDER:")) {
