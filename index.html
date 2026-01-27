@@ -38,7 +38,8 @@
 
         .klantnaam-veld { display: none; margin-top: 10px; }
         .btn-voeg-toe { background: #007bff; color: white; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; border: none; margin-bottom: 20px; }
-        .btn-verzend { background: #28a745; color: white; width: 100%; padding: 18px; font-size: 18px; font-weight: bold; border: none; border-radius: 12px; }
+        .btn-verzend { background: #28a745; color: white; width: 100%; padding: 18px; font-size: 18px; font-weight: bold; border: none; border-radius: 12px; margin-bottom: 10px; }
+        .btn-print { background: #555; color: white; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; border: none; margin-bottom: 10px; }
 
         .totaal-overzicht { font-size: 14px; color: #555; line-height: 1.6; }
         .totaal-overzicht b { color: #000; float: right; }
@@ -50,6 +51,17 @@
         .val-display { flex: 1; text-align: center; line-height: 45px; font-weight: bold; }
         .km-field { border: none; background: transparent; width: 100%; text-align: center; font-weight: 700; font-size: 16px; outline: none; }
         .pac-container { z-index: 10000 !important; border-radius: 8px; }
+
+        /* PRINT STIJLEN */
+        @media print {
+            body { background: white; padding: 0; }
+            #menu-scherm, .btn-terug, .btn-voeg-toe, .btn-verzend, .btn-print, .btn-wis, button, .radio-group, label { display: none !important; }
+            .card, .taxi-rit-blok { box-shadow: none; border: 1px solid #ccc; margin-bottom: 10px; page-break-inside: avoid; }
+            input, select, textarea { border: none; background: none; padding: 0; margin-bottom: 5px; height: auto; }
+            .val-display { line-height: normal; }
+            .taxi-rit-nummer { background: #000; position: static; display: inline-block; margin-bottom: 10px; }
+            .klantnaam-veld { display: block !important; }
+        }
     </style>
 </head>
 <body>
@@ -72,12 +84,15 @@
         </div>
 
         <div class="card">
+            <div class="logo-container" style="padding:0; margin-bottom:10px;">
+                <div class="logo-tekst" style="font-size:16px;">BERKHOUT BUSREIZEN & TAXI</div>
+            </div>
             <label>Chauffeur</label>
             <select id="chauffeur-naam" onchange="bewaarData()">
                 <option value="">Kies naam...</option>
                 <option value="Fred Haan">Fred Haan</option><option value="Fred Stravers">Fred Stravers</option><option value="Gerard Hellewegen">Gerard Hellewegen</option><option value="Hans Roordink">Hans Roordink</option><option value="Hilbert van Dam">Hilbert van Dam</option><option value="Jan Jolink">Jan Jolink</option><option value="Jesse Berkhout">Jesse Berkhout</option><option value="Monique Westerholt">Monique Westerholt</option><option value="Niek Berkhout">Niek Berkhout</option>
             </select>
-            <label>Begindatum Dienst</label>
+            <label>Datum</label>
             <input type="date" id="rit-datum" onchange="bewaarData()">
             <label>Voertuig</label>
             <select id="bus-nummer" onchange="bewaarData()"></select>
@@ -86,7 +101,7 @@
         <div id="ritten-container"></div>
 
         <div id="bus-footer" class="card" style="display:none;">
-            <label>Einddatum Dienst</label>
+            <label>Einddatum</label>
             <input type="date" id="rit-einddatum" onchange="bewaarData()">
             <div style="font-weight:bold; color:#0056b3; border-top:1px solid #eee; padding-top:10px;">
                 <span id="totaalKm">Totaal KM: 0 km</span>
@@ -99,12 +114,13 @@
                 <div>Contant: <b>€ <span id="som-contant">0.00</span></b></div>
                 <div>Pin: <b>€ <span id="som-pin">0.00</span></b></div>
                 <div>Rekening: <b>€ <span id="som-rekening">0.00</span></b></div>
-                <div class="eindtotaal">TOTAAL GENEREERD: <b>€ <span id="som-totaal">0.00</span></b></div>
+                <div class="eindtotaal">TOTAAL: <b>€ <span id="som-totaal">0.00</span></b></div>
             </div>
         </div>
 
         <button class="btn-verzend" onclick="verstuurMail()">VERSTUUR NAAR KANTOOR</button>
-        <button style="background:transparent; color:#dc3545; border:none; width:100%; padding:15px;" onclick="wisAlles()">WIS ALLES</button>
+        <button class="btn-print" onclick="window.print()">🖨️ PRINT RITSTAAT</button>
+        <button class="btn-wis" style="background:transparent; color:#dc3545; border:none; width:100%; padding:15px;" onclick="wisAlles()">WIS ALLES</button>
     </div>
 
     <script>
@@ -117,7 +133,6 @@
         };
         let taxiRitTeller = 0; let huidigType = "";
 
-        // OPSLAAN DATA
         function bewaarData() {
             const data = {
                 type: huidigType,
@@ -143,7 +158,6 @@
             localStorage.setItem('berkhout_backup', JSON.stringify(data));
         }
 
-        // HERSTELLEN DATA
         function herstelData() {
             const backup = localStorage.getItem('berkhout_backup');
             if(!backup) return;
@@ -156,9 +170,7 @@
                 document.getElementById('rit-einddatum').value = data.eindDatum;
                 if(data.type === 'Taxirit' && data.taxiRitten.length > 0) {
                     document.getElementById('ritten-container').innerHTML = ""; taxiRitTeller = 0;
-                    data.taxiRitten.forEach(rit => {
-                        voegTaxiRitToe(rit);
-                    });
+                    data.taxiRitten.forEach(rit => voegTaxiRitToe(rit));
                 }
             }
         }
