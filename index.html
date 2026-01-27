@@ -5,45 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Berkhout Ritregistratie</title>
+    
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi1U8gP0dlE87sYaUDI2JbKKFxJW_YjlY&libraries=places&language=nl&region=NL"></script>
+
     <style>
-        body { font-family: -apple-system, system-ui, sans-serif; background: #f0f0f5; margin: 0; padding: 15px; color: #333; }
-        .logo-container { text-align: center; margin-bottom: 20px; padding-top: 10px; }
-        .app-icon-img { width: 80px; height: 80px; border-radius: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        .logo-tekst { font-size: 20px; font-weight: 900; color: #0056b3; margin-top: 10px; }
-        
-        #menu-scherm { display: flex; flex-direction: column; gap: 15px; max-width: 500px; margin: 0 auto; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: #f0f0f5; margin: 0; padding: 15px; color: #333; -webkit-tap-highlight-color: transparent; }
+        .logo-container { text-align: center; margin-bottom: 25px; padding-top: 20px; }
+        .app-icon-img { width: 80px; height: 80px; border-radius: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 10px; }
+        .logo-tekst { font-size: 20px; font-weight: 900; color: #0056b3; letter-spacing: 0.5px; text-transform: uppercase; }
+        .logo-tekst span { font-weight: 300; color: #666; }
+
+        #menu-scherm { display: flex; flex-direction: column; gap: 12px; max-width: 500px; margin: 0 auto; }
         .menu-blok { background: white; border-radius: 20px; padding: 25px; border: 1px solid #e0e0e0; font-size: 22px; font-weight: bold; color: #0056b3; display: flex; align-items: center; gap: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        
+        .menu-blok:active { background: #e7f3ff; }
+
         #app-scherm { display: none; max-width: 500px; margin: 0 auto; }
-        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; }
         .header-balk { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
-        .btn-terug { background: #6c757d; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; }
+        .btn-terug { background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         
-        label { display: block; font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase; margin-bottom: 5px; }
-        input, select, textarea { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; background: #f9f9f9; margin-bottom: 15px; box-sizing: border-box; }
-        
-        /* Specifieke styling voor Taxi Radio Buttons */
+        label { display: block; font-size: 11px; font-weight: 700; color: #666; text-transform: uppercase; margin-bottom: 5px; }
+        input, select, textarea { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; background: #f9f9f9; margin-bottom: 12px; box-sizing: border-box; -webkit-appearance: none; }
+
+        .pac-container { border-radius: 10px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); border: none; margin-top: 5px; z-index: 10000 !important; }
+        .pac-item { padding: 12px; font-size: 14px; color: #000; background-color: #fff; cursor: pointer; }
+        .pac-item-query { font-size: 15px; color: #000; }
+
         .radio-group { display: flex; gap: 10px; margin-bottom: 15px; }
         .radio-option { flex: 1; text-align: center; }
         .radio-option input { display: none; }
         .radio-label { display: block; padding: 12px; background: #f0f0f5; border-radius: 10px; font-weight: bold; color: #666; border: 1px solid #ddd; }
         .radio-option input:checked + .radio-label { background: #0056b3; color: white; border-color: #0056b3; }
 
-        .btn-verzend { background: #28a745; color: white; width: 100%; padding: 18px; font-size: 18px; font-weight: bold; border: none; border-radius: 12px; }
-        .btn-wis { background: #dc3545; color: white; width: 100%; padding: 10px; border: none; border-radius: 8px; margin-top: 20px; opacity: 0.6; }
+        .btn-verzend { background: #28a745; color: white; width: 100%; padding: 18px; font-size: 18px; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; }
         
-        /* Bus ritten styling */
-        .rit-rij { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .rit-rij { border-bottom: 1px solid #f0f0f0; padding: 12px 0; }
         .selector-row { display: flex; gap: 10px; align-items: center; margin-top: 5px; }
-        .stepper { display: flex; flex: 1; background: #f0f0f5; border-radius: 10px; overflow: hidden; border: 1px solid #ddd; }
-        .t-btn { width: 45px; height: 45px; border: none; background: white; font-size: 20px; font-weight: bold; color: #0056b3; }
+        .stepper { display: flex; flex: 1; background: #f0f0f5; border-radius: 10px; overflow: hidden; border: 1px solid #e0e0e0; }
+        .t-btn { width: 45px; height: 45px; border: none; background: white; font-size: 22px; font-weight: bold; color: #0056b3; cursor: pointer; }
         .val-display { flex: 1; text-align: center; line-height: 45px; font-weight: bold; }
-        .km-input-small { border: none; background: transparent; width: 100%; text-align: center; font-weight: bold; font-size: 16px; }
+        .km-input-small { border: none; background: transparent; width: 100%; text-align: center; font-weight: 700; font-size: 16px; outline: none; }
     </style>
 </head>
 <body>
-
     <div id="menu-scherm">
         <div class="logo-container">
             <img src="apple-touch-icon.png" alt="Icon" class="app-icon-img" onerror="this.style.display='none'">
@@ -57,73 +63,55 @@
     </div>
 
     <div id="app-scherm">
-        <form autocomplete="on"> <div class="header-balk">
-                <button type="button" class="btn-terug" onclick="terugNaarMenu()">❮ Menu</button>
-                <span id="titel-weergave" style="font-weight:bold; color:#0056b3;">RITDATA</span>
+        <div class="header-balk">
+            <button class="btn-terug" onclick="terugNaarMenu()">❮ Menu</button>
+            <span id="titel-weergave" style="font-weight:bold; color:#0056b3;">RITDATA</span>
+        </div>
+
+        <div class="card">
+            <label>Chauffeur</label>
+            <select id="chauffeur-naam">
+                <option value="">Kies naam...</option>
+                <option value="Fred Haan">Fred Haan</option><option value="Fred Stravers">Fred Stravers</option><option value="Gerard Hellewegen">Gerard Hellewegen</option><option value="Hans Roordink">Hans Roordink</option><option value="Hilbert van Dam">Hilbert van Dam</option><option value="Jan Jolink">Jan Jolink</option><option value="Jesse Berkhout">Jesse Berkhout</option><option value="Monique Westerholt">Monique Westerholt</option><option value="Niek Berkhout">Niek Berkhout</option>
+            </select>
+            <label>Datum</label>
+            <input type="date" id="rit-datum">
+            <div id="taxi-tijd-box" style="display:none;">
+                <label>Tijd</label>
+                <input type="time" id="taxi-tijd" value="12:00">
             </div>
+            <label>Voertuig</label>
+            <select id="bus-nummer">
+                <option value="">Kies voertuig...</option>
+                <option value="19">19</option><option value="23">23</option><option value="50">50</option><option value="53">53</option><option value="60">60</option><option value="62">62</option><option value="Taxi 1">Taxi 1</option><option value="Taxi 2">Taxi 2</option>
+            </select>
+            <label>Van</label>
+            <input type="text" id="van-plaats" placeholder="Typ beginadres...">
+            <label>Naar</label>
+            <input type="text" id="naar-plaats" placeholder="Typ bestemming...">
+        </div>
 
-            <div class="card">
-                <label>Chauffeur</label>
-                <select id="chauffeur-naam">
-                    <option value="">Kies naam...</option>
-                    <option value="Fred Haan">Fred Haan</option>
-                    <option value="Fred Stravers">Fred Stravers</option>
-                    <option value="Gerard Hellewegen">Gerard Hellewegen</option>
-                    <option value="Hans Roordink">Hans Roordink</option>
-                    <option value="Hilbert van Dam">Hilbert van Dam</option>
-                    <option value="Jan Jolink">Jan Jolink</option>
-                    <option value="Jesse Berkhout">Jesse Berkhout</option>
-                    <option value="Monique Westerholt">Monique Westerholt</option>
-                    <option value="Niek Berkhout">Niek Berkhout</option>
-                </select>
-
-                <label>Datum</label>
-                <input type="date" id="rit-datum">
-
-                <div id="taxi-tijd-box" style="display:none;">
-                    <label>Tijd</label>
-                    <input type="time" id="taxi-tijd" value="12:00">
-                </div>
-
-                <label>Voertuig</label>
-                <select id="bus-nummer">
-                    <option value="">Kies...</option>
-                    <option value="19">19</option><option value="23">23</option><option value="50">50</option>
-                    <option value="53">53</option><option value="60">60</option><option value="62">62</option>
-                    <option value="Taxi 1">Taxi 1</option><option value="Taxi 2">Taxi 2</option>
-                </select>
-
-                <label>Van (Adres)</label>
-                <input type="text" id="van-plaats" name="street-address" autocomplete="shipping street-address" placeholder="Straat + Woonplaats">
-                
-                <label>Naar (Adres)</label>
-                <input type="text" id="naar-plaats" name="destination-address" autocomplete="shipping street-address" placeholder="Straat + Woonplaats">
+        <div id="taxi-extra" class="card" style="display:none;">
+            <label>Betaalwijze</label>
+            <div class="radio-group">
+                <div class="radio-option"><input type="radio" name="betaal" id="b1" value="Contant" checked><label for="b1" class="radio-label">Contant</label></div>
+                <div class="radio-option"><input type="radio" name="betaal" id="b2" value="Pin"><label for="b2" class="radio-label">Pin</label></div>
+                <div class="radio-option"><input type="radio" name="betaal" id="b3" value="Rekening"><label for="b3" class="radio-label">Rekening</label></div>
             </div>
+            <label>Bedrag (€)</label>
+            <input type="number" id="taxi-bedrag" placeholder="0.00" step="0.01" inputmode="decimal">
+            <label>Bijzonderheden</label>
+            <textarea id="bijzonderheden" placeholder="Opmerkingen..."></textarea>
+        </div>
 
-            <div id="taxi-extra" class="card" style="display:none;">
-                <label>Betaalwijze</label>
-                <div class="radio-group">
-                    <div class="radio-option"><input type="radio" name="betaal" id="b1" value="Contant" checked><label for="b1" class="radio-label">Contant</label></div>
-                    <div class="radio-option"><input type="radio" name="betaal" id="b2" value="Pin"><label for="b2" class="radio-label">Pin</label></div>
-                    <div class="radio-option"><input type="radio" name="betaal" id="b3" value="Rekening"><label for="b3" class="radio-label">Rekening</label></div>
-                </div>
-                <label>Bedrag (€)</label>
-                <input type="number" id="taxi-bedrag" placeholder="0.00" step="0.01">
-                <label>Bijzonderheden</label>
-                <textarea id="bijzonderheden" placeholder="Opmerkingen..."></textarea>
+        <div id="bus-ritten-box" class="card">
+            <div id="ritLijst"></div>
+            <div style="margin-top:15px; font-weight:bold; color:#0056b3; border-top:1px solid #eee; padding-top:10px;">
+                <span id="totaalKm">Totaal KM: 0 km</span>
             </div>
-
-            <div id="bus-ritten-box" class="card">
-                <div id="ritLijst"></div>
-                <div style="margin-top:15px;">
-                    <span id="totaalTijd" style="font-weight:bold; color:#0056b3;">Diensttijd: 0u 0m</span><br>
-                    <span id="totaalKm" style="font-weight:bold; color:#0056b3;">Totaal KM: 0 km</span>
-                </div>
-            </div>
-
-            <button type="button" class="btn-verzend" onclick="verstuurMail()">VERSTUUR NAAR KANTOOR</button>
-            <button type="button" class="btn-wis" onclick="location.reload()">WIS ALLES</button>
-        </form>
+        </div>
+        <button class="btn-verzend" onclick="verstuurMail()">VERSTUUR NAAR KANTOOR</button>
+        <button style="background:transparent; color:#dc3545; border:none; width:100%; padding:15px; margin-top:20px;" onclick="location.reload()">WIS ALLES</button>
     </div>
 
     <script>
@@ -131,41 +119,43 @@
             'Taxirit': [],
             'Dagrit': ["Vertrek garage", "Vertrek klant", "Aankomst bestemming", "Vertrek bestemming", "Retour klant", "Retour garage"],
             'Enkele rit': ["Vertrek garage", "Vertrek klant", "Aankomst bestemming", "Retour garage"],
+            'Treinstremming': ["Vertrek zaak", "1e station", "Laatste station", "Retour zaak"],
             'Breng en haal': ["Vertrek garage (Heen)", "Vertrek klant", "Aankomst bestemming", "Retour garage", "DIVIDER:Deel 2", "Vertrek garage (Terug)", "Vertrek bestemming", "Retour klant", "Retour garage"]
         };
 
         let huidigType = "";
 
-        function init() {
-            document.getElementById('rit-datum').valueAsDate = new Date();
+        function initAutocomplete() {
+            if (typeof google === 'undefined') return;
+            const options = { componentRestrictions: { country: "nl" }, fields: ["formatted_address"], types: ["geocode"] };
+            const vanInput = new google.maps.places.Autocomplete(document.getElementById('van-plaats'), options);
+            const naarInput = new google.maps.places.Autocomplete(document.getElementById('naar-plaats'), options);
+            vanInput.addListener('place_changed', () => document.getElementById('van-plaats').blur());
+            naarInput.addListener('place_changed', () => document.getElementById('naar-plaats').blur());
         }
 
         function kiesRit(type) {
             huidigType = type;
             document.getElementById('menu-scherm').style.display = 'none';
             document.getElementById('app-scherm').style.display = 'block';
+            document.getElementById('rit-datum').valueAsDate = new Date();
             document.getElementById('titel-weergave').innerText = type.toUpperCase();
-
             const isTaxi = (type === 'Taxirit');
             document.getElementById('taxi-extra').style.display = isTaxi ? 'block' : 'none';
             document.getElementById('taxi-tijd-box').style.display = isTaxi ? 'block' : 'none';
             document.getElementById('bus-ritten-box').style.display = isTaxi ? 'none' : 'block';
-
             if (!isTaxi) bouwBusLijst();
+            window.scrollTo(0,0);
         }
 
-        function terugNaarMenu() {
-            document.getElementById('app-scherm').style.display = 'none';
-            document.getElementById('menu-scherm').style.display = 'flex';
-        }
+        function terugNaarMenu() { document.getElementById('app-scherm').style.display = 'none'; document.getElementById('menu-scherm').style.display = 'flex'; }
 
         function bouwBusLijst() {
             let html = ""; let v = 0;
             rittenConfig[huidigType].forEach(label => {
-                if (label.startsWith("DIVIDER")) {
-                    html += `<div style="background:#e7f3ff; text-align:center; padding:5px; font-weight:bold; margin:10px 0;">${label.split(":")[1]}</div>`;
-                } else {
-                    html += `<div class="rit-rij"><div>${label}</div><div class="selector-row"><div class="stepper"><button type="button" class="t-btn" onclick="pasT(${v},-15)">-</button><div class="val-display" id="tijd-${v}">08:00</div><button type="button" class="t-btn" onclick="pasT(${v},15)">+</button></div><div class="stepper"><input type="number" id="km-${v}" class="km-input-small" placeholder="KM" oninput="reken()" inputmode="numeric"></div></div></div>`;
+                if (label.startsWith("DIVIDER")) html += `<div style="background:#e7f3ff; text-align:center; padding:8px; font-weight:bold; margin:10px -15px;">${label.split(":")[1]}</div>`;
+                else {
+                    html += `<div class="rit-rij"><div>${label}</div><div class="selector-row"><div class="stepper"><button type="button" class="t-btn" onclick="pasT(${v},-15)">-</button><div class="val-display" id="tijd-${v}">08:00</div><button type="button" class="t-btn" onclick="pasT(${v},15)">+</button></div><div class="stepper"><input type="number" id="km-${v}" class="km-field" placeholder="KM" oninput="reken()" inputmode="numeric"></div></div></div>`;
                     v++;
                 }
             });
@@ -178,12 +168,11 @@
             let [h, min] = el.innerText.split(':').map(Number);
             let d = new Date(); d.setHours(h, min + m);
             el.innerText = d.getHours().toString().padStart(2,'0') + ":" + d.getMinutes().toString().padStart(2,'0');
-            reken();
         }
 
         function reken() {
             if (huidigType === 'Taxirit') return;
-            let kms = []; document.querySelectorAll('.km-input-small').forEach(i => kms.push(parseInt(i.value)||0));
+            let kms = []; document.querySelectorAll('.km-field').forEach(i => kms.push(parseInt(i.value)||0));
             let gevuld = kms.filter(k => k > 0);
             let tot = gevuld.length > 1 ? Math.max(...gevuld) - Math.min(...gevuld) : 0;
             document.getElementById('totaalKm').innerText = `Totaal KM: ${tot} km`;
@@ -191,28 +180,21 @@
 
         function verstuurMail() {
             const chauffeur = document.getElementById('chauffeur-naam').value;
-            if(!chauffeur) { alert("Kies chauffeur"); return; }
-            
-            let body = `RITREGISTRATIE - ${huidigType}\nChauffeur: ${chauffeur}\nDatum: ${document.getElementById('rit-datum').value}\nVoertuig: ${document.getElementById('bus-nummer').value}\n`;
-            
+            if(!chauffeur) { alert("Kies een chauffeur"); return; }
+            let body = `RITREGISTRATIE - ${huidigType}\nChauffeur: ${chauffeur}\nDatum: ${document.getElementById('rit-datum').value}\nVoertuig: ${document.getElementById('bus-nummer').value}\nTraject: ${document.getElementById('van-plaats').value} naar ${document.getElementById('naar-plaats').value}\n\n`;
             if (huidigType === 'Taxirit') {
                 const betaal = document.querySelector('input[name="betaal"]:checked').value;
-                body += `Tijd: ${document.getElementById('taxi-tijd').value}\nTraject: ${document.getElementById('van-plaats').value} -> ${document.getElementById('naar-plaats').value}\nBedrag: € ${document.getElementById('taxi-bedrag').value} (${betaal})\nBijzonderheden: ${document.getElementById('bijzonderheden').value}`;
+                body += `Tijd: ${document.getElementById('taxi-tijd').value}\nBedrag: € ${document.getElementById('taxi-bedrag').value} (${betaal})\nBijzonderheden: ${document.getElementById('bijzonderheden').value}`;
             } else {
                 let v = 0;
                 rittenConfig[huidigType].forEach(r => {
-                    if(!r.startsWith("DIVIDER")) {
-                        body += `${r}: ${document.getElementById(`tijd-${v}`).innerText} | KM: ${document.getElementById(`km-${v}`).value || '-'}\n`;
-                        v++;
-                    }
+                    if(!r.startsWith("DIVIDER")) { body += `${r}: ${document.getElementById(`tijd-${v}`).innerText} | KM: ${document.getElementById(`km-${v}`).value || '-'}\n`; v++; }
                 });
                 body += `\n${document.getElementById('totaalKm').innerText}`;
             }
-            
             window.location.href = `mailto:info@taxiberkhout.nl?subject=Rit ${huidigType} - ${chauffeur}&body=${encodeURIComponent(body)}`;
         }
-
-        init();
+        window.onload = initAutocomplete;
     </script>
 </body>
 </html>
