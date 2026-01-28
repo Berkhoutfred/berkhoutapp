@@ -3,128 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Berkhout Offerte-App</title>
+    <title>Berkhout Offerte - Google Maps</title>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi1U8gP0dlE87sYaUDI2JbKKFxJW_YjlY&libraries=places"></script>
     <style>
-        :root {
-            --berkhout-blue: #004a99;
-            --apple-grey: #f2f2f7;
-            --border-color: #d1d1d6;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--apple-grey);
-            margin: 0;
-            padding: 15px;
-            color: #1c1c1e;
-        }
-
-        .container { max-width: 600px; margin: 0 auto; }
-        h1 { color: var(--berkhout-blue); font-size: 24px; text-align: center; }
-        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .section-title { background: var(--berkhout-blue); color: white; padding: 8px 12px; border-radius: 6px; font-size: 16px; margin: -15px -15px 15px -15px; }
-        
-        .form-group { margin-bottom: 12px; }
-        label { display: block; font-size: 12px; color: #8e8e93; margin-bottom: 4px; text-transform: uppercase; }
-        input { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        
-        .btn-calc { background-color: var(--berkhout-blue); color: white; border: none; padding: 15px; width: 100%; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; }
-        .total-price { font-size: 32px; color: var(--berkhout-blue); font-weight: 800; text-align: center; margin: 10px 0; }
-        
-        .km-label { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
-        .km-input-small { width: 80px !important; text-align: right; padding: 5px !important; }
+        :root { --blue: #004a99; --grey: #f2f2f7; }
+        body { font-family: -apple-system, sans-serif; background: var(--grey); padding: 15px; margin: 0; }
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .title { background: var(--blue); color: white; padding: 10px; border-radius: 8px; font-weight: bold; margin: -15px -15px 15px -15px; }
+        label { display: block; font-size: 12px; color: #888; margin-bottom: 4px; text-transform: uppercase; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
+        .result { background: #eef6ff; border: 2px solid var(--blue); text-align: center; }
+        .price { font-size: 32px; color: var(--blue); font-weight: 800; margin: 10px 0; }
+        #km_info { font-weight: bold; color: var(--blue); margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Offerte Touringcar</h1>
+<div style="max-width: 500px; margin: 0 auto;">
+    <h2 style="color:var(--blue); text-align:center;">Offerte Berekening</h2>
 
     <div class="card">
-        <div class="section-title">Route (Automatische KM)</div>
-        <div class="form-group">
-            <label>Vertrekadres (Garage)</label>
-            <input type="text" id="start" placeholder="Adres..." value="Industrieweg 99J, Zutphen">
-        </div>
-        <div class="form-group">
-            <label>Bestemming</label>
-            <input type="text" id="eind" placeholder="Adres..." onchange="berekenAfstand()">
-        </div>
-        <div id="route_info" style="font-size: 12px; color: var(--berkhout-blue); font-weight: bold;"></div>
+        <div class="title">Route Planner</div>
+        <label>Vertrek (Garage)</label>
+        <input type="text" id="start" value="Industrieweg 99J, Zutphen">
+        <label>Bestemming</label>
+        <input type="text" id="eind" placeholder="Waar gaat de reis heen?" onchange="berekenAfstand()">
+        <div id="km_info">KM: 0</div>
     </div>
 
     <div class="card">
-        <div class="section-title">Kilometers & Tijden</div>
-        <div class="km-label"><span>Nederland (9%)</span><input type="number" id="km_nl" class="km-input-small" value="0" oninput="berekenOfferte()"></div>
-        <div class="km-label"><span>Duitsland</span><input type="number" id="km_de" class="km-input-small" value="0" oninput="berekenOfferte()"></div>
-        <div class="km-label"><span>Aantal uren inzet</span><input type="number" id="uren" class="km-input-small" value="0" oninput="berekenOfferte()"></div>
+        <div class="title">Extra variabelen</div>
+        <label>Aantal uren inzet (Chauffeur)</label>
+        <input type="number" id="uren" value="0" oninput="rekenen()">
+        <label>Parkeren / Tol / Hotel</label>
+        <input type="number" id="onkosten" value="0" oninput="rekenen()">
     </div>
 
-    <div class="card" style="border: 2px solid var(--berkhout-blue);">
-        <div class="section-title">Prijsopgave</div>
-        <div class="total-price" id="eindbedrag">€ 0,00</div>
-        <p style="text-align: center; font-size: 12px; color: #666;">Incl. 9% BTW en 50% brutowinst</p>
-        <button class="btn-calc" onclick="window.print()">Deel via PDF/Print</button>
+    <div class="card result">
+        <div class="title">Totaal Offerte</div>
+        <p>Geadviseerde verkoopprijs (incl. 9% BTW):</p>
+        <div class="price" id="totaal">€ 0,00</div>
+        <p style="font-size:11px;">Kostprijs x 2 (50% winst) + BTW</p>
+        <button onclick="window.print()" style="width:100%; padding:15px; background:var(--blue); color:white; border:none; border-radius:10px; font-weight:bold;">Print / Opslaan als PDF</button>
     </div>
 </div>
 
 <script>
-    // 1. Initialiseer Autocomplete
-    function initMap() {
-        const startInput = document.getElementById('start');
-        const eindInput = document.getElementById('eind');
-        new google.maps.places.Autocomplete(startInput);
-        new google.maps.places.Autocomplete(eindInput);
+    // 1. Google Autocomplete activeren
+    function init() {
+        new google.maps.places.Autocomplete(document.getElementById('start'));
+        new google.maps.places.Autocomplete(document.getElementById('eind'));
     }
 
-    // 2. Bereken afstand via Google
+    // 2. Afstand ophalen bij Google
     function berekenAfstand() {
         const start = document.getElementById('start').value;
         const eind = document.getElementById('eind').value;
-
-        if (start && eind) {
-            const service = new google.maps.DistanceMatrixService();
-            service.getDistanceMatrix({
-                origins: [start],
-                destinations: [eind],
-                travelMode: 'DRIVING',
-            }, (response, status) => {
-                if (status === 'OK') {
-                    const distanceInKm = response.rows[0].elements[0].distance.value / 1000;
-                    // We verdubbelen de afstand voor Heen & Terug
-                    const totaalKm = Math.round(distanceInKm * 2);
-                    document.getElementById('km_nl').value = totaalKm;
-                    document.getElementById('route_info').innerText = "Afstand (retour): " + totaalKm + " km";
-                    berekenOfferte();
-                }
-            });
-        }
+        const service = new google.maps.DistanceMatrixService();
+        
+        service.getDistanceMatrix({
+            origins: [start],
+            destinations: [eind],
+            travelMode: 'DRIVING'
+        }, (response, status) => {
+            if (status === 'OK') {
+                const dist = response.rows[0].elements[0].distance.value / 1000;
+                // Retour berekenen (heen en terug)
+                const retourKm = Math.round(dist * 2);
+                document.getElementById('km_info').innerText = "KM: " + retourKm + " (retour)";
+                window.huidigeKM = retourKm; // Opslaan voor berekening
+                rekenen();
+            }
+        });
     }
 
-    // 3. De rekenlogica (jouw regels)
-    function berekenOfferte() {
-        const kmNl = parseFloat(document.getElementById('km_nl').value) || 0;
-        const kmDe = parseFloat(document.getElementById('km_de').value) || 0;
+    // 3. De Berkhout Rekenformule
+    function rekenen() {
+        const km = window.huidigeKM || 0;
         const uren = parseFloat(document.getElementById('uren').value) || 0;
-        
+        const onkosten = parseFloat(document.getElementById('onkosten').value) || 0;
+
+        // Jouw tarieven:
         const kmPrijs = 1.00;
         const uurPrijs = 33.00;
-        const minTarief = 200.00;
+        const minKostprijs = 200.00;
 
-        let kostprijs = (kmNl + kmDe) * kmPrijs + (uren * uurPrijs);
+        // Basis kostprijs
+        let kostprijs = (km * kmPrijs) + (uren * uurPrijs) + onkosten;
         
-        // Minimum tarief check
-        if (kostprijs < minTarief) kostprijs = minTarief;
+        // Minimum check
+        if (kostprijs < minKostprijs) kostprijs = minKostprijs;
 
-        // 50% brutowinst (Verkoopprijs = Kosten * 2)
-        const verkoopprijsExBtw = kostprijs * 2;
-        const totaalInclBtw = verkoopprijsExBtw * 1.09;
+        // Verkoopprijs (50% brutowinst = kosten x 2)
+        const verkoopExBtw = kostprijs * 2;
+        const totaalInclBtw = verkoopExBtw * 1.09;
 
-        document.getElementById('eindbedrag').innerText = '€ ' + totaalInclBtw.toLocaleString('nl-NL', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('totaal').innerText = '€ ' + totaalInclBtw.toLocaleString('nl-NL', {minimumFractionDigits: 2});
     }
 
-    window.onload = initMap;
+    window.onload = init;
 </script>
 
 </body>
