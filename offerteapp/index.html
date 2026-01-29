@@ -16,7 +16,6 @@
             --sidebar-width: 250px;
             --text-dark: #333;
         }
-
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text-dark); display: flex; height: 100vh; overflow: hidden; }
 
         /* SIDEBAR */
@@ -31,7 +30,7 @@
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .page-title { font-size: 24px; font-weight: bold; color: var(--secondary); }
 
-        /* COMPONENTS */
+        /* CARDS & FORMS */
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e0e0e0; }
         .section-header { font-size: 16px; font-weight: bold; color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
         
@@ -40,17 +39,16 @@
 
         label { display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 5px; text-transform: uppercase; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; margin-bottom: 10px; }
-        input:focus { border-color: var(--primary); outline: none; }
         
-        .time-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding: 8px; background: #f9f9fc; border-radius: 6px; border: 1px solid #eee; }
-        .time-label { width: 140px; font-weight: 600; font-size: 13px; }
+        /* TIJDEN TABEL */
+        .time-row { display: grid; grid-template-columns: 140px 100px 1fr; align-items: center; gap: 10px; margin-bottom: 8px; padding: 8px; background: #f9f9fc; border-radius: 6px; border: 1px solid #eee; }
+        .time-label { font-weight: 600; font-size: 13px; }
+        .google-time { font-size: 11px; color: #888; font-style: italic; }
 
         .btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-success { background: var(--accent); color: white; }
-        .btn-danger { background: #dc3545; color: white; }
         
-        /* TABELLEN & STATUS */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
         th { color: #888; font-weight: 600; font-size: 12px; text-transform: uppercase; }
@@ -58,7 +56,6 @@
         .status-offerte { background: #e3f2fd; color: #1976d2; }
         .status-opdracht { background: #e8f5e9; color: #2e7d32; }
 
-        /* SECTIONS */
         .page-section { display: none; }
         .page-section.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -74,9 +71,7 @@
         <div class="nav-item active" onclick="nav('dashboard')"><i class="fa-solid fa-chart-line"></i> Dashboard</div>
         <div class="nav-item" onclick="nav('nieuwe-rit')"><i class="fa-solid fa-calculator"></i> Calculatie / Offerte</div>
         <div class="nav-item" onclick="nav('klanten')"><i class="fa-solid fa-users"></i> Klantenbestand</div>
-        <div class="nav-item" onclick="nav('planning')"><i class="fa-solid fa-calendar-days"></i> Planning</div>
-        
-        <div class="sidebar-footer">v1.2 - Berkhout Touringcars</div>
+        <div class="sidebar-footer">v1.3 - Totaal Systeem</div>
     </div>
 
     <div class="main">
@@ -91,26 +86,53 @@
             <div class="card">
                 <div class="section-header">Recente Ritten</div>
                 <table id="recent-table">
-                    <thead><tr><th>Datum</th><th>Klant</th><th>Bestemming</th><th>Bedrag</th><th>Status</th><th>Actie</th></tr></thead>
+                    <thead><tr><th>Datum</th><th>Klant</th><th>Bus</th><th>Bestemming</th><th>Bedrag</th><th>Status</th><th>Actie</th></tr></thead>
                     <tbody id="recent-body"></tbody>
                 </table>
             </div>
         </div>
 
         <div id="nieuwe-rit" class="page-section">
-            <div class="header"><div class="page-title">Calculatie & Offerte</div></div>
+            <div class="header"><div class="page-title">Nieuwe Rit</div></div>
             <div class="grid-2">
                 <div>
                     <div class="card">
-                        <div class="section-header">1. Klant & Route</div>
-                        <label>Selecteer Klant</label>
+                        <div class="section-header">1. Klant & Bus</div>
                         <select id="calc-klant-select" onchange="vulKlantInCalc()"><option value="">-- Kies Klant --</option></select>
-                        <label style="margin-top:10px;">Vertrek (Garage)</label>
+                        
+                        <div class="grid-2" style="margin-top:10px;">
+                            <div>
+                                <label>Aantal Personen</label>
+                                <input type="number" id="aantal-pax" placeholder="0">
+                            </div>
+                            <div>
+                                <label>Type Bus</label>
+                                <select id="bus-type">
+                                    <option value="50">50-persoons Touringcar</option>
+                                    <option value="60">60-persoons Touringcar</option>
+                                    <option value="19">19-persoons Midibus</option>
+                                    <option value="Combi">Combinatie / Meerdere</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="section-header">2. Route (Google Routeplanner)</div>
+                        <label>Vertrek (Garage)</label>
                         <input type="text" id="route-start" value="Industrieweg 99J, Zutphen">
-                        <label>Bestemming</label>
-                        <input type="text" id="route-eind" placeholder="Typ bestemming..." onchange="berekenGoogleAfstand()">
+                        
+                        <label>Via Locatie 1 (Optioneel)</label>
+                        <input type="text" id="route-via-1" placeholder="Tussenstop..." onchange="berekenRoute()">
+                        
+                        <label>Via Locatie 2 (Optioneel)</label>
+                        <input type="text" id="route-via-2" placeholder="Tussenstop..." onchange="berekenRoute()">
+                        
+                        <label>Eindbestemming</label>
+                        <input type="text" id="route-eind" placeholder="Bestemming..." onchange="berekenRoute()">
+                        
                         <div style="background:#f0f7ff; padding:10px; border-radius:6px; font-weight:bold; color:var(--primary); text-align:center;">
-                            Retour: <span id="display-km-retour">0</span> km
+                            Totale Afstand: <span id="display-km-retour">0</span> km (Retour)
                         </div>
                         <input type="hidden" id="val-km-retour" value="0">
                     </div>
@@ -118,101 +140,103 @@
 
                 <div>
                     <div class="card">
-                        <div class="section-header">2. Tijdschema</div>
-                        <div class="time-row"><div class="time-label">1. Vertrek Zaak</div><input type="time" id="t-vertrek-zaak" value="08:00" onchange="rekenUren()"></div>
-                        <div class="time-row"><div class="time-label">2. Voorstaan</div><input type="time" id="t-voorstaan" value="08:30" onchange="rekenUren()"></div>
-                        <div class="time-row"><div class="time-label">3. Vertrek Klant</div><input type="time" id="t-vertrek-klant" value="08:45" onchange="rekenUren()"></div>
-                        <div class="time-row"><div class="time-label">4. Aankomst Loc.</div><input type="time" id="t-aankomst-loc" value="10:00" onchange="rekenUren()"></div>
-                        <div style="text-align:center; font-size:11px; color:#888;">-- Verblijf --</div>
-                        <div class="time-row"><div class="time-label">5. Vertrek Loc.</div><input type="time" id="t-vertrek-loc" value="16:00" onchange="rekenUren()"></div>
-                        <div class="time-row"><div class="time-label">6. Retour Klant</div><input type="time" id="t-retour-klant" value="17:15" onchange="rekenUren()"></div>
-                        <div class="time-row"><div class="time-label">7. Aankomst Zaak</div><input type="time" id="t-aankomst-zaak" value="17:45" onchange="rekenUren()"></div>
-                        <div style="font-weight:bold; text-align:right; margin-top:5px;">Totaal Uren: <span id="display-uren">0.0</span></div>
-                    </div>
-                </div>
-            </div>
+                        <div class="section-header">3. Tijdsplanning</div>
+                        
+                        <div class="time-row">
+                            <div class="time-label">1. Vertrek Garage</div>
+                            <input type="time" id="t-vertrek-zaak" step="900" onchange="rekenUren()">
+                            <span class="google-time"></span>
+                        </div>
+                        
+                        <div class="time-row" style="border-left: 3px solid var(--accent);">
+                            <div class="time-label">2. Voorstaan</div>
+                            <input type="time" id="t-voorstaan" step="900" readonly style="background:#eee; color:#666;">
+                            <span class="google-time"><i class="fa-solid fa-clock"></i> 15 min voor vertrek</span>
+                        </div>
 
-            <div class="card">
-                <div class="section-header">3. Financieel</div>
-                <div class="grid-2">
-                    <div>
-                        <label>Overige kosten (Tol/Parkeren)</label>
-                        <input type="number" id="kosten-overig" value="0" oninput="rekenPrijs()">
+                        <div class="time-row" style="border-left: 3px solid var(--accent);">
+                            <div class="time-label">3. Vertrek Klant</div>
+                            <input type="time" id="t-vertrek-klant" step="900" onchange="autoVoorstaan(); rekenUren()">
+                            <span class="google-time" id="gt-naar-klant"></span>
+                        </div>
+
+                        <div class="time-row">
+                            <div class="time-label">4. Aankomst Loc.</div>
+                            <input type="time" id="t-aankomst-loc" step="900" onchange="rekenUren()">
+                            <span class="google-time" id="gt-naar-bestemming"></span>
+                        </div>
+
+                        <div style="text-align:center; font-size:11px; color:#888; margin:5px 0;">-- Verblijf op Locatie --</div>
+
+                        <div class="time-row">
+                            <div class="time-label">5. Vertrek Loc.</div>
+                            <input type="time" id="t-vertrek-loc" step="900" onchange="rekenUren()">
+                            <span class="google-time"></span>
+                        </div>
+
+                        <div class="time-row">
+                            <div class="time-label">6. Retour Klant</div>
+                            <input type="time" id="t-retour-klant" step="900" onchange="rekenUren()">
+                            <span class="google-time" id="gt-terug-klant"></span>
+                        </div>
+
+                        <div class="time-row">
+                            <div class="time-label">7. Aankomst Garage</div>
+                            <input type="time" id="t-aankomst-zaak" step="900" onchange="rekenUren()">
+                            <span class="google-time" id="gt-terug-garage"></span>
+                        </div>
+                        
+                        <div style="font-weight:bold; text-align:right; margin-top:10px; font-size:16px;">
+                            Totale Inzet: <span id="display-uren" style="color:var(--primary)">0.0</span> uur
+                        </div>
                     </div>
-                    <div class="total-block">
-                        <div style="font-size:12px; color:#666;">Offertebedrag (incl. 9% BTW)</div>
-                        <div class="total-price" id="eind-totaal">€ 0,00</div>
-                        <div style="font-size:11px; color:#28a745;">Afgerond op € 25,- (Winstmarge ~33%)</div>
+
+                    <div class="card">
+                        <div class="section-header">4. Totaal & Offerte</div>
+                        <label>Overige kosten</label>
+                        <input type="number" id="kosten-overig" value="0" oninput="rekenPrijs()">
+                        
+                        <div class="total-block">
+                            <div style="font-size:12px; color:#666;">Totaal incl. 9% BTW</div>
+                            <div class="total-price" id="eind-totaal">€ 200,00</div>
+                            <div style="font-size:11px; color:#28a745;">(Winstmarge ~33% | Afgerond)</div>
+                        </div>
+                        <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top:15px;" onclick="slaRitOp()"><i class="fa-solid fa-save"></i> Opslaan</button>
                     </div>
                 </div>
-                <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top:15px;" onclick="slaRitOp()"><i class="fa-solid fa-save"></i> Opslaan als Offerte</button>
             </div>
         </div>
 
         <div id="klanten" class="page-section">
-            <div class="header">
-                <div class="page-title">Klantenbestand</div>
-                <button class="btn btn-success" onclick="toggleNieuweKlant()">+ Nieuwe Klant</button>
-            </div>
-            
-            <div id="nieuw-klant-form" class="card" style="display:none; background:#f0f7ff; border:2px solid var(--primary);">
-                <div class="section-header">Nieuwe Klant / Bedrijf Zoeken</div>
-                
-                <label style="color:var(--primary);"><i class="fa-solid fa-magnifying-glass"></i> Zoek Bedrijf op Google (Naam + Adres vult automatisch)</label>
-                <input type="text" id="google-bedrijf-zoek" placeholder="Typ bedrijfsnaam (bijv. 'Bakker Bart Zutphen')..." style="border:2px solid var(--primary);">
-
-                <div class="grid-2" style="margin-top:15px;">
-                    <div>
-                        <label>Naam / Bedrijf</label>
-                        <input type="text" id="nk-naam">
-                        <label>Contactpersoon</label>
-                        <input type="text" id="nk-contact">
-                        <label>E-mailadres</label>
-                        <input type="email" id="nk-email">
-                    </div>
-                    <div>
-                        <label>Adres (Straat + Huisnr)</label>
-                        <input type="text" id="nk-adres">
-                        <label>Postcode & Plaats</label>
-                        <input type="text" id="nk-plaats">
-                        <label>Telefoon</label>
-                        <input type="text" id="nk-tel">
-                    </div>
+            <div class="header"><div class="page-title">Klanten</div><button class="btn btn-success" onclick="toggleNieuweKlant()">+ Nieuwe Klant</button></div>
+            <div id="nieuw-klant-form" class="card" style="display:none; border:2px solid var(--primary);">
+                <div class="section-header">Nieuwe Klant</div>
+                <label style="color:var(--primary);">Zoek Bedrijf (Google)</label>
+                <input type="text" id="google-bedrijf-zoek" placeholder="Typ naam...">
+                <div class="grid-2">
+                    <input type="text" id="nk-naam" placeholder="Naam">
+                    <input type="text" id="nk-contact" placeholder="Contactpersoon">
+                    <input type="email" id="nk-email" placeholder="Email">
+                    <input type="text" id="nk-adres" placeholder="Adres">
+                    <input type="text" id="nk-plaats" placeholder="Plaats">
                 </div>
                 <button class="btn btn-primary" onclick="slaKlantOp()">Opslaan</button>
-                <button class="btn btn-danger" onclick="toggleNieuweKlant()">Annuleren</button>
             </div>
-
-            <div class="card">
-                <table id="klanten-tabel">
-                    <thead><tr><th>Naam</th><th>Plaats</th><th>Email</th><th>Actie</th></tr></thead>
-                    <tbody id="klanten-body"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="planning" class="page-section">
-            <div class="header"><div class="page-title">Planning</div></div>
-            <div class="card" style="text-align:center; padding:50px;">
-                <h3 style="color:#666;">Planning module in ontwikkeling</h3>
-                <p>Hier komt het grafische planbord.</p>
-            </div>
+            <div class="card"><table id="klanten-tabel"><thead><tr><th>Naam</th><th>Plaats</th><th>Actie</th></tr></thead><tbody id="klanten-body"></tbody></table></div>
         </div>
 
     </div>
 
     <script>
-        // DATA
         let db = { klanten: [], ritten: [] };
+        let googleTimes = {}; // Opslag voor reistijden
 
-        // INIT
         function initApp() {
             const opgeslagen = localStorage.getItem('berkhout_erp_v1');
             if(opgeslagen) db = JSON.parse(opgeslagen);
             updateDashboard();
             vulKlantenLijst();
             initGoogleMaps();
-            rekenUren();
         }
 
         function saveData() {
@@ -228,118 +252,99 @@
             event.currentTarget.classList.add('active');
         }
 
-        // GOOGLE MAPS & AUTOCOMPLETE
+        // --- GOOGLE ROUTE & AUTOCOMPLETE ---
         function initGoogleMaps() {
             const options = { types: ['address'], componentRestrictions: {country: 'nl'} };
             
-            // Route velden
             new google.maps.places.Autocomplete(document.getElementById('route-start'), options);
+            new google.maps.places.Autocomplete(document.getElementById('route-via-1'), options);
+            new google.maps.places.Autocomplete(document.getElementById('route-via-2'), options);
             const autoEind = new google.maps.places.Autocomplete(document.getElementById('route-eind'), options);
-            autoEind.addListener('place_changed', berekenGoogleAfstand);
+            autoEind.addListener('place_changed', berekenRoute);
 
-            // Klant Adres Zoeken (Alleen adres)
-            const autoAdres = new google.maps.places.Autocomplete(document.getElementById('nk-adres'), options);
-            autoAdres.addListener('place_changed', () => {
-                const place = autoAdres.getPlace();
-                fillAddressFields(place);
-            });
-
-            // Bedrijven Zoeker (Establishment)
-            const bedrijfOptions = { types: ['establishment'], componentRestrictions: {country: 'nl'} };
-            const autoBedrijf = new google.maps.places.Autocomplete(document.getElementById('google-bedrijf-zoek'), bedrijfOptions);
-            
+            // Bedrijf zoeker
+            const autoBedrijf = new google.maps.places.Autocomplete(document.getElementById('google-bedrijf-zoek'), { types: ['establishment'] });
             autoBedrijf.addListener('place_changed', () => {
-                const place = autoBedrijf.getPlace();
-                document.getElementById('nk-naam').value = place.name || '';
-                document.getElementById('nk-tel').value = place.formatted_phone_number || '';
-                fillAddressFields(place);
+                const p = autoBedrijf.getPlace();
+                document.getElementById('nk-naam').value = p.name || '';
+                if(p.address_components) {
+                   // Simpele adres invul logica
+                   document.getElementById('nk-adres').value = p.formatted_address;
+                }
             });
         }
 
-        function fillAddressFields(place) {
-            let straat = '', huisnr = '', postcode = '', stad = '';
-            if (place.address_components) {
-                for (const component of place.address_components) {
-                    const type = component.types[0];
-                    if (type === "route") straat = component.long_name;
-                    if (type === "street_number") huisnr = component.long_name;
-                    if (type === "postal_code") postcode = component.long_name;
-                    if (type === "locality") stad = component.long_name;
-                }
-            }
-            document.getElementById('nk-adres').value = `${straat} ${huisnr}`.trim();
-            document.getElementById('nk-plaats').value = `${postcode} ${stad}`.trim();
-        }
-
-        function berekenGoogleAfstand() {
+        function berekenRoute() {
             const start = document.getElementById('route-start').value;
             const eind = document.getElementById('route-eind').value;
+            const via1 = document.getElementById('route-via-1').value;
+            const via2 = document.getElementById('route-via-2').value;
+
             if(!start || !eind) return;
 
-            const service = new google.maps.DistanceMatrixService();
-            service.getDistanceMatrix({ origins: [start], destinations: [eind], travelMode: 'DRIVING' }, (response, status) => {
-                if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
-                    const dist = response.rows[0].elements[0].distance.value / 1000;
-                    const retour = Math.round(dist * 2);
-                    document.getElementById('display-km-retour').innerText = retour;
-                    document.getElementById('val-km-retour').value = retour;
+            const waypoints = [];
+            if(via1) waypoints.push({location: via1, stopover: true});
+            if(via2) waypoints.push({location: via2, stopover: true});
+
+            const directionsService = new google.maps.DirectionsService();
+            
+            // 1. Garage -> Klant (Via's?) -> Bestemming
+            directionsService.route({
+                origin: start,
+                destination: eind,
+                waypoints: waypoints,
+                travelMode: 'DRIVING'
+            }, (response, status) => {
+                if (status === 'OK') {
+                    let totalDist = 0;
+                    let totalDuration = 0; // seconden
+                    const legs = response.routes[0].legs;
+
+                    // Totale afstand optellen
+                    legs.forEach(leg => {
+                        totalDist += leg.distance.value;
+                        totalDuration += leg.duration.value;
+                    });
+
+                    // We doen retour, dus x2
+                    const retourKm = Math.round((totalDist / 1000) * 2);
+                    document.getElementById('display-km-retour').innerText = retourKm;
+                    document.getElementById('val-km-retour').value = retourKm;
+
+                    // Google Tijd Indicatie tonen
+                    const heenUur = Math.floor(totalDuration / 3600);
+                    const heenMin = Math.round((totalDuration % 3600) / 60);
+                    
+                    // Vul indicaties in tabel
+                    const textTime = `${heenUur}u ${heenMin}m rijden`;
+                    document.getElementById('gt-naar-bestemming').innerText = `(Google indicatie: ${textTime})`;
+                    
                     rekenPrijs();
                 }
             });
         }
 
-        // KLANTEN
-        function toggleNieuweKlant() {
-            const el = document.getElementById('nieuw-klant-form');
-            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        // --- TIJDEN LOGICA ---
+        function autoVoorstaan() {
+            const vertrekKlant = document.getElementById('t-vertrek-klant').value;
+            if(!vertrekKlant) return;
+
+            const [h, m] = vertrekKlant.split(':').map(Number);
+            const date = new Date();
+            date.setHours(h, m - 15); // 15 min eraf
+
+            const newH = String(date.getHours()).padStart(2, '0');
+            const newM = String(date.getMinutes()).padStart(2, '0');
+            document.getElementById('t-voorstaan').value = `${newH}:${newM}`;
         }
 
-        function slaKlantOp() {
-            const naam = document.getElementById('nk-naam').value;
-            if(!naam) return alert("Naam is verplicht");
-            
-            db.klanten.push({
-                id: Date.now(),
-                naam: naam,
-                contact: document.getElementById('nk-contact').value,
-                email: document.getElementById('nk-email').value,
-                adres: document.getElementById('nk-adres').value,
-                plaats: document.getElementById('nk-plaats').value
-            });
-            saveData();
-            toggleNieuweKlant();
-            document.getElementById('nk-naam').value = ''; 
-            document.getElementById('google-bedrijf-zoek').value = '';
-        }
-
-        function vulKlantenLijst() {
-            const tbody = document.getElementById('klanten-body');
-            tbody.innerHTML = '';
-            db.klanten.forEach(k => {
-                tbody.innerHTML += `<tr><td><b>${k.naam}</b></td><td>${k.plaats}</td><td>${k.email}</td><td><button class="btn btn-primary" style="padding:4px 8px; font-size:12px;" onclick="kiesKlant('${k.id}')">Kies</button></td></tr>`;
-            });
-            const select = document.getElementById('calc-klant-select');
-            select.innerHTML = '<option value="">-- Kies Klant --</option>';
-            db.klanten.forEach(k => { select.innerHTML += `<option value="${k.id}">${k.naam}</option>`; });
-        }
-
-        function kiesKlant(id) {
-            nav('nieuwe-rit');
-            document.getElementById('calc-klant-select').value = id;
-            vulKlantInCalc();
-        }
-
-        function vulKlantInCalc() {
-            // Placeholder logic indien nodig
-        }
-
-        // REKENMACHINE
         function rekenUren() {
             const tStart = parseTime(document.getElementById('t-vertrek-zaak').value);
             const tEind = parseTime(document.getElementById('t-aankomst-zaak').value);
+            
             if(tStart && tEind) {
-                let diff = (tEind - tStart) / (1000 * 60 * 60);
-                if(diff < 0) diff += 24;
+                let diff = (tEind - tStart) / (1000 * 60 * 60); // uren
+                if(diff < 0) diff += 24; // over middernacht
                 document.getElementById('display-uren').innerText = diff.toFixed(2);
                 rekenPrijs();
             }
@@ -357,34 +362,69 @@
             const kms = parseFloat(document.getElementById('val-km-retour').value) || 0;
             const extra = parseFloat(document.getElementById('kosten-overig').value) || 0;
 
-            const tariefKm = 1.00;
+            const tariefKm = 1.00; 
             const tariefUur = 33.00;
             
             let kostprijs = (kms * tariefKm) + (uren * tariefUur) + extra;
             
-            // Winstmarge ~33% op verkoopprijs (Factor 1.5)
+            // Winstmarge ~33% (Factor 1.5)
             let verkoopEx = kostprijs * 1.5;
             let totaalIncl = verkoopEx * 1.09;
 
             // Afronden op 25 euro
-            // Math.ceil zorgt dat je altijd naar boven afrond naar volgende 25-tal voor veiligheid?
-            // Of Math.round voor dichtstbijzijnde. Laten we 'nearest' doen.
             totaalIncl = Math.round(totaalIncl / 25) * 25;
 
-            // Minimaal 200
             if(totaalIncl < 200) totaalIncl = 200;
 
             document.getElementById('eind-totaal').innerText = '€ ' + totaalIncl.toLocaleString('nl-NL', {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
 
+        // --- OPSLAAN & KLANTEN ---
+        function toggleNieuweKlant() {
+            const el = document.getElementById('nieuw-klant-form');
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function slaKlantOp() {
+            db.klanten.push({
+                id: Date.now(),
+                naam: document.getElementById('nk-naam').value,
+                plaats: document.getElementById('nk-plaats').value
+            });
+            saveData();
+            toggleNieuweKlant();
+        }
+
+        function vulKlantenLijst() {
+            const tbody = document.getElementById('klanten-body');
+            tbody.innerHTML = '';
+            db.klanten.forEach(k => {
+                tbody.innerHTML += `<tr><td><b>${k.naam}</b></td><td>${k.plaats}</td><td><button class="btn btn-primary" onclick="kiesKlant('${k.id}')">Kies</button></td></tr>`;
+            });
+            const select = document.getElementById('calc-klant-select');
+            select.innerHTML = '<option value="">-- Kies Klant --</option>';
+            db.klanten.forEach(k => { select.innerHTML += `<option value="${k.id}">${k.naam}</option>`; });
+        }
+
+        function kiesKlant(id) {
+            nav('nieuwe-rit');
+            document.getElementById('calc-klant-select').value = id;
+        }
+        
+        function vulKlantInCalc() {
+             // Toekomstige logica om klantvelden in te vullen
+        }
+
         function slaRitOp() {
             const klantId = document.getElementById('calc-klant-select').value;
             const klantNaam = klantId ? db.klanten.find(k=>k.id==klantId).naam : 'Onbekend';
-            
+            const bus = document.getElementById('bus-type').value;
+
             db.ritten.unshift({
                 id: Date.now(),
                 datum: new Date().toLocaleDateString(),
                 klant: klantNaam,
+                bus: bus,
                 bestemming: document.getElementById('route-eind').value,
                 bedrag: document.getElementById('eind-totaal').innerText,
                 status: 'Offerte'
@@ -401,7 +441,7 @@
             const tbody = document.getElementById('recent-body');
             tbody.innerHTML = '';
             db.ritten.slice(0, 5).forEach(r => {
-                tbody.innerHTML += `<tr><td>${r.datum}</td><td><b>${r.klant}</b></td><td>${r.bestemming}</td><td>${r.bedrag}</td><td><span class="status-badge status-${r.status.toLowerCase()}">${r.status}</span></td><td><button class="btn btn-primary" style="padding:4px;" onclick="window.location.href='mailto:?subject=Offerte&body=Bedrag: ${r.bedrag}'"><i class="fa-solid fa-envelope"></i></button></td></tr>`;
+                tbody.innerHTML += `<tr><td>${r.datum}</td><td><b>${r.klant}</b></td><td>${r.bus}p</td><td>${r.bestemming}</td><td>${r.bedrag}</td><td><span class="status-badge status-${r.status.toLowerCase()}">${r.status}</span></td><td>...</td></tr>`;
             });
         }
 
