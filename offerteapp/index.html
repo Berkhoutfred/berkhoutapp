@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berkhout Planning V2</title>
+    <title>Berkhout Planning V2.2</title>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi1U8gP0dlE87sYaUDI2JbKKFxJW_YjlY&libraries=places"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
@@ -32,6 +32,11 @@
         .time-select-group { display: flex; gap: 5px; align-items: center; }
         .select-uur, .select-min { width: 60px; text-align: center; font-weight: bold; cursor: pointer; }
         
+        /* INFO DISPLAY */
+        .info-display { background: #eef6ff; border: 1px solid var(--primary); padding: 10px; border-radius: 6px; margin-top: 5px; color: var(--primary); }
+        .info-large { font-size: 18px; font-weight: bold; }
+        .info-sub { font-size: 12px; color: #555; margin-top: 3px; }
+
         /* TOTALEN */
         .total-box { text-align: right; background: #eef6ff; padding: 15px; border-radius: 8px; border: 2px solid var(--primary); }
         .total-price { font-size: 28px; font-weight: 900; color: var(--primary); }
@@ -96,7 +101,7 @@
                 </div>
 
                 <div class="card">
-                    <div class="section-header">2. Route (Stad of Adres)</div>
+                    <div class="section-header">2. Route (Auto + 15% Busfactor)</div>
                     <label>Vertrek (Garage)</label>
                     <input type="text" id="route-start" value="Industrieweg 99J, Zutphen">
                     
@@ -109,8 +114,9 @@
                     <label>Bestemming</label>
                     <input type="text" id="route-eind" placeholder="Waar gaat de reis heen?" onchange="berekenRoute()">
                     
-                    <div style="text-align:center; font-weight:bold; color:var(--primary); margin-top:10px;">
-                        Afstand Retour: <span id="km-display">0</span> km
+                    <div class="info-display">
+                        <div class="info-large"><span id="km-display">0</span> km <span style="font-size:14px; font-weight:normal;">(Retour)</span></div>
+                        <div class="info-sub" id="tijd-display">Nog geen route berekend</div>
                     </div>
                 </div>
             </div>
@@ -118,8 +124,7 @@
             <div>
                 <div class="card">
                     <div class="section-header">3. Tijdsplanning (Kwartieren)</div>
-                    <div id="tijd-container">
-                        </div>
+                    <div id="tijd-container"></div>
                     <div style="text-align:right; font-weight:bold; margin-top:10px;">
                         Totaal: <span id="uren-display">0.0</span> uur
                     </div>
@@ -127,7 +132,7 @@
 
                 <div class="card">
                     <div class="section-header">4. Offerte</div>
-                    <label>Overige Kosten</label>
+                    <label>Overige Kosten (Tol/Parkeren/Hotel)</label>
                     <input type="number" id="kosten-extra" value="0" oninput="rekenPrijs()">
                     
                     <div class="total-box">
@@ -189,7 +194,7 @@
         rekenUren();
     }
 
-    // BOUW DE TIJD KIEZERS (Selectboxen)
+    // BOUW DE TIJD KIEZERS
     function bouwTijdKiezers() {
         const container = document.getElementById('tijd-container');
         let html = '';
@@ -208,12 +213,10 @@
                 minOpties += `<option value="${m}" ${sel}>${m}</option>`;
             });
 
-            // Extra styling voor 'Voorstaan' en 'Vertrek Klant'
             let style = '';
             if(veld.id === 'voorstaan') style = 'border-left: 3px solid orange;';
             if(veld.id === 'vertrek_klant') style = 'border-left: 3px solid green;';
 
-            // Onchange event
             let changeFn = `rekenUren()`;
             if(veld.trigger) changeFn = `updateVoorstaan(); rekenUren()`;
             let disabled = veld.readonly ? 'disabled style="background:#eee"' : '';
@@ -230,27 +233,18 @@
         container.innerHTML = html;
     }
 
-    // AUTOMATISCH VOORSTAAN BEREKENEN (-15 min)
     function updateVoorstaan() {
         let h = parseInt(document.getElementById('h_vertrek_klant').value);
         let m = parseInt(document.getElementById('m_vertrek_klant').value);
-        
-        // 15 minuten eraf
         m = m - 15;
-        if(m < 0) {
-            m = 45;
-            h = h - 1;
-            if(h < 0) h = 23;
-        }
-
-        // Zet de waardes in de voorstaan selectors
+        if(m < 0) { m = 45; h = h - 1; if(h < 0) h = 23; }
         document.getElementById('h_voorstaan').value = h.toString().padStart(2,'0');
         document.getElementById('m_voorstaan').value = m.toString().padStart(2,'0');
     }
 
-    // MAPS & ROUTE (Zonder type restrictie!)
+    // MAPS & ROUTE & TIJD (MET 1.15 FACTOR)
     function initMaps() {
-        const opts = { componentRestrictions: {country: 'nl'} }; // Geen types restrictie meer!
+        const opts = { componentRestrictions: {country: 'nl'} };
         
         new google.maps.places.Autocomplete(document.getElementById('route-start'), opts);
         new google.maps.places.Autocomplete(document.getElementById('route-via1'), opts);
@@ -291,19 +285,34 @@
         }, (res, status) => {
             if(status === 'OK') {
                 let m = 0;
-                res.routes[0].legs.forEach(leg => m += leg.distance.value);
+                let s = 0; // seconden
+                res.routes[0].legs.forEach(leg => {
+                    m += leg.distance.value;
+                    s += leg.duration.value;
+                });
+
+                // Afstand berekening
                 retourKM = Math.round((m / 1000) * 2);
                 document.getElementById('km-display').innerText = retourKM;
+
+                // Tijd berekening (Enkele reis) met 1.15 Touringcar Factor
+                let enkeleReisSec = s * 1.15; 
+                let uren = Math.floor(enkeleReisSec / 3600);
+                let minuten = Math.round((enkeleReisSec % 3600) / 60);
+                
+                document.getElementById('tijd-display').innerHTML = 
+                    `Geschatte reistijd (enkel): <b>${uren} uur ${minuten} min</b><br>` + 
+                    `(Incl. 15% extra tijd voor touringcar)`;
+
                 rekenPrijs();
             } else {
-                alert("Kan route niet berekenen. Controleer API Key of typ adressen handmatig.");
+                alert("Let op: 'Directions API' staat waarschijnlijk nog niet aan in Google Cloud Console.");
             }
         });
     }
 
     // PRIJS BEREKENING
     function rekenUren() {
-        // Haal Start (Garage) en Eind (Garage) op
         const h1 = document.getElementById('h_vertrek_zaak').value;
         const m1 = document.getElementById('m_vertrek_zaak').value;
         const h2 = document.getElementById('h_aankomst_zaak').value;
@@ -313,7 +322,7 @@
         const d2 = new Date(2000, 0, 1, h2, m2);
         
         let diff = (d2 - d1) / (1000 * 60 * 60);
-        if(diff < 0) diff += 24; // nachtrit
+        if(diff < 0) diff += 24; 
 
         document.getElementById('uren-display').innerText = diff.toFixed(2);
         rekenPrijs();
@@ -327,7 +336,6 @@
         let verkoop = kostprijs * 1.5; // 33% marge
         let incl = verkoop * 1.09;
         
-        // Afronden op 25
         incl = Math.round(incl / 25) * 25;
         if(incl < 200) incl = 200;
         
