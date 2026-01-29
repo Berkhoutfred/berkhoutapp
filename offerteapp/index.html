@@ -2,279 +2,346 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berkhout Planning V4.0 (PRO)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Berkhout Planning V4.0</title>
     
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi1U8gP0dlE87sYaUDI2JbKKFxJW_YjlY&libraries=places"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi1U8gP0dlE87sYaUDI2JbKKFxJW_YjlY&libraries=places&callback=initMap" async defer></script>
+
     <style>
-        /* --- APP STYLING (ALLEEN VOOR HET SCHERM) --- */
-        :root { --primary: #004a99; --bg: #f4f6f9; --text: #333; }
-        body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+        :root { 
+            --blue: #004a99; 
+            --blue-light: #e6f0fa;
+            --grey: #f4f6f8; 
+            --text: #333;
+        }
         
-        /* ZIJBALK */
-        .sidebar { width: 220px; background: var(--primary); color: white; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; z-index: 10; }
-        .nav-item { padding: 12px; cursor: pointer; border-radius: 6px; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; }
-        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.2); font-weight: bold; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--grey); 
+            padding: 20px; 
+            margin: 0; 
+            color: var(--text);
+        }
 
-        /* HOOFD CONTENT */
-        .main { flex: 1; padding: 20px; overflow-y: auto; position: relative; z-index: 1; }
+        .container { max-width: 500px; margin: 0 auto; }
         
-        /* GOOGLE MAPS FIX */
-        .pac-container { z-index: 999999 !important; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        h2 { color: var(--blue); text-align: center; margin-bottom: 20px; }
 
-        /* KAARTEN & VELDEN */
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #ddd; }
-        .section-header { font-size: 16px; font-weight: bold; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-        label { display: block; font-size: 11px; font-weight: bold; color: #666; margin-bottom: 4px; text-transform: uppercase; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; margin-bottom: 10px; }
-        
-        /* LAYOUT HULP */
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .bus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .bus-option { display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid #eee; border-radius: 6px; font-size: 12px; cursor: pointer; }
-        .bus-option:hover { background: #f0f7ff; border-color: var(--primary); }
-        .bus-option input { margin: 0; width: auto; }
-        
-        /* TIJDEN & TOTALEN */
-        .time-row { display: flex; align-items: center; gap: 5px; margin-bottom: 8px; background: #f8f9fa; padding: 5px; border-radius: 6px; }
-        .time-label { width: 110px; font-weight: bold; font-size: 12px; }
-        .total-box { text-align: right; background: #eef6ff; padding: 15px; border-radius: 8px; border: 2px solid var(--primary); }
-        .total-price { font-size: 26px; font-weight: 900; color: var(--primary); }
-        
-        /* KNOPPEN */
-        .btn { padding: 12px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; width: 100%; margin-top: 10px; }
-        .btn-blue { background: var(--primary); }
-        .btn-green { background: #28a745; }
-        .btn-link { background: none; color: var(--primary); border: none; font-size: 12px; cursor: pointer; padding: 0; text-decoration: underline; margin-bottom: 10px; }
+        .card { 
+            background: white; 
+            border-radius: 12px; 
+            padding: 20px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+            border: 1px solid #eee;
+        }
 
-        .page-section { display: none; }
-        .page-section.active { display: block; }
-        .hidden { display: none; }
-        .klant-info-box { font-size:12px; color:#555; margin-bottom:10px; padding:5px; border-left:3px solid var(--primary); background:#f9f9f9; display:none; }
+        .card-header {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--blue);
+            border-bottom: 2px solid var(--blue-light);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            letter-spacing: 0.5px;
+        }
+
+        label { 
+            display: block; 
+            font-size: 12px; 
+            color: #666; 
+            margin-bottom: 6px; 
+            font-weight: 600; 
+        }
+
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            font-size: 15px; 
+            box-sizing: border-box; 
+            margin-bottom: 15px; 
+            transition: border-color 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        input:focus { outline: none; border-color: var(--blue); }
+
+        /* Specifieke styling voor de tijden zodat ze netjes naast elkaar staan */
+        .time-row { display: flex; gap: 15px; }
+        .time-col { flex: 1; }
+        
+        .time-input-styled {
+            background-color: #f9f9f9;
+            text-align: center;
+            font-weight: 600;
+            color: var(--blue);
+        }
+
+        #km_display { 
+            font-size: 16px; 
+            font-weight: 600; 
+            color: var(--blue); 
+            text-align: center; 
+            padding: 12px; 
+            border-radius: 8px; 
+            background: var(--blue-light); 
+            margin-bottom: 5px; 
+        }
+
+        .price-box { 
+            background: white; 
+            border: 2px solid var(--blue); 
+            text-align: center; 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,74,153,0.1);
+        }
+
+        .price { 
+            font-size: 42px; 
+            color: var(--blue); 
+            font-weight: 800; 
+            margin: 10px 0; 
+        }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        
+        button { 
+            flex: 1;
+            border: none; 
+            padding: 14px; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: opacity 0.2s;
+        }
+        
+        button:hover { opacity: 0.9; }
+
+        .btn-print { background: var(--blue); color: white; }
+        .btn-mail { background: #28a745; color: white; }
+
     </style>
 </head>
 <body>
 
-<div class="sidebar">
-    <div style="font-size: 20px; font-weight: 900; margin-bottom: 30px;">BERKHOUT</div>
-    <div class="nav-item active" onclick="nav('calculatie')"><i class="fa-solid fa-calculator"></i> Calculatie</div>
-    <div class="nav-item" onclick="nav('klanten')"><i class="fa-solid fa-users"></i> Klanten</div>
-    <div class="nav-item" onclick="nav('dashboard')"><i class="fa-solid fa-chart-line"></i> Dashboard</div>
-</div>
+<div class="container">
+    <h2>Berkhout Planning V4.0</h2>
 
-<div class="main">
-    <div id="calculatie" class="page-section active">
-        <h2 style="color:var(--primary)">Nieuwe Rit</h2>
-        <div class="grid-2">
-            <div>
-                <div class="card">
-                    <div class="section-header">1. Klant & Voertuigen</div>
-                    <select id="calc-klant" onchange="vulKlant()"><option value="">-- Kies Klant --</option></select>
-                    <div id="klant-details" class="klant-info-box"></div>
-                    
-                    <label style="margin-top:10px;">Selecteer Voertuigen</label>
-                    <div class="bus-grid" id="bus-container"></div>
-                    
-                    <label style="margin-top:10px;">Aantal Personen</label>
-                    <input type="number" id="pax" placeholder="Aantal">
-                    <label>Datum Rit</label>
-                    <input type="date" id="rit-datum">
-                </div>
-                
-                <div class="card">
-                    <div class="section-header">2. Route</div>
-                    <label>Vertrek Garage</label><input type="text" id="route-start" value="Industrieweg 99J, Zutphen">
-                    <label>Ophaaladres Klant</label><input type="text" id="route-ophaal" onchange="berekenRoute()">
-                    <button class="btn-link" onclick="toggleVia()">+ Via toevoegen</button>
-                    <div id="via-container" class="hidden">
-                        <input type="text" id="route-via1" placeholder="Via 1" onchange="berekenRoute()">
-                        <input type="text" id="route-via2" placeholder="Via 2" onchange="berekenRoute()">
-                    </div>
-                    <label>Bestemming</label><input type="text" id="route-eind" onchange="berekenRoute()">
-                    
-                    <div style="background:#eef6ff; padding:10px; border-radius:6px; margin-top:5px; border:1px solid var(--primary); color:var(--primary); font-weight:bold; text-align:center;">
-                        Totaal Retour: <span id="info-totaal">0 km</span>
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <div class="card">
-                    <div class="section-header">3. Tijdsplanning</div>
-                    <div id="tijd-container"></div>
-                    <div style="text-align:right; font-weight:bold; margin-top:10px;">Totaal: <span id="uren-display">0.0</span> uur</div>
-                </div>
-
-                <div class="card">
-                    <div class="section-header">4. Offerte</div>
-                    <label>Extra Kosten</label><input type="number" id="kosten-extra" value="0" oninput="rekenPrijs()">
-                    <div class="total-box">
-                        <label>Totaal incl. 9% BTW</label>
-                        <div class="total-price" id="prijs-display">€ 0,00</div>
-                        <div style="font-size:12px; color:#666; margin-top:5px;" id="btw-display">Waarvan BTW: € 0,00</div>
-                    </div>
-                    <button class="btn btn-green" onclick="genereerPDF()"><i class="fa-solid fa-print"></i> MAAK OFFERTE (PDF)</button>
-                    <button class="btn btn-blue" onclick="opslaan()"><i class="fa-solid fa-save"></i> Opslaan</button>
-                </div>
-            </div>
-        </div>
+    <div class="card">
+        <div class="card-header">1. Klantgegevens</div>
+        <label>Naam Klant</label>
+        <input type="text" id="klant_naam" placeholder="Bijv. Dhr. Jansen">
+        <label>E-mailadres</label>
+        <input type="email" id="klant_mail" placeholder="klant@email.com">
+        <label>Datum van de rit</label>
+        <input type="date" id="rit_datum">
     </div>
 
-    <div id="klanten" class="page-section">
-        <h2 style="color:var(--primary)">Klanten</h2>
-        <div class="card">
-            <div class="section-header">Nieuwe Klant</div>
-            <label>Zoek Bedrijf (Google)</label><input type="text" id="zoek-bedrijf">
-            <div class="grid-2">
-                <input type="text" id="nk-naam" placeholder="Naam"> <input type="text" id="nk-plaats" placeholder="Plaats">
-                <input type="text" id="nk-adres" placeholder="Adres"> <input type="text" id="nk-tel" placeholder="Tel">
-            </div>
-            <button class="btn btn-green" onclick="klantOpslaan()">Toevoegen</button>
-        </div>
-        <div class="card"><div id="klanten-lijst"></div></div>
+    <div class="card">
+        <div class="card-header">2. Route</div>
+        <label>Vertrek (Garage)</label>
+        <input type="text" id="start" value="Industrieweg 99J, Zutphen">
+        
+        <label>Bestemming</label>
+        <input type="text" id="eind" placeholder="Typ bestemming (Google zoekt...)" onchange="berekenAfstand()">
+        
+        <div id="km_display">Nog geen route berekend</div>
     </div>
 
-    <div id="dashboard" class="page-section">
-        <h2 style="color:var(--primary)">Dashboard</h2>
-        <div class="card"><div id="recent-list"></div></div>
+    <div class="card">
+        <div class="card-header">3. Tijden & Uren</div>
+        <div class="time-row">
+            <div class="time-col">
+                <label>Starttijd</label>
+                <input type="time" id="tijd_start" value="08:00" class="time-input-styled" onchange="berekenUren()">
+            </div>
+            <div class="time-col">
+                <label>Eindtijd</label>
+                <input type="time" id="tijd_eind" value="17:00" class="time-input-styled" onchange="berekenUren()">
+            </div>
+        </div>
+        <label>Totaal aantal uren (wordt berekend)</label>
+        <input type="number" id="uren" value="9" step="0.5" readonly style="background:#eee; font-weight:bold;">
+    </div>
+
+    <div class="price-box">
+        <div style="font-weight:bold; color:#666;">Totaalprijs (incl. 9% BTW)</div>
+        <div class="price" id="totaal">€ 0,00</div>
+        
+        <div class="btn-group">
+            <button class="btn-print" onclick="maakPDF()">📄 Print PDF</button>
+            <button class="btn-mail" onclick="verstuurMail()">✉️ E-mail</button>
+        </div>
     </div>
 </div>
 
 <script>
-    let db = { klanten: [], ritten: [] };
-    const busOpties = [
-        { label: 'Bus 19 (Max 19)', prijs: 0.75 }, { label: 'Bus 23 (Max 19)', prijs: 0.75 },
-        { label: 'Bus 50 (Max 50)', prijs: 1.00 }, { label: 'Bus 55 (Max 53)', prijs: 1.00 },
-        { label: 'Bus 60 (Max 60)', prijs: 1.20 }, { label: 'Bus 62 (Max 62)', prijs: 1.20 }
-    ];
-    const tijdVelden = [
-        { id: 'vertrek_zaak', label: '1. Vertrek Garage', defH: '08', defM: '00', auto: true },
-        { id: 'voorstaan', label: '2. Voorstaan', defH: '08', defM: '30', readonly: true },
-        { id: 'vertrek_klant', label: '3. Vertrek Klant', defH: '08', defM: '45', auto: true, style: 'border-left:3px solid green' },
-        { id: 'aankomst_loc', label: '4. Aankomst Loc.', defH: '10', defM: '00' },
-        { id: 'vertrek_loc', label: '5. Vertrek Loc.', defH: '16', defM: '00' },
-        { id: 'retour_klant', label: '6. Retour Klant', defH: '17', defM: '15', auto: true, style: 'border-left:3px solid green' },
-        { id: 'aankomst_zaak', label: '7. Aankomst Garage', defH: '18', defM: '00', readonly: true, style: 'background:#f0f0f0' }
-    ];
-    let retourKM = 0;
+    let retourKm = 0;
+    
+    // Globale functie die door de Google Script URL wordt aangeroepen
+    window.initMap = function() {
+        const options = { types: ['address'], componentRestrictions: {country: 'nl'} };
+        
+        // Autocomplete koppelen aan het bestemmingsveld
+        const inputEind = document.getElementById('eind');
+        const autoEind = new google.maps.places.Autocomplete(inputEind, options);
+        
+        // Als er een plek gekozen is, direct rekenen
+        autoEind.addListener('place_changed', () => { 
+            berekenAfstand(); 
+        });
 
-    function init() {
-        const save = localStorage.getItem('berkhout_v2');
-        if(save) db = JSON.parse(save);
-        bouwBusKiezers(); bouwTijdKiezers(); updateKlantenLijst(); updateDashboard(); initMaps(); rekenUren();
-        document.getElementById('rit-datum').valueAsDate = new Date();
+        // Zet datum standaard op vandaag
+        document.getElementById('rit_datum').valueAsDate = new Date();
+        
+        // Eerste berekening voor de default waarden
+        berekenUren();
     }
 
-    // --- DE NIEUWE PDF GENERATOR (POPUP) ---
-    function genereerPDF() {
-        // Data verzamelen
-        const kId = document.getElementById('calc-klant').value;
-        const klant = db.klanten.find(k => k.id == kId) || {naam: 'Klant', adres: '', plaats: ''};
-        const ophaal = document.getElementById('route-ophaal').value;
-        const eind = document.getElementById('route-eind').value;
-        const datum = new Date(document.getElementById('rit-datum').value).toLocaleDateString('nl-NL', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+    function berekenAfstand() {
+        const startVal = document.getElementById('start').value;
+        const eindVal = document.getElementById('eind').value;
+
+        if(!startVal || !eindVal) return;
+
+        const service = new google.maps.DistanceMatrixService();
+        service.getDistanceMatrix({
+            origins: [startVal],
+            destinations: [eindVal],
+            travelMode: 'DRIVING'
+        }, (response, status) => {
+            if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
+                const dist = response.rows[0].elements[0].distance.value / 1000;
+                retourKm = Math.round(dist * 2); // Heen en terug
+                document.getElementById('km_display').innerText = `Afstand: ${retourKm} km (retour)`;
+                rekenen();
+            } else {
+                document.getElementById('km_display').innerText = "Kon afstand niet berekenen.";
+            }
+        });
+    }
+
+    function berekenUren() {
+        const t1 = document.getElementById('tijd_start').value.split(':');
+        const t2 = document.getElementById('tijd_eind').value.split(':');
         
-        // Bussen
-        let bussen = [];
-        document.querySelectorAll('.bus-check').forEach(box => { if(box.checked) bussen.push(busOpties[box.value].label); });
+        if(t1.length < 2 || t2.length < 2) return;
+
+        const d1 = new Date(0, 0, 0, t1[0], t1[1]);
+        const d2 = new Date(0, 0, 0, t2[0], t2[1]);
         
-        // Prijzen
-        const totaalTekst = document.getElementById('prijs-display').innerText;
-        const totaalVal = parseFloat(totaalTekst.replace('€ ','').replace('.','').replace(',','.'));
-        const exBtw = (totaalVal / 1.09).toLocaleString('nl-NL',{minimumFractionDigits:2});
-        const btw = (totaalVal - (totaalVal/1.09)).toLocaleString('nl-NL',{minimumFractionDigits:2});
+        let diff = (d2 - d1) / (1000 * 60 * 60);
+        if (diff < 0) diff += 24; // Nachtwerk correctie
         
-        // HTML Bouwen voor de PDF
-        const pdfContent = `
-        <html>
-        <head>
-            <title>Offerte ${klant.naam}</title>
-            <style>
-                body { font-family: Helvetica, Arial, sans-serif; padding: 40px; color: #333; }
-                .header { display: flex; justify-content: space-between; margin-bottom: 50px; }
-                .logo { font-size: 24px; font-weight: 900; color: #004a99; }
-                .sender { text-align: right; font-size: 12px; color: #555; line-height: 1.4; }
-                .recipient { margin-bottom: 40px; font-size: 14px; }
-                .meta { border-bottom: 2px solid #004a99; padding-bottom: 10px; margin-bottom: 30px; display: flex; justify-content: space-between; font-size: 14px; }
-                .title { font-size: 22px; font-weight: bold; color: #004a99; margin-bottom: 20px; }
-                table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; }
-                th { text-align: left; border-bottom: 1px solid #000; padding: 8px 0; }
-                td { border-bottom: 1px solid #eee; padding: 8px 0; vertical-align: top; }
-                .total-box { float: right; width: 40%; text-align: right; }
-                .total-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-                .grand-total { font-size: 18px; font-weight: bold; border-top: 2px solid #000; padding-top: 10px; margin-top: 10px; }
-                .footer { position: fixed; bottom: 0; left: 0; right: 0; text-align: center; font-size: 10px; color: #888; border-top: 1px solid #ccc; padding-top: 10px; }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <div class="logo">BERKHOUT TOURINGCARS</div>
-                <div class="sender">
-                    <strong>Berkhout Touringcars</strong><br>Industrieweg 99J<br>7202 CA Zutphen<br>info@taxiberkhout.nl
+        document.getElementById('uren').value = diff.toFixed(1);
+        rekenen();
+    }
+
+    function rekenen() {
+        const uren = parseFloat(document.getElementById('uren').value) || 0;
+        const prijsPerKm = 1.00;
+        const uurTarief = 33.00;
+        const aantalBussen = 1;
+        const extraKosten = 0;
+
+        // Formule: ((KM * prijs) + (uren * 33 * bussen) + extra) / 0.75
+        let kostprijsBasis = (retourKm * prijsPerKm) + (uren * uurTarief * aantalBussen) + extraKosten;
+        
+        // Marge berekening (delen door 0.75 is factor 1.33)
+        let verkoopExBtw = kostprijsBasis / 0.75;
+        
+        // BTW toevoegen
+        let verkoopInclBtw = verkoopExBtw * 1.09;
+
+        // Afronden op veelvouden van 25 euro
+        let afgerond = Math.ceil(verkoopInclBtw / 25) * 25;
+
+        // Minimum tarief
+        if (afgerond < 200) afgerond = 200;
+
+        document.getElementById('totaal').innerText = '€ ' + afgerond.toLocaleString('nl-NL', {
+            minimumFractionDigits: 2, 
+            maximumFractionDigits: 2
+        });
+    }
+
+    function maakPDF() {
+        const klantNaam = document.getElementById('klant_naam').value || "Klant";
+        const datum = document.getElementById('rit_datum').value;
+        const van = document.getElementById('start').value;
+        const naar = document.getElementById('eind').value;
+        const prijs = document.getElementById('totaal').innerText;
+        const uren = document.getElementById('uren').value;
+
+        // Hier bouwen we de 'brief' voor de PDF/Print
+        const printContent = `
+            <html>
+            <head>
+                <title>Offerte ${klantNaam}</title>
+                <style>
+                    body { font-family: sans-serif; padding: 40px; color: #333; max-width: 800px; margin: 0 auto; }
+                    h1 { color: #004a99; border-bottom: 2px solid #004a99; padding-bottom: 10px; }
+                    .row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+                    .label { font-weight: bold; width: 150px; }
+                    .footer { margin-top: 50px; font-size: 12px; color: #777; border-top: 1px solid #ccc; padding-top: 20px; }
+                    .prijs-groot { font-size: 24px; font-weight: bold; color: #004a99; margin-top: 20px; }
+                </style>
+            </head>
+            <body>
+                <h1>Offerte Berkhout Touringcar</h1>
+                <p>Geachte ${klantNaam},</p>
+                <p>Hartelijk dank voor uw aanvraag. Op basis van uw gegevens bieden wij u het volgende aan:</p>
+                
+                <div style="background: #f4f6f8; padding: 20px; border-radius: 8px;">
+                    <div class="row"><span class="label">Datum:</span> <span>${datum}</span></div>
+                    <div class="row"><span class="label">Vertrek:</span> <span>${van}</span></div>
+                    <div class="row"><span class="label">Bestemming:</span> <span>${naar}</span></div>
+                    <div class="row"><span class="label">Verwachte duur:</span> <span>${uren} uur</span></div>
+                    <div class="row"><span class="label">Afstand:</span> <span>${retourKm} km (retour)</span></div>
                 </div>
-            </div>
-            
-            <div class="recipient">
-                <strong>${klant.naam}</strong><br>
-                ${klant.adres || ''}<br>
-                ${klant.plaats || ''}
-            </div>
-            
-            <div class="meta">
-                <span><strong>Offerte:</strong> OFF-${Date.now().toString().slice(-6)}</span>
-                <span><strong>Datum:</strong> ${new Date().toLocaleDateString('nl-NL')}</span>
-            </div>
-            
-            <div class="title">Offerte Touringcarvervoer</div>
-            <p>Geachte relatie, hierbij ontvangt u de offerte op basis van uw aanvraag.</p>
-            
-            <table>
-                <tr><th width="30%">Omschrijving</th><th>Details</th></tr>
-                <tr><td><strong>Datum Rit</strong></td><td>${datum}</td></tr>
-                <tr><td><strong>Route</strong></td><td>Van: ${ophaal}<br>Naar: ${eind}<br><small>(Retour Garage Zutphen)</small></td></tr>
-                <tr><td><strong>Tijden</strong></td><td>Vertrek: ${document.getElementById('h_vertrek_klant').value}:${document.getElementById('m_vertrek_klant').value}<br>Retour: ${document.getElementById('h_retour_klant').value}:${document.getElementById('m_retour_klant').value}</td></tr>
-                <tr><td><strong>Voertuigen</strong></td><td>${bussen.join(', ') || '-'}</td></tr>
-                <tr><td><strong>Personen</strong></td><td>${document.getElementById('pax').value || '-'}</td></tr>
-            </table>
-            
-            <div class="total-box">
-                <div class="total-row"><span>Subtotaal:</span><span>€ ${exBtw}</span></div>
-                <div class="total-row"><span>BTW (9%):</span><span>€ ${btw}</span></div>
-                <div class="grand-total"><div class="total-row"><span>TOTAAL:</span><span>${totaalTekst}</span></div></div>
-            </div>
-            
-            <div class="footer">KVK: 12345678 | IBAN: NL00 RABO 0123 4567 89</div>
-            
-            <script>
-                window.onload = function() { window.print(); }
-            <\/script>
-        </body>
-        </html>`;
-        
-        // Open nieuw venster en schrijf inhoud
+
+                <div class="prijs-groot">
+                    Totaalprijs: ${prijs} <span style="font-size:14px; color:#333;">(inclusief 9% BTW)</span>
+                </div>
+
+                <p>Deze offerte is geldig tot 14 dagen na dagtekening.</p>
+                
+                <div class="footer">
+                    Berkhout Touringcarverhuur | Industrieweg 99J, Zutphen<br>
+                    Telefoon: 0575-XXXXXX | Email: info@berkhout.nl
+                </div>
+            </body>
+            </html>
+        `;
+
         const win = window.open('', '_blank');
-        win.document.write(pdfContent);
+        win.document.write(printContent);
         win.document.close();
+        
+        // Wacht heel even met printen zodat plaatjes/stijlen geladen zijn (indien van toepassing)
+        setTimeout(() => {
+            win.focus();
+            win.print();
+        }, 500);
     }
 
-    // --- FUNCTIONALITEIT (BEKEND) ---
-    function toggleVia(){document.getElementById('via-container').classList.toggle('hidden')}
-    function bouwBusKiezers(){const c=document.getElementById('bus-container');let h='';busOpties.forEach((b,i)=>h+=`<label class="bus-option"><input type="checkbox" class="bus-check" value="${i}" onchange="rekenPrijs()"><span>${b.label} (€${b.prijs.toFixed(2)})</span></label>`);c.innerHTML=h}
-    function bouwTijdKiezers(){const c=document.getElementById('tijd-container');let h='';tijdVelden.forEach(v=>{let u='',m='';for(let i=0;i<24;i++){let x=i.toString().padStart(2,'0');u+=`<option value="${x}" ${x==v.defH?'selected':''}>${x}</option>`}['00','15','30','45'].forEach(x=>m+=`<option value="${x}" ${x==v.defM?'selected':''}>${x}</option>`);let fn=v.auto?`syncTijden();rekenUren()`:`rekenUren()`;h+=`<div class="time-row" style="${v.style||''}"><div class="time-label">${v.label}</div><div class="time-select-group"><select id="h_${v.id}" class="select-uur" onchange="${fn}" ${v.readonly?'disabled':''}>${u}</select>:<select id="m_${v.id}" class="select-min" onchange="${fn}" ${v.readonly?'disabled':''}>${m}</select></div></div>`});c.innerHTML=h}
-    function syncTijden(){let hv=parseInt(document.getElementById('h_vertrek_klant').value),mv=parseInt(document.getElementById('m_vertrek_klant').value);let dV=new Date(2000,0,1,hv,mv-15);document.getElementById('h_voorstaan').value=dV.getHours().toString().padStart(2,'0');document.getElementById('m_voorstaan').value=dV.getMinutes().toString().padStart(2,'0');let h1=parseInt(document.getElementById('h_vertrek_zaak').value),m1=parseInt(document.getElementById('m_vertrek_zaak').value);let dS=new Date(2000,0,1,h1,m1),dK=new Date(2000,0,1,hv,mv);let ms=dK-dS;if(ms<0)ms=0;let hr=parseInt(document.getElementById('h_retour_klant').value),mr=parseInt(document.getElementById('m_retour_klant').value);let dR=new Date(2000,0,1,hr,mr),dA=new Date(dR.getTime()+ms);document.getElementById('h_aankomst_zaak').value=dA.getHours().toString().padStart(2,'0');document.getElementById('m_aankomst_zaak').value=dA.getMinutes().toString().padStart(2,'0')}
-    function initMaps(){if(typeof google==='undefined')return;const o={componentRestrictions:{country:'nl'}};new google.maps.places.Autocomplete(document.getElementById('route-start'),o);new google.maps.places.Autocomplete(document.getElementById('route-ophaal'),o);new google.maps.places.Autocomplete(document.getElementById('route-via1'),o);new google.maps.places.Autocomplete(document.getElementById('route-via2'),o);const ae=new google.maps.places.Autocomplete(document.getElementById('route-eind'),o);ae.addListener('place_changed',berekenRoute);const ab=new google.maps.places.Autocomplete(document.getElementById('zoek-bedrijf'),o);ab.addListener('place_changed',()=>{const p=ab.getPlace();document.getElementById('nk-naam').value=p.name||'';document.getElementById('nk-tel').value=p.formatted_phone_number||'';document.getElementById('nk-adres').value=p.formatted_address||'';let s='';if(p.address_components)p.address_components.forEach(c=>{if(c.types.includes('locality'))s=c.long_name});document.getElementById('nk-plaats').value=s})}
-    function berekenRoute(){const s=document.getElementById('route-start').value,o=document.getElementById('route-ophaal').value,e=document.getElementById('route-eind').value,v1=document.getElementById('route-via1').value,v2=document.getElementById('route-via2').value;if(!s||!o||!e)return;const wp=[{location:o,stopover:true}];if(v1)wp.push({location:v1,stopover:true});if(v2)wp.push({location:v2,stopover:true});new google.maps.DirectionsService().route({origin:s,destination:e,waypoints:wp,travelMode:'DRIVING'},(r,st)=>{if(st==='OK'){const l=r.routes[0].legs;let am=l[0].distance.value,as=l[0].duration.value;let hm=0,hs=0;for(let i=1;i<l.length;i++){hm+=l[i].distance.value;hs+=l[i].duration.value}document.getElementById('info-aanrij').innerText=`${Math.round(am/1000)} km / ${Math.round(as/60)} min`;document.getElementById('info-hoofd').innerText=`${Math.round(hm/1000)} km / ${Math.round(hs/60)} min`;retourKM=Math.round((am+hm)*2/1000);document.getElementById('info-totaal').innerText=retourKM+" km";rekenPrijs()}})}
-    function rekenUren(){const h1=document.getElementById('h_vertrek_zaak').value,m1=document.getElementById('m_vertrek_zaak').value;const h2=document.getElementById('h_aankomst_zaak').value,m2=document.getElementById('m_aankomst_zaak').value;let diff=(new Date(2000,0,1,h2,m2)-new Date(2000,0,1,h1,m1))/(1000*60*60);if(diff<0)diff+=24;document.getElementById('uren-display').innerText=diff.toFixed(2);rekenPrijs()}
-    function rekenPrijs(){const uren=parseFloat(document.getElementById('uren-display').innerText)||0,extra=parseFloat(document.getElementById('kosten-extra').value)||0;let kmP=0,nBus=0;document.querySelectorAll('.bus-check').forEach(b=>{if(b.checked){kmP+=busOpties[b.value].prijs;nBus++}});if(nBus===0){document.getElementById('prijs-display').innerText='€ 0,00';return}let kost=(retourKM*kmP)+(uren*33*nBus)+extra;let verk=kost/0.75;let inc=Math.round((verk*1.09)/25)*25;if(inc<200)inc=200;let ex=inc/1.09,bt=inc-ex;document.getElementById('prijs-display').innerText='€ '+inc.toLocaleString('nl-NL',{minimumFractionDigits:2});document.getElementById('btw-display').innerText='Waarvan BTW (9%): € '+bt.toLocaleString('nl-NL',{minimumFractionDigits:2})}
-    function vulKlant(){const kId=document.getElementById('calc-klant').value,box=document.getElementById('klant-details');if(!kId){box.style.display='none';return}const k=db.klanten.find(x=>x.id==kId);if(k){document.getElementById('route-ophaal').value=k.adres||k.plaats;box.style.display='block';box.innerText=`${k.naam} | ${k.adres} ${k.plaats}`;berekenRoute()}}
-    function opslaan(){const kId=document.getElementById('calc-klant').value,k=db.klanten.find(x=>x.id==kId);db.ritten.unshift({datum:new Date().toLocaleDateString(),klant:k?k.naam:'?',dest:document.getElementById('route-eind').value,prijs:document.getElementById('prijs-display').innerText});localStorage.setItem('berkhout_v2',JSON.stringify(db));nav('dashboard');updateDashboard()}
-    function klantOpslaan(){db.klanten.push({id:Date.now(),naam:document.getElementById('nk-naam').value,plaats:document.getElementById('nk-plaats').value,adres:document.getElementById('nk-adres').value,tel:document.getElementById('nk-tel').value});localStorage.setItem('berkhout_v2',JSON.stringify(db));document.getElementById('nk-naam').value='';document.getElementById('zoek-bedrijf').value='';updateKlantenLijst();nav('klanten')}
-    function updateKlantenLijst(){const s=document.getElementById('calc-klant');s.innerHTML='<option value="">-- Kies Klant --</option>';db.klanten.forEach(k=>{s.innerHTML+=`<option value="${k.id}">${k.naam}</option>`});let h='<table style="width:100%;text-align:left;border-collapse:collapse;"><tr><th>Naam</th><th>Adres</th><th>Tel</th></tr>';db.klanten.forEach(k=>{h+=`<tr style="border-bottom:1px solid #eee"><td style="padding:8px">${k.naam}</td><td>${k.adres||''} ${k.plaats}</td><td>${k.tel||''}</td></tr>`});document.getElementById('klanten-lijst').innerHTML=h+'</table>'}
-    function updateDashboard(){document.getElementById('dash-aantal').innerText=db.ritten.length;let h='<table style="width:100%;text-align:left;"><tr><th>Datum</th><th>Klant</th><th>Bestemming</th><th>Prijs</th></tr>';db.ritten.slice(0,5).forEach(r=>{h+=`<tr><td>${r.datum}</td><td>${r.klant}</td><td>${r.dest}</td><td>${r.prijs}</td></tr>`});document.getElementById('recent-list').innerHTML=h+'</table>'}
-    function nav(id){document.querySelectorAll('.page-section').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));event.currentTarget.classList.add('active')}
-    window.onload=init;
+    function verstuurMail() {
+        const klantMail = document.getElementById('klant_mail').value;
+        const datum = document.getElementById('rit_datum').value;
+        const prijs = document.getElementById('totaal').innerText;
+        const onderwerp = `Offerte Berkhout - ${datum}`;
+        const body = `Uw prijsopgave is berekend op: ${prijs}.`;
+        
+        window.location.href = `mailto:${klantMail}?subject=${encodeURIComponent(onderwerp)}&body=${encodeURIComponent(body)}`;
+    }
 </script>
+
 </body>
 </html>
