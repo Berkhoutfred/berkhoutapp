@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berkhout Planning V2.3</title>
+    <title>Berkhout Planning V2.4</title>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi1U8gP0dlE87sYaUDI2JbKKFxJW_YjlY&libraries=places"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
@@ -28,7 +28,7 @@
 
         /* BUS CHECKBOXES */
         .bus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .bus-option { display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid #eee; border-radius: 6px; font-size: 13px; cursor: pointer; transition: 0.2s; }
+        .bus-option { display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid #eee; border-radius: 6px; font-size: 12px; cursor: pointer; transition: 0.2s; }
         .bus-option:hover { background: #f0f7ff; border-color: var(--primary); }
         .bus-option input { width: auto; margin: 0; }
 
@@ -46,6 +46,7 @@
         /* TOTALEN */
         .total-box { text-align: right; background: #eef6ff; padding: 15px; border-radius: 8px; border: 2px solid var(--primary); }
         .total-price { font-size: 28px; font-weight: 900; color: var(--primary); }
+        .btw-line { font-size: 13px; color: #666; margin-top: 5px; font-style: italic; }
         
         /* KNOPPEN */
         .btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; width: 100%; margin-top: 10px; }
@@ -90,16 +91,13 @@
         <div class="grid-2">
             <div>
                 <div class="card">
-                    <div class="section-header">1. Klant & Bus(sen)</div>
+                    <div class="section-header">1. Klant & Voertuigen</div>
                     <select id="calc-klant" onchange="vulKlant()"><option value="">-- Kies Klant --</option></select>
                     
-                    <label style="margin-top:10px;">Selecteer Voertuigen (Vink aan)</label>
+                    <label style="margin-top:10px;">Selecteer Voertuigen (Combi mogelijk)</label>
                     <div class="bus-grid" id="bus-container">
                         </div>
-                    <div style="margin-top:5px; font-size:11px; color:#666; font-style:italic;">
-                        Selecteer meerdere voor een combi-rit.
-                    </div>
-
+                    
                     <label style="margin-top:10px;">Aantal Personen (Totaal)</label>
                     <input type="number" id="pax" placeholder="Aantal">
                 </div>
@@ -127,10 +125,13 @@
 
             <div>
                 <div class="card">
-                    <div class="section-header">3. Tijdsplanning (Kwartieren)</div>
+                    <div class="section-header">3. Tijdsplanning (Auto-Retour)</div>
                     <div id="tijd-container"></div>
                     <div style="text-align:right; font-weight:bold; margin-top:10px;">
-                        Totaal: <span id="uren-display">0.0</span> uur
+                        Totaal Inzet: <span id="uren-display">0.0</span> uur
+                    </div>
+                    <div style="text-align:right; font-size:11px; color:#666; font-style:italic;">
+                        * Aankomst Garage wordt automatisch berekend
                     </div>
                 </div>
 
@@ -142,7 +143,8 @@
                     <div class="total-box">
                         <label>Totaal incl. 9% BTW</label>
                         <div class="total-price" id="prijs-display">€ 0,00</div>
-                        <small>Incl. 33% marge, afgerond op €25</small>
+                        <div class="btw-line" id="btw-display">Waarvan BTW (9%): € 0,00</div>
+                        <small style="display:block; margin-top:5px;">Marge 25%, afgerond op €25</small>
                     </div>
                     
                     <button class="btn btn-blue" onclick="opslaan()"><i class="fa-solid fa-save"></i> Opslaan</button>
@@ -174,25 +176,26 @@
     // DATA STORE
     let db = { klanten: [], ritten: [] };
     
-    // VOERTUIGEN CONFIGURATIE
+    // VOERTUIGEN CONFIGURATIE (Nieuwe indeling)
     const busOpties = [
-        { label: '19-persoons', prijs: 0.75 },
-        { label: '23-persoons', prijs: 0.75 },
-        { label: '50-persoons', prijs: 1.00 },
-        { label: '55-persoons', prijs: 1.00 },
-        { label: '60-persoons', prijs: 1.20 },
-        { label: '62-persoons', prijs: 1.20 }
+        { label: 'Bus 19 (Max 19)', prijs: 0.75 },
+        { label: 'Bus 23 (Max 19)', prijs: 0.75 },
+        { label: 'Bus 50 (Max 50)', prijs: 1.00 },
+        { label: 'Bus 55 (Max 53)', prijs: 1.00 },
+        { label: 'Bus 60 (Max 60)', prijs: 1.20 },
+        { label: 'Bus 62 (Max 62)', prijs: 1.20 }
     ];
 
     // TIJDEN CONFIGURATIE
+    // We geven aan welke velden 'triggers' zijn voor de automatische berekening
     const tijdVelden = [
-        { id: 'vertrek_zaak', label: '1. Vertrek Garage', defH: '08', defM: '00' },
+        { id: 'vertrek_zaak', label: '1. Vertrek Garage', defH: '08', defM: '00', auto: true },
         { id: 'voorstaan', label: '2. Voorstaan', defH: '08', defM: '30', readonly: true },
-        { id: 'vertrek_klant', label: '3. Vertrek Klant', defH: '08', defM: '45', trigger: true },
+        { id: 'vertrek_klant', label: '3. Vertrek Klant', defH: '08', defM: '45', auto: true, style: 'border-left:3px solid green' },
         { id: 'aankomst_loc', label: '4. Aankomst Loc.', defH: '10', defM: '00' },
         { id: 'vertrek_loc', label: '5. Vertrek Loc.', defH: '16', defM: '00' },
-        { id: 'retour_klant', label: '6. Retour Klant', defH: '17', defM: '15' },
-        { id: 'aankomst_zaak', label: '7. Aankomst Garage', defH: '17', defM: '45' }
+        { id: 'retour_klant', label: '6. Retour Klant', defH: '17', defM: '15', auto: true, style: 'border-left:3px solid green' },
+        { id: 'aankomst_zaak', label: '7. Aankomst Garage', defH: '18', defM: '00', readonly: true, style: 'background:#f0f0f0' }
     ];
 
     let retourKM = 0;
@@ -209,7 +212,7 @@
         rekenUren();
     }
 
-    // BOUW BUS CHECKBOXES
+    // BUS CHECKBOXES
     function bouwBusKiezers() {
         const container = document.getElementById('bus-container');
         let html = '';
@@ -223,7 +226,7 @@
         container.innerHTML = html;
     }
 
-    // BOUW DE TIJD KIEZERS
+    // TIJD KIEZERS
     function bouwTijdKiezers() {
         const container = document.getElementById('tijd-container');
         let html = '';
@@ -239,12 +242,15 @@
                 let sel = m === veld.defM ? 'selected' : '';
                 minOpties += `<option value="${m}" ${sel}>${m}</option>`;
             });
-            let style = '';
-            if(veld.id === 'voorstaan') style = 'border-left: 3px solid orange;';
-            if(veld.id === 'vertrek_klant') style = 'border-left: 3px solid green;';
+
+            // Logica voor onChange:
+            // Als het een 'auto' veld is, triggeren we de sync functie
             let changeFn = `rekenUren()`;
-            if(veld.trigger) changeFn = `updateVoorstaan(); rekenUren()`;
+            if(veld.auto) changeFn = `syncTijden(); rekenUren()`;
+            
             let disabled = veld.readonly ? 'disabled style="background:#eee"' : '';
+            let style = veld.style || '';
+
             html += `
             <div class="time-row" style="${style}">
                 <div class="time-label">${veld.label}</div>
@@ -257,16 +263,36 @@
         container.innerHTML = html;
     }
 
-    function updateVoorstaan() {
-        let h = parseInt(document.getElementById('h_vertrek_klant').value);
-        let m = parseInt(document.getElementById('m_vertrek_klant').value);
-        m = m - 15;
-        if(m < 0) { m = 45; h = h - 1; if(h < 0) h = 23; }
-        document.getElementById('h_voorstaan').value = h.toString().padStart(2,'0');
-        document.getElementById('m_voorstaan').value = m.toString().padStart(2,'0');
+    // SLIMME TIJD SYNCHRONISATIE
+    function syncTijden() {
+        // 1. Update Voorstaan (Altijd 15 min voor vertrek klant)
+        let hv = parseInt(document.getElementById('h_vertrek_klant').value);
+        let mv = parseInt(document.getElementById('m_vertrek_klant').value);
+        let dVoor = new Date(2000,0,1, hv, mv - 15);
+        document.getElementById('h_voorstaan').value = dVoor.getHours().toString().padStart(2,'0');
+        document.getElementById('m_voorstaan').value = dVoor.getMinutes().toString().padStart(2,'0');
+
+        // 2. Bereken Reistijd Heen (Vertrek Garage -> Vertrek Klant)
+        let h1 = parseInt(document.getElementById('h_vertrek_zaak').value);
+        let m1 = parseInt(document.getElementById('m_vertrek_zaak').value);
+        let dStart = new Date(2000,0,1, h1, m1);
+        let dKlant = new Date(2000,0,1, hv, mv);
+        
+        let reisTijdMs = dKlant - dStart; // Verschil in ms
+        if(reisTijdMs < 0) reisTijdMs = 0; // Geen negatieve tijd
+
+        // 3. Update Aankomst Garage (Retour Klant + Reistijd Heen)
+        let hr = parseInt(document.getElementById('h_retour_klant').value);
+        let mr = parseInt(document.getElementById('m_retour_klant').value);
+        let dRetour = new Date(2000,0,1, hr, mr);
+        
+        let dAankomst = new Date(dRetour.getTime() + reisTijdMs);
+        
+        document.getElementById('h_aankomst_zaak').value = dAankomst.getHours().toString().padStart(2,'0');
+        document.getElementById('m_aankomst_zaak').value = dAankomst.getMinutes().toString().padStart(2,'0');
     }
 
-    // MAPS & ROUTE & TIJD (MET 1.15 FACTOR)
+    // MAPS
     function initMaps() {
         const opts = { componentRestrictions: {country: 'nl'} };
         new google.maps.places.Autocomplete(document.getElementById('route-start'), opts);
@@ -279,11 +305,7 @@
             const p = autoBedrijf.getPlace();
             document.getElementById('nk-naam').value = p.name || '';
             let stad = '';
-            if(p.address_components) {
-                p.address_components.forEach(c => {
-                    if(c.types.includes('locality')) stad = c.long_name;
-                });
-            }
+            if(p.address_components) p.address_components.forEach(c => { if(c.types.includes('locality')) stad = c.long_name; });
             document.getElementById('nk-plaats').value = stad;
         });
     }
@@ -309,18 +331,18 @@
                 retourKM = Math.round((m / 1000) * 2);
                 document.getElementById('km-display').innerText = retourKM;
 
-                let enkeleReisSec = s * 1.15; // 15% extra voor bus
+                let enkeleReisSec = s * 1.15; // 15% extra
                 let uren = Math.floor(enkeleReisSec / 3600);
                 let minuten = Math.round((enkeleReisSec % 3600) / 60);
                 document.getElementById('tijd-display').innerHTML = `Geschatte reistijd (enkel): <b>${uren}u ${minuten}m</b> (Incl. 15% busfactor)`;
                 rekenPrijs();
             } else {
-                alert("Let op: 'Directions API' aanzetten in Google Cloud!");
+                alert("Let op: Directions API inschakelen!");
             }
         });
     }
 
-    // PRIJS BEREKENING (MET COMBI LOGICA)
+    // PRIJS BEREKENING (MARGE 25%)
     function rekenUren() {
         const h1 = document.getElementById('h_vertrek_zaak').value;
         const m1 = document.getElementById('m_vertrek_zaak').value;
@@ -338,12 +360,9 @@
         const uren = parseFloat(document.getElementById('uren-display').innerText) || 0;
         const extra = parseFloat(document.getElementById('kosten-extra').value) || 0;
         
-        // 1. Bereken KM prijs op basis van vinkjes
         let kmTariefTotaal = 0;
         let aantalBussen = 0;
-        const checkboxes = document.querySelectorAll('.bus-check');
-        
-        checkboxes.forEach(box => {
+        document.querySelectorAll('.bus-check').forEach(box => {
             if(box.checked) {
                 let index = parseInt(box.value);
                 kmTariefTotaal += busOpties[index].prijs;
@@ -353,35 +372,38 @@
 
         if (aantalBussen === 0) {
             document.getElementById('prijs-display').innerText = '€ 0,00';
+            document.getElementById('btw-display').innerText = 'Waarvan BTW: € 0,00';
             return;
         }
 
-        // 2. Kosten berekening
-        // KM Kosten: De opgetelde km-prijs van alle bussen x afstand
         let kostenKM = retourKM * kmTariefTotaal;
-        
-        // Uur Kosten: €33 per uur PER BUS (want 2 bussen = 2 chauffeurs)
         let kostenUur = uren * 33.00 * aantalBussen;
-
         let kostprijs = kostenKM + kostenUur + extra;
         
-        // 3. Winst & BTW
-        let verkoop = kostprijs * 1.5; // 33% marge
-        let incl = verkoop * 1.09;
+        // MARGE 25% op Verkoopprijs
+        // Formule: Verkoopprijs = Kostprijs / (1 - Marge)
+        // Verkoopprijs = Kostprijs / 0.75
+        let verkoopEx = kostprijs / 0.75; 
+        let btwBedrag = verkoopEx * 0.09;
+        let incl = verkoopEx + btwBedrag;
         
-        // 4. Afronding
+        // Afronding op 25
         incl = Math.round(incl / 25) * 25;
         if(incl < 200) incl = 200;
-        
+
+        // Herbereken BTW na afronding voor weergave (terugrekenen)
+        // incl = 109%, btw = 9%
+        let echteVerkoop = incl / 1.09;
+        let echteBtw = incl - echteVerkoop;
+
         document.getElementById('prijs-display').innerText = '€ ' + incl.toLocaleString('nl-NL', {minimumFractionDigits: 2});
+        document.getElementById('btw-display').innerText = 'Waarvan BTW (9%): € ' + echteBtw.toLocaleString('nl-NL', {minimumFractionDigits: 2});
     }
 
-    // OPSLAAN & NAVIGATIE
     function opslaan() {
         const kId = document.getElementById('calc-klant').value;
         const kNaam = kId ? db.klanten.find(k => k.id == kId).naam : 'Onbekend';
         
-        // Welke bussen?
         let gekozenBussen = [];
         document.querySelectorAll('.bus-check').forEach(box => {
             if(box.checked) gekozenBussen.push(busOpties[box.value].label);
@@ -401,23 +423,16 @@
     }
 
     function klantOpslaan() {
-        db.klanten.push({
-            id: Date.now(),
-            naam: document.getElementById('nk-naam').value,
-            plaats: document.getElementById('nk-plaats').value
-        });
+        db.klanten.push({ id: Date.now(), naam: document.getElementById('nk-naam').value, plaats: document.getElementById('nk-plaats').value });
         localStorage.setItem('berkhout_v2', JSON.stringify(db));
-        document.getElementById('nk-naam').value = '';
-        document.getElementById('zoek-bedrijf').value = '';
+        document.getElementById('nk-naam').value = ''; document.getElementById('zoek-bedrijf').value = '';
         updateKlantenLijst();
     }
 
     function updateKlantenLijst() {
         const s = document.getElementById('calc-klant');
         s.innerHTML = '<option value="">-- Kies Klant --</option>';
-        db.klanten.forEach(k => {
-            s.innerHTML += `<option value="${k.id}">${k.naam} (${k.plaats})</option>`;
-        });
+        db.klanten.forEach(k => { s.innerHTML += `<option value="${k.id}">${k.naam} (${k.plaats})</option>`; });
         let html = '<table style="width:100%; text-align:left;">';
         db.klanten.forEach(k => html += `<tr><td>${k.naam}</td><td>${k.plaats}</td></tr>`);
         document.getElementById('klanten-lijst').innerHTML = html + '</table>';
@@ -426,9 +441,7 @@
     function updateDashboard() {
         document.getElementById('dash-aantal').innerText = db.ritten.length;
         let html = '<table style="width:100%; text-align:left;"><tr><th>Datum</th><th>Klant</th><th>Bus(sen)</th><th>Bestemming</th><th>Prijs</th></tr>';
-        db.ritten.slice(0,5).forEach(r => {
-            html += `<tr><td>${r.datum}</td><td>${r.klant}</td><td>${r.bus}</td><td>${r.dest}</td><td>${r.prijs}</td></tr>`;
-        });
+        db.ritten.slice(0,5).forEach(r => { html += `<tr><td>${r.datum}</td><td>${r.klant}</td><td>${r.bus}</td><td>${r.dest}</td><td>${r.prijs}</td></tr>`; });
         document.getElementById('recent-list').innerHTML = html + '</table>';
     }
 
