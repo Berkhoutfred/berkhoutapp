@@ -3,37 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berkhout Planning V3.0 (PDF)</title>
+    <title>Berkhout Planning V3.1 (FIX)</title>
+    
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi1U8gP0dlE87sYaUDI2JbKKFxJW_YjlY&libraries=places"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
         :root { --primary: #004a99; --bg: #f4f6f9; --text: #333; }
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
         
-        /* --- APP LAYOUT (SCREEN) --- */
-        .sidebar { width: 220px; background: var(--primary); color: white; padding: 20px; display: flex; flex-direction: column; }
-        .main { flex: 1; padding: 20px; overflow-y: auto; }
+        /* --- APP LAYOUT --- */
+        .sidebar { width: 220px; background: var(--primary); color: white; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; }
+        .main { flex: 1; padding: 20px; overflow-y: auto; position: relative; z-index: 1; } /* Z-index zorgt dat dit bovenop ligt */
+
+        /* NAVIGATIE */
         .nav-item { padding: 12px; cursor: pointer; border-radius: 6px; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; }
         .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.2); font-weight: bold; }
         
+        /* CARDS & INPUTS */
         .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #ddd; }
         .section-header { font-size: 16px; font-weight: bold; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
         
         label { display: block; font-size: 11px; font-weight: bold; color: #666; margin-bottom: 4px; text-transform: uppercase; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; margin-bottom: 10px; }
+        
+        /* GRIDS */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-
         .bus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        
+        /* BUS OPTIES */
         .bus-option { display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid #eee; border-radius: 6px; font-size: 12px; cursor: pointer; transition: 0.2s; }
         .bus-option:hover { background: #f0f7ff; border-color: var(--primary); }
         .bus-option input { width: auto; margin: 0; }
 
+        /* TIJDEN */
         .time-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding: 5px; background: #f8f9fa; border-radius: 6px; }
         .time-label { width: 120px; font-weight: bold; font-size: 13px; }
         .time-select-group { display: flex; gap: 5px; align-items: center; }
         .select-uur, .select-min { width: 60px; text-align: center; font-weight: bold; cursor: pointer; }
         
+        /* INFO EN TOTALEN */
         .info-display { background: #eef6ff; border: 1px solid var(--primary); padding: 10px; border-radius: 6px; margin-top: 5px; color: var(--primary); }
         .info-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; border-bottom: 1px dashed #ccc; padding-bottom: 4px; }
         .info-row:last-child { border: none; margin-bottom: 0; padding-bottom: 0; }
@@ -42,6 +51,7 @@
         .total-price { font-size: 28px; font-weight: 900; color: var(--primary); }
         .btw-line { font-size: 13px; color: #666; margin-top: 5px; font-style: italic; }
         
+        /* KNOPPEN */
         .btn { padding: 12px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; width: 100%; margin-top: 10px; font-size: 14px; }
         .btn-blue { background: var(--primary); }
         .btn-green { background: #28a745; }
@@ -50,21 +60,32 @@
         .page-section { display: none; }
         .page-section.active { display: block; }
         .hidden { display: none; }
-        
         .klant-info-box { font-size:12px; color:#555; margin-bottom:10px; padding:5px; border-left:3px solid var(--primary); background:#f9f9f9; display:none; }
 
-        /* --- PRINT STYLES (PDF GENERATOR) --- */
-        #print-container { display: none; } /* Verberg papier op scherm */
+        /* --- PRINT STYLES (PDF) --- */
+        /* Dit blok zorgt dat de PDF onzichtbaar is tijdens het werken */
+        #print-container { 
+            display: none !important; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            z-index: -1;
+        } 
 
         @media print {
-            body { background: white; height: auto; display: block; }
-            .sidebar, .main { display: none !important; } /* Verberg app */
-            #print-container { display: block !important; padding: 0; margin: 0; }
+            body { background: white; height: auto; overflow: visible; display: block; }
+            .sidebar, .main { display: none !important; } /* Verberg de app tijdens printen */
+            #print-container { 
+                display: block !important; 
+                position: relative; 
+                z-index: 9999; 
+                width: 100%;
+                margin: 0; padding: 0;
+            }
             
-            /* A4 Papier instellingen */
             @page { size: A4; margin: 15mm; }
             
-            /* Offerte Opmaak */
+            /* PDF Opmaak */
             .letterhead { font-family: 'Helvetica', 'Arial', sans-serif; color: #000; line-height: 1.5; }
             .header-top { display: flex; justify-content: space-between; margin-bottom: 50px; }
             .company-logo { font-size: 24px; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
@@ -130,8 +151,10 @@
                     
                     <button class="btn-link" onclick="toggleVia()">+ Via-locatie toevoegen</button>
                     <div id="via-container" class="hidden">
-                        <input type="text" id="route-via1" placeholder="Via 1" onchange="berekenRoute()">
-                        <input type="text" id="route-via2" placeholder="Via 2" onchange="berekenRoute()">
+                        <label>Via 1</label>
+                        <input type="text" id="route-via1" placeholder="Plaats of Adres..." onchange="berekenRoute()">
+                        <label>Via 2</label>
+                        <input type="text" id="route-via2" placeholder="Plaats of Adres..." onchange="berekenRoute()">
                     </div>
                     
                     <label>Eindbestemming</label>
@@ -166,7 +189,7 @@
                     </div>
                     
                     <button class="btn btn-green" onclick="maakPDF()"><i class="fa-solid fa-file-pdf"></i> MAAK OFFERTE (PDF)</button>
-                    <button class="btn btn-blue" onclick="opslaan()"><i class="fa-solid fa-save"></i> Opslaan in Systeem</button>
+                    <button class="btn btn-blue" onclick="opslaan()"><i class="fa-solid fa-save"></i> Opslaan</button>
                 </div>
             </div>
         </div>
@@ -315,13 +338,13 @@
         const save = localStorage.getItem('berkhout_v2');
         if(save) db = JSON.parse(save);
         bouwBusKiezers(); bouwTijdKiezers(); updateKlantenLijst(); updateDashboard(); initMaps(); rekenUren();
-        document.getElementById('rit-datum').valueAsDate = new Date();
+        const d = new Date(); document.getElementById('rit-datum').valueAsDate = d;
     }
 
-    // PDF GENERATIE FUNCTIE
+    // PDF FUNCTIE
     function maakPDF() {
-        // 1. Data verzamelen
-        const klantId = document.getElementById('calc-klant').value;
+        // Data verzamelen
+        const kId = document.getElementById('calc-klant').value;
         const klant = db.klanten.find(k => k.id == kId) || {naam: 'Klant', adres: '', plaats: ''};
         const ophaal = document.getElementById('route-ophaal').value || 'N.t.b.';
         const bestemming = document.getElementById('route-eind').value || 'N.t.b.';
@@ -334,12 +357,11 @@
         });
         
         const totaalPrijsTxt = document.getElementById('prijs-display').innerText;
-        // Haal bedrag op en reken terug voor PDF
         const totaalVal = parseFloat(totaalPrijsTxt.replace('€ ','').replace('.','').replace(',','.'));
-        const exBtw = totalVal / 1.09;
-        const btw = totalVal - exBtw;
+        const exBtw = totaalVal / 1.09;
+        const btw = totaalVal - exBtw;
 
-        // 2. Vul het verborgen PDF formulier
+        // Vul PDF
         document.getElementById('pdf-klant-naam').innerText = klant.naam;
         document.getElementById('pdf-klant-adres').innerText = klant.adres || '';
         document.getElementById('pdf-klant-plaats').innerText = klant.plaats || '';
@@ -361,11 +383,11 @@
         document.getElementById('pdf-ex-btw').innerText = '€ ' + exBtw.toLocaleString('nl-NL', {minimumFractionDigits: 2});
         document.getElementById('pdf-btw').innerText = '€ ' + btw.toLocaleString('nl-NL', {minimumFractionDigits: 2});
 
-        // 3. Printen (Browser opent PDF dialoog)
+        // Printen
         window.print();
     }
 
-    // --- BASIS FUNCTIES (UIT V2.6) ---
+    // STANDAARD FUNCTIES
     function toggleVia() { document.getElementById('via-container').classList.toggle('hidden'); }
     function bouwBusKiezers() {
         const c = document.getElementById('bus-container'); let h='';
