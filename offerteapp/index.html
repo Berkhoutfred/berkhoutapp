@@ -3,35 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berkhout Planning V3.2 (FINAL FIX)</title>
+    <title>Berkhout Planning V3.3 (STABIEL)</title>
     
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi1U8gP0dlE87sYaUDI2JbKKFxJW_YjlY&libraries=places"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi1U8gP0dlE87sYaUDI2JbKKFxJW_YjlY&libraries=places&callback=googleGeladen" async defer></script>
     
     <style>
         :root { --primary: #004a99; --bg: #f4f6f9; --text: #333; }
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
         
-        /* --- BELANGRIJKE FIX VOOR GOOGLE AUTOFILL --- */
-        /* Dit zorgt dat de adreslijst ALTIJD bovenop ligt */
-        .pac-container { z-index: 99999 !important; border-radius: 8px; border: 1px solid #ddd; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        /* BASIS LAYOUT (Versimpeld voor stabiliteit) */
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
+        
+        /* ZIJBALK (Vast aan de linkerkant) */
+        .sidebar { 
+            position: fixed; top: 0; left: 0; bottom: 0; 
+            width: 220px; background: var(--primary); color: white; padding: 20px; 
+            overflow-y: auto; z-index: 100;
+        }
 
-        /* --- APP LAYOUT --- */
-        .sidebar { width: 220px; background: var(--primary); color: white; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; z-index: 2; }
-        .main { flex: 1; padding: 20px; overflow-y: auto; position: relative; z-index: 1; }
+        /* HOOFD CONTENT (Rechts van de balk) */
+        .main { 
+            margin-left: 260px; /* Ruimte voor sidebar */
+            padding: 30px; 
+            max-width: 1000px;
+        }
+
+        /* GOOGLE FIX: Zorg dat de lijst ALTIJD boven alles ligt */
+        .pac-container { z-index: 999999 !important; }
 
         /* NAVIGATIE */
         .nav-item { padding: 12px; cursor: pointer; border-radius: 6px; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; }
         .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.2); font-weight: bold; }
         
         /* CARDS & INPUTS */
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #ddd; position: relative; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #ddd; }
         .section-header { font-size: 16px; font-weight: bold; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
         
         label { display: block; font-size: 11px; font-weight: bold; color: #666; margin-bottom: 4px; text-transform: uppercase; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; margin-bottom: 10px; }
         
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        /* GRIDS */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .bus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         
         /* BUS OPTIES */
@@ -63,21 +76,32 @@
         .btn-link { background: none; color: var(--primary); border: none; font-size: 12px; cursor: pointer; padding: 0; width: auto; text-decoration: underline; margin-bottom: 10px; }
 
         .page-section { display: none; }
-        .page-section.active { display: block; }
+        .page-section.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
         .hidden { display: none; }
         .klant-info-box { font-size:12px; color:#555; margin-bottom:10px; padding:5px; border-left:3px solid var(--primary); background:#f9f9f9; display:none; }
+        
+        /* API ERROR BOX */
+        #api-error { display:none; background: #ffe6e6; border: 1px solid red; color: red; padding: 10px; margin-bottom: 20px; border-radius: 6px; font-weight: bold; }
 
         /* --- PRINT STYLES (PDF) --- */
-        #print-container { display: none !important; position: absolute; top: 0; left: 0; z-index: -1; } 
+        #print-container { display: none !important; } 
 
         @media print {
-            body { background: white; height: auto; overflow: visible; display: block; }
-            .sidebar, .main { display: none !important; }
-            #print-container { display: block !important; position: relative; z-index: 9999; width: 100%; margin: 0; padding: 0; }
+            body { background: white; }
+            .sidebar { display: none !important; }
+            .main { display: none !important; }
+            #print-container { 
+                display: block !important; 
+                position: absolute; top:0; left:0; width: 100%; 
+                z-index: 9999;
+            }
             @page { size: A4; margin: 15mm; }
             
+            /* PDF Styling */
             .letterhead { font-family: 'Helvetica', 'Arial', sans-serif; color: #000; line-height: 1.5; }
-            .header-top { display: flex; justify-content: space-between; margin-bottom: 50px; }
+            .header-top { display: flex; justify-content: space-between; margin-bottom: 40px; }
             .company-logo { font-size: 24px; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
             .sender-info { text-align: right; font-size: 12px; color: #555; }
             .recipient-box { margin-bottom: 40px; font-size: 14px; }
@@ -99,13 +123,16 @@
 <body>
 
 <div class="sidebar">
-    <div style="font-size: 20px; font-weight: 900; margin-bottom: 30px;">BERKHOUT</div>
+    <div style="font-size: 20px; font-weight: 900; margin-bottom: 30px;"><i class="fa-solid fa-bus"></i> BERKHOUT</div>
     <div class="nav-item active" onclick="nav('calculatie')"><i class="fa-solid fa-calculator"></i> Calculatie</div>
     <div class="nav-item" onclick="nav('klanten')"><i class="fa-solid fa-users"></i> Klanten</div>
     <div class="nav-item" onclick="nav('dashboard')"><i class="fa-solid fa-chart-line"></i> Dashboard</div>
 </div>
 
 <div class="main">
+    
+    <div id="api-error">⚠️ Let op: Google Maps API is niet geladen. Controleer je API Key en of 'Places API' aan staat in Google Cloud!</div>
+
     <div id="calculatie" class="page-section active">
         <h2 style="color:var(--primary)">Nieuwe Rit</h2>
         <div class="grid-2">
@@ -317,17 +344,28 @@
         { id: 'aankomst_zaak', label: '7. Aankomst Garage', defH: '18', defM: '00', readonly: true, style: 'background:#f0f0f0' }
     ];
     let retourKM = 0;
+    
+    // API CONTROL
+    function googleGeladen() {
+        // API is geladen, start initialisatie
+        console.log("Google Maps geladen");
+        initMaps();
+    }
 
     function init() {
         const save = localStorage.getItem('berkhout_v2');
         if(save) db = JSON.parse(save);
-        bouwBusKiezers(); bouwTijdKiezers(); updateKlantenLijst(); updateDashboard(); initMaps(); rekenUren();
+        bouwBusKiezers(); bouwTijdKiezers(); updateKlantenLijst(); updateDashboard(); rekenUren();
         const d = new Date(); document.getElementById('rit-datum').valueAsDate = d;
+        
+        // Check if google maps is present (als callback te laat was of faalde)
+        if(typeof google === 'undefined') {
+            document.getElementById('api-error').style.display = 'block';
+        }
     }
 
     // PDF FUNCTIE
     function maakPDF() {
-        // Data verzamelen
         const kId = document.getElementById('calc-klant').value;
         const klant = db.klanten.find(k => k.id == kId) || {naam: 'Klant', adres: '', plaats: ''};
         const ophaal = document.getElementById('route-ophaal').value || 'N.t.b.';
@@ -342,32 +380,26 @@
         
         const totaalPrijsTxt = document.getElementById('prijs-display').innerText;
         const totaalVal = parseFloat(totaalPrijsTxt.replace('€ ','').replace('.','').replace(',','.'));
-        const exBtw = totaalVal / 1.09;
-        const btw = totaalVal - exBtw;
+        const exBtw = totalVal / 1.09;
+        const btw = totalVal - exBtw;
 
-        // Vul PDF
         document.getElementById('pdf-klant-naam').innerText = klant.naam;
         document.getElementById('pdf-klant-adres').innerText = klant.adres || '';
         document.getElementById('pdf-klant-plaats').innerText = klant.plaats || '';
         document.getElementById('pdf-datum').innerText = new Date().toLocaleDateString('nl-NL');
         document.getElementById('pdf-offerte-nr').innerText = 'OFF-' + Date.now().toString().slice(-6);
-        
         document.getElementById('pdf-rit-datum').innerText = new Date(datum).toLocaleDateString('nl-NL', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
         document.getElementById('pdf-van').innerText = ophaal;
         document.getElementById('pdf-naar').innerText = bestemming;
-        
         document.getElementById('pdf-tijd-vertrek').innerText = document.getElementById('h_vertrek_klant').value + ':' + document.getElementById('m_vertrek_klant').value;
         document.getElementById('pdf-tijd-retour').innerText = document.getElementById('h_retour_klant').value + ':' + document.getElementById('m_retour_klant').value;
         document.getElementById('pdf-tijd-aankomst').innerText = document.getElementById('h_aankomst_loc').value + ':' + document.getElementById('m_aankomst_loc').value;
-        
         document.getElementById('pdf-voertuig').innerText = voertuigen.join(', ') || 'N.t.b.';
         document.getElementById('pdf-pax').innerText = pax + ' personen';
-        
         document.getElementById('pdf-totaal').innerText = totaalPrijsTxt;
         document.getElementById('pdf-ex-btw').innerText = '€ ' + exBtw.toLocaleString('nl-NL', {minimumFractionDigits: 2});
         document.getElementById('pdf-btw').innerText = '€ ' + btw.toLocaleString('nl-NL', {minimumFractionDigits: 2});
 
-        // Printen
         window.print();
     }
 
@@ -383,19 +415,15 @@
         tijdVelden.forEach(v=>{
             let u=''; for(let i=0;i<24;i++){let x=i.toString().padStart(2,'0'); u+=`<option value="${x}" ${x==v.defH?'selected':''}>${x}</option>`}
             let m=''; ['00','15','30','45'].forEach(x=>{m+=`<option value="${x}" ${x==v.defM?'selected':''}>${x}</option>`});
-            let fn = v.auto ? `syncTijden(); rekenUren()`;
-            if(v.id === 'vertrek_zaak' || v.id === 'aankomst_zaak' || v.id === 'vertrek_klant' || v.id === 'retour_klant') fn = `syncTijden(); rekenUren()`; else fn = `rekenUren()`;
+            let fn = v.auto ? `syncTijden(); rekenUren()` : `rekenUren()`;
             h+=`<div class="time-row" style="${v.style||''}"><div class="time-label">${v.label}</div><div class="time-select-group"><select id="h_${v.id}" class="select-uur" onchange="${fn}" ${v.readonly?'disabled':''}>${u}</select>:<select id="m_${v.id}" class="select-min" onchange="${fn}" ${v.readonly?'disabled':''}>${m}</select></div></div>`;
         });
         c.innerHTML=h;
     }
     function syncTijden() {
-        // Voorstaan = Vertrek Klant - 15min
         let hv=parseInt(document.getElementById('h_vertrek_klant').value), mv=parseInt(document.getElementById('m_vertrek_klant').value);
         let dV=new Date(2000,0,1,hv,mv-15);
         document.getElementById('h_voorstaan').value=dV.getHours().toString().padStart(2,'0'); document.getElementById('m_voorstaan').value=dV.getMinutes().toString().padStart(2,'0');
-        
-        // Bereken Aankomst Garage
         let h1=parseInt(document.getElementById('h_vertrek_zaak').value), m1=parseInt(document.getElementById('m_vertrek_zaak').value);
         let dS=new Date(2000,0,1,h1,m1), dK=new Date(2000,0,1,hv,mv);
         let ms=dK-dS; if(ms<0)ms=0;
@@ -403,7 +431,11 @@
         let dR=new Date(2000,0,1,hr,mr), dA=new Date(dR.getTime()+ms);
         document.getElementById('h_aankomst_zaak').value=dA.getHours().toString().padStart(2,'0'); document.getElementById('m_aankomst_zaak').value=dA.getMinutes().toString().padStart(2,'0');
     }
+    
     function initMaps() {
+        // Wordt aangeroepen door Google Callback
+        if(typeof google === 'undefined') return;
+        
         const o={componentRestrictions:{country:'nl'}};
         new google.maps.places.Autocomplete(document.getElementById('route-start'),o);
         new google.maps.places.Autocomplete(document.getElementById('route-ophaal'),o);
@@ -418,6 +450,7 @@
             let s=''; if(p.address_components)p.address_components.forEach(c=>{if(c.types.includes('locality'))s=c.long_name}); document.getElementById('nk-plaats').value=s;
         });
     }
+
     function berekenRoute() {
         const s=document.getElementById('route-start').value, o=document.getElementById('route-ophaal').value, e=document.getElementById('route-eind').value;
         const v1=document.getElementById('route-via1').value, v2=document.getElementById('route-via2').value;
