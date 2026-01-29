@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berkhout Planning V3.1 (FIX)</title>
+    <title>Berkhout Planning V3.2 (FINAL FIX)</title>
     
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi1U8gP0dlE87sYaUDI2JbKKFxJW_YjlY&libraries=places"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -12,22 +12,25 @@
         :root { --primary: #004a99; --bg: #f4f6f9; --text: #333; }
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
         
+        /* --- BELANGRIJKE FIX VOOR GOOGLE AUTOFILL --- */
+        /* Dit zorgt dat de adreslijst ALTIJD bovenop ligt */
+        .pac-container { z-index: 99999 !important; border-radius: 8px; border: 1px solid #ddd; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
         /* --- APP LAYOUT --- */
-        .sidebar { width: 220px; background: var(--primary); color: white; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; }
-        .main { flex: 1; padding: 20px; overflow-y: auto; position: relative; z-index: 1; } /* Z-index zorgt dat dit bovenop ligt */
+        .sidebar { width: 220px; background: var(--primary); color: white; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; z-index: 2; }
+        .main { flex: 1; padding: 20px; overflow-y: auto; position: relative; z-index: 1; }
 
         /* NAVIGATIE */
         .nav-item { padding: 12px; cursor: pointer; border-radius: 6px; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; }
         .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.2); font-weight: bold; }
         
         /* CARDS & INPUTS */
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #ddd; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #ddd; position: relative; }
         .section-header { font-size: 16px; font-weight: bold; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
         
         label { display: block; font-size: 11px; font-weight: bold; color: #666; margin-bottom: 4px; text-transform: uppercase; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; margin-bottom: 10px; }
         
-        /* GRIDS */
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .bus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         
@@ -46,6 +49,8 @@
         .info-display { background: #eef6ff; border: 1px solid var(--primary); padding: 10px; border-radius: 6px; margin-top: 5px; color: var(--primary); }
         .info-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; border-bottom: 1px dashed #ccc; padding-bottom: 4px; }
         .info-row:last-child { border: none; margin-bottom: 0; padding-bottom: 0; }
+        .info-label { color: #666; }
+        .info-val { font-weight: bold; }
 
         .total-box { text-align: right; background: #eef6ff; padding: 15px; border-radius: 8px; border: 2px solid var(--primary); }
         .total-price { font-size: 28px; font-weight: 900; color: var(--primary); }
@@ -63,51 +68,30 @@
         .klant-info-box { font-size:12px; color:#555; margin-bottom:10px; padding:5px; border-left:3px solid var(--primary); background:#f9f9f9; display:none; }
 
         /* --- PRINT STYLES (PDF) --- */
-        /* Dit blok zorgt dat de PDF onzichtbaar is tijdens het werken */
-        #print-container { 
-            display: none !important; 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            z-index: -1;
-        } 
+        #print-container { display: none !important; position: absolute; top: 0; left: 0; z-index: -1; } 
 
         @media print {
             body { background: white; height: auto; overflow: visible; display: block; }
-            .sidebar, .main { display: none !important; } /* Verberg de app tijdens printen */
-            #print-container { 
-                display: block !important; 
-                position: relative; 
-                z-index: 9999; 
-                width: 100%;
-                margin: 0; padding: 0;
-            }
-            
+            .sidebar, .main { display: none !important; }
+            #print-container { display: block !important; position: relative; z-index: 9999; width: 100%; margin: 0; padding: 0; }
             @page { size: A4; margin: 15mm; }
             
-            /* PDF Opmaak */
             .letterhead { font-family: 'Helvetica', 'Arial', sans-serif; color: #000; line-height: 1.5; }
             .header-top { display: flex; justify-content: space-between; margin-bottom: 50px; }
             .company-logo { font-size: 24px; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
             .sender-info { text-align: right; font-size: 12px; color: #555; }
-            
             .recipient-box { margin-bottom: 40px; font-size: 14px; }
             .recipient-name { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
-            
             .meta-info { display: flex; justify-content: space-between; margin-bottom: 30px; border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
             .meta-item { font-size: 14px; }
-            
             .doc-title { font-size: 20px; font-weight: bold; margin-bottom: 20px; color: var(--primary); }
             .intro-text { font-size: 14px; margin-bottom: 30px; }
-            
             .details-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; }
             .details-table th { text-align: left; border-bottom: 1px solid #000; padding: 8px 0; }
             .details-table td { border-bottom: 1px solid #eee; padding: 8px 0; vertical-align: top; }
-            
             .pricing-box { float: right; width: 40%; text-align: right; margin-top: 20px; }
             .price-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px; }
             .price-total { font-size: 18px; font-weight: bold; border-top: 2px solid #000; padding-top: 10px; margin-top: 10px; }
-            
             .footer { position: fixed; bottom: 0; left: 0; right: 0; font-size: 10px; text-align: center; color: #888; border-top: 1px solid #ccc; padding-top: 10px; }
         }
     </style>
@@ -399,15 +383,19 @@
         tijdVelden.forEach(v=>{
             let u=''; for(let i=0;i<24;i++){let x=i.toString().padStart(2,'0'); u+=`<option value="${x}" ${x==v.defH?'selected':''}>${x}</option>`}
             let m=''; ['00','15','30','45'].forEach(x=>{m+=`<option value="${x}" ${x==v.defM?'selected':''}>${x}</option>`});
-            let fn = v.auto ? `syncTijden(); rekenUren()` : `rekenUren()`;
+            let fn = v.auto ? `syncTijden(); rekenUren()`;
+            if(v.id === 'vertrek_zaak' || v.id === 'aankomst_zaak' || v.id === 'vertrek_klant' || v.id === 'retour_klant') fn = `syncTijden(); rekenUren()`; else fn = `rekenUren()`;
             h+=`<div class="time-row" style="${v.style||''}"><div class="time-label">${v.label}</div><div class="time-select-group"><select id="h_${v.id}" class="select-uur" onchange="${fn}" ${v.readonly?'disabled':''}>${u}</select>:<select id="m_${v.id}" class="select-min" onchange="${fn}" ${v.readonly?'disabled':''}>${m}</select></div></div>`;
         });
         c.innerHTML=h;
     }
     function syncTijden() {
+        // Voorstaan = Vertrek Klant - 15min
         let hv=parseInt(document.getElementById('h_vertrek_klant').value), mv=parseInt(document.getElementById('m_vertrek_klant').value);
         let dV=new Date(2000,0,1,hv,mv-15);
         document.getElementById('h_voorstaan').value=dV.getHours().toString().padStart(2,'0'); document.getElementById('m_voorstaan').value=dV.getMinutes().toString().padStart(2,'0');
+        
+        // Bereken Aankomst Garage
         let h1=parseInt(document.getElementById('h_vertrek_zaak').value), m1=parseInt(document.getElementById('m_vertrek_zaak').value);
         let dS=new Date(2000,0,1,h1,m1), dK=new Date(2000,0,1,hv,mv);
         let ms=dK-dS; if(ms<0)ms=0;
