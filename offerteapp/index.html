@@ -2,250 +2,652 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Berkhout Planning V4.1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Berkhout Planning V2.7</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi1U8gP0dlE87sYaUDI2JbKKFxJW_YjlY&libraries=places&callback=initMap" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi1U8gP0dlE87sYaUDI2JbKKFxJW_YjlY&libraries=places&callback=initApp" async defer></script>
     <style>
-        /* STYLING VAN DE APP */
         :root { 
             --primary: #004a99; 
-            --bg-color: #f0f2f5;
-            --text-color: #333;
+            --primary-dark: #003366;
+            --bg: #f3f4f6; 
+            --text: #1f2937; 
+            --border: #e5e7eb;
         }
         
         body { 
-            font-family: 'Roboto', sans-serif; 
-            background: var(--bg-color); 
-            margin: 0; padding: 0;
-            color: var(--text-color);
-        }
-
-        .app-header {
-            background: var(--primary);
-            color: white;
-            padding: 15px 20px;
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin: 0; 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden;
         }
         
-        .container { max-width: 500px; margin: 20px auto; padding: 0 15px 40px 15px; }
+        /* SIDEBAR STYLING */
+        .sidebar { 
+            width: 240px; 
+            background: var(--primary); 
+            color: white; 
+            padding: 25px; 
+            display: flex; 
+            flex-direction: column; 
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        .brand { font-size: 22px; font-weight: 800; margin-bottom: 40px; letter-spacing: -0.5px; }
+        
+        .nav-item { 
+            padding: 14px; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            margin-bottom: 8px; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        
+        .nav-item:hover { background: rgba(255,255,255,0.1); }
+        .nav-item.active { background: white; color: var(--primary); font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        /* MAIN CONTENT */
+        .main { flex: 1; padding: 30px; overflow-y: auto; }
+        .page-section { display: none; max-width: 1000px; margin: 0 auto; }
+        .page-section.active { display: block; animation: fadeIn 0.3s ease; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        h2 { color: var(--primary); border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 25px; font-size: 20px; }
+
+        /* CARDS & LAYOUT */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
 
         .card { 
             background: white; 
+            padding: 25px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); 
+            margin-bottom: 25px; 
+            border: 1px solid var(--border);
+        }
+
+        .section-header { 
+            font-size: 14px; 
+            font-weight: 700; 
+            color: #6b7280; 
+            text-transform: uppercase; 
+            margin-bottom: 15px; 
+            letter-spacing: 0.5px;
+        }
+        
+        /* FORMULIER ELEMENTEN */
+        label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; margin-top: 15px; }
+        label:first-of-type { margin-top: 0; }
+        
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid #d1d5db; 
             border-radius: 8px; 
+            font-size: 15px; 
+            box-sizing: border-box; 
+            transition: border-color 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        input:focus, select:focus { outline: none; border-color: var(--primary); ring: 2px solid rgba(0, 74, 153, 0.1); }
+        input[readonly] { background-color: #f9fafb; color: #6b7280; }
+
+        /* BUS KEUZE */
+        .bus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .bus-option { 
+            display: flex; align-items: center; gap: 10px; 
+            padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; 
+            font-size: 13px; cursor: pointer; transition: 0.2s; margin: 0;
+        }
+        .bus-option:hover { background: #eff6ff; border-color: var(--primary); }
+        .bus-option input { width: auto; margin: 0; }
+
+        /* TIJDEN */
+        .time-row { 
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 12px; background: #f9fafb; border-radius: 8px; margin-bottom: 8px; border: 1px solid #f3f4f6;
+        }
+        .time-label { font-size: 13px; font-weight: 600; color: #4b5563; }
+        .time-select-group { display: flex; gap: 5px; align-items: center; }
+        .select-uur, .select-min { 
+            width: 55px; padding: 6px; text-align: center; font-weight: 600; 
+            border: 1px solid #d1d5db; border-radius: 6px; background: white;
+        }
+
+        /* INFO BOXEN */
+        .info-display { background: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; border-radius: 8px; margin-top: 15px; }
+        .info-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px; }
+        .info-val { font-weight: 700; color: var(--primary); }
+
+        /* PRIJS BOX */
+        .total-box { 
+            background: var(--primary); 
+            color: white; 
             padding: 20px; 
-            margin-bottom: 20px; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
-            border-left: 5px solid var(--primary);
+            border-radius: 10px; 
+            text-align: center; 
+            margin-top: 20px;
+            box-shadow: 0 10px 15px -3px rgba(0, 74, 153, 0.2);
         }
+        .total-price { font-size: 32px; font-weight: 800; margin: 5px 0; }
+        .btw-line { font-size: 13px; opacity: 0.8; }
 
-        .card-title {
-            font-size: 16px; font-weight: 700; color: var(--primary);
-            margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;
+        /* KNOPPEN */
+        .btn { 
+            width: 100%; padding: 14px; border: none; border-radius: 8px; 
+            font-weight: 600; font-size: 16px; cursor: pointer; margin-top: 15px; 
+            transition: transform 0.1s;
         }
+        .btn:active { transform: scale(0.98); }
+        .btn-green { background: #10b981; color: white; }
+        .btn-blue { background: var(--primary); color: white; }
+        .btn-link { background: none; color: var(--primary); width: auto; padding: 0; font-size: 13px; margin-top: 5px; text-decoration: underline; }
 
-        label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 500; }
-
-        input { 
-            width: 100%; padding: 12px; border: 1px solid #ccc; 
-            border-radius: 6px; font-size: 16px; box-sizing: border-box; 
-            margin-bottom: 15px; background: #fafafa;
-        }
-
-        input:focus { outline: none; border-color: var(--primary); background: white; }
-
-        .row-2 { display: flex; gap: 15px; }
-        .col { flex: 1; }
-
-        .result-box {
-            background: #eef6ff; color: #003366; padding: 10px;
-            border-radius: 6px; font-weight: bold; text-align: center;
-            border: 1px dashed var(--primary); margin-bottom: 10px;
-        }
-
-        .price-card { background: var(--primary); color: white; text-align: center; border: none; }
-        .price-display { font-size: 40px; font-weight: 700; margin: 10px 0; }
-
-        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        button { flex: 1; border: none; padding: 15px; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; }
-        .btn-white { background: white; color: var(--primary); }
-        .btn-green { background: #28a745; color: white; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="app-header">
-        <h1 style="margin:0; font-size:20px;">Berkhout Touringcar</h1>
-        <div style="font-size:10px; opacity:0.8;">PLANNING V4.1</div>
+<div class="sidebar">
+    <div class="brand"><i class="fa-solid fa-bus"></i> BERKHOUT</div>
+    <div class="nav-item active" onclick="nav('dashboard')"><i class="fa-solid fa-chart-line"></i> Dashboard</div>
+    <div class="nav-item" onclick="nav('calculatie')"><i class="fa-solid fa-calculator"></i> Calculatie</div>
+    <div class="nav-item" onclick="nav('klanten')"><i class="fa-solid fa-users"></i> Klanten</div>
+</div>
+
+<div class="main">
+
+    <div id="dashboard" class="page-section active">
+        <h2>Overzicht</h2>
+        <div class="grid-2">
+            <div class="card" style="display:flex; align-items:center; gap:20px;">
+                <div style="font-size:40px; color:var(--primary);"><i class="fa-solid fa-file-invoice"></i></div>
+                <div>
+                    <div style="font-size:32px; font-weight:bold; color:var(--primary);" id="dash-aantal">0</div>
+                    <div style="color:#666;">Opgeslagen offertes</div>
+                </div>
+            </div>
+            <div class="card" style="display:flex; align-items:center; justify-content:center;">
+                <button class="btn btn-blue" onclick="nav('calculatie')">Start Nieuwe Berekening</button>
+            </div>
+        </div>
+        <div class="card">
+            <div class="section-header">Laatste 5 ritten</div>
+            <div id="recent-list">Geen ritten gevonden...</div>
+        </div>
     </div>
 
-    <div class="container">
+    <div id="calculatie" class="page-section">
+        <h2>Nieuwe Offerte Berekenen</h2>
         
-        <div class="card">
-            <div class="card-title">1. Klantgegevens</div>
-            <label>Naam Opdrachtgever</label>
-            <input type="text" id="klant_naam" placeholder="Naam klant">
-            <label>E-mailadres</label>
-            <input type="email" id="klant_mail" placeholder="email@klant.nl">
-            <label>Datum Rit</label>
-            <input type="date" id="rit_datum">
-        </div>
-
-        <div class="card">
-            <div class="card-title">2. Route & Afstand</div>
-            <label>Vertrekpunt (Garage)</label>
-            <input type="text" id="start" value="Industrieweg 99J, Zutphen">
-            <label>Bestemming (Zoek op adres)</label>
-            <input type="text" id="eind" placeholder="Typ bestemming..." onchange="berekenAfstand()">
-            <div id="km_display" class="result-box">Nog geen route berekend</div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">3. Tijdsplanning</div>
-            <div class="row-2">
-                <div class="col">
-                    <label>Starttijd</label>
-                    <input type="time" id="tijd_start" value="08:00" onchange="berekenUren()">
-                </div>
-                <div class="col">
-                    <label>Eindtijd</label>
-                    <input type="time" id="tijd_eind" value="17:00" onchange="berekenUren()">
-                </div>
-            </div>
-            <label>Totaal berekende uren</label>
-            <input type="number" id="uren" value="9.0" readonly style="background:#eee; font-weight:bold; color:#333;">
-        </div>
-
-        <div class="card price-card">
-            <div style="font-size: 14px; opacity: 0.9;">Totaalprijs (incl. 9% BTW)</div>
-            <div class="price-display" id="totaal">€ 0,00</div>
-            <div class="btn-group">
-                <button class="btn-white" onclick="maakPDF()">📄 PDF / Print</button>
-                <button class="btn-green" onclick="verstuurMail()">✉️ Mail Klant</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let retourKm = 0;
-
-        // Deze functie start automatisch als Google Maps geladen is
-        window.initMap = function() {
-            const options = { types: ['address'], componentRestrictions: {country: 'nl'} };
-            const inputEind = document.getElementById('eind');
-            
-            if(inputEind) {
-                const autocomplete = new google.maps.places.Autocomplete(inputEind, options);
-                autocomplete.addListener('place_changed', berekenAfstand);
-            }
-
-            document.getElementById('rit_datum').valueAsDate = new Date();
-            berekenUren();
-        }
-
-        function berekenAfstand() {
-            const start = document.getElementById('start').value;
-            const eind = document.getElementById('eind').value;
-
-            if(!start || !eind) return;
-
-            const service = new google.maps.DistanceMatrixService();
-            service.getDistanceMatrix({
-                origins: [start],
-                destinations: [eind],
-                travelMode: 'DRIVING'
-            }, (response, status) => {
-                if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
-                    const dist = response.rows[0].elements[0].distance.value / 1000;
-                    retourKm = Math.round(dist * 2);
-                    document.getElementById('km_display').innerText = `Afstand: ${retourKm} km (retour)`;
-                    rekenen();
-                }
-            });
-        }
-
-        function berekenUren() {
-            const t1 = document.getElementById('tijd_start').value.split(':');
-            const t2 = document.getElementById('tijd_eind').value.split(':');
-            
-            const d1 = new Date(0, 0, 0, t1[0], t1[1]);
-            const d2 = new Date(0, 0, 0, t2[0], t2[1]);
-            
-            let diff = (d2 - d1) / (1000 * 60 * 60);
-            if (diff < 0) diff += 24; 
-            
-            document.getElementById('uren').value = diff.toFixed(1);
-            rekenen();
-        }
-
-        function rekenen() {
-            const uren = parseFloat(document.getElementById('uren').value) || 0;
-            const prijsPerKm = 1.00;
-            const uurTarief = 33.00;
-            const aantalBussen = 1;
-
-            // Formule: ((KM * prijs) + (uren * 33 * bussen)) / 0.75
-            let basisPrijs = (retourKm * prijsPerKm) + (uren * uurTarief * aantalBussen);
-            let verkoopEx = basisPrijs / 0.75; 
-            let verkoopInc = verkoopEx * 1.09;
-
-            // Afronden op 25 euro
-            let afgerond = Math.ceil(verkoopInc / 25) * 25;
-            if (afgerond < 200) afgerond = 200;
-
-            document.getElementById('totaal').innerText = '€ ' + afgerond.toLocaleString('nl-NL', {minimumFractionDigits: 2});
-        }
-
-        function maakPDF() {
-            const naam = document.getElementById('klant_naam').value;
-            const datum = document.getElementById('rit_datum').value;
-            const van = document.getElementById('start').value;
-            const naar = document.getElementById('eind').value;
-            const prijs = document.getElementById('totaal').innerText;
-            const uren = document.getElementById('uren').value;
-
-            const win = window.open('', '_blank');
-            win.document.write(`
-                <html>
-                <head>
-                    <title>Offerte ${naam}</title>
-                    <style>
-                        body { font-family: sans-serif; margin: 40px; color: #333; }
-                        h1 { color: #004a99; border-bottom: 2px solid #004a99; padding-bottom: 10px; }
-                        .row { display: flex; margin-bottom: 10px; justify-content: space-between; max-width: 600px; border-bottom: 1px solid #eee; padding: 5px 0;}
-                        .label { font-weight: bold; }
-                        .total { font-size: 24px; font-weight: bold; color: #004a99; margin-top: 30px; }
-                    </style>
-                </head>
-                <body>
-                    <h1>Offerte Berkhout Touringcar</h1>
-                    <p>Datum: ${datum}</p>
-                    <p>Beste ${naam},<br>Hierbij uw prijsopgave:</p>
+        <div class="grid-2">
+            <div>
+                <div class="card">
+                    <div class="section-header">1. Klant & Voertuig</div>
+                    <select id="calc-klant" onchange="vulKlant()"><option value="">-- Selecteer Klant --</option></select>
                     
-                    <div style="background:#f9f9f9; padding:20px; border-radius:8px; margin:20px 0;">
-                        <div class="row"><span class="label">Van:</span> <span>${van}</span></div>
-                        <div class="row"><span class="label">Naar:</span> <span>${naar}</span></div>
-                        <div class="row"><span class="label">Uren:</span> <span>${uren} uur</span></div>
-                        <div class="row"><span class="label">Afstand:</span> <span>${retourKm} km (retour)</span></div>
+                    <div id="klant-details" style="display:none; background:#f0f9ff; padding:10px; border-radius:6px; margin-top:10px; font-size:13px; color:#0369a1;"></div>
+
+                    <label>Kies Voertuig(en)</label>
+                    <div class="bus-grid" id="bus-container">
+                        </div>
+                </div>
+
+                <div class="card">
+                    <div class="section-header">2. Route</div>
+                    <label>Vertrek Garage</label>
+                    <input type="text" id="route-start" value="Industrieweg 99J, Zutphen">
+                    
+                    <label>Ophaaladres Klant</label>
+                    <input type="text" id="route-ophaal" placeholder="Zoek adres..." onchange="berekenRoute()">
+                    
+                    <button class="btn-link" onclick="toggleVia()">+ Via-locatie toevoegen</button>
+                    <div id="via-container" class="hidden">
+                        <label>Via 1</label>
+                        <input type="text" id="route-via1" placeholder="Adres..." onchange="berekenRoute()">
+                        <label>Via 2</label>
+                        <input type="text" id="route-via2" placeholder="Adres..." onchange="berekenRoute()">
                     </div>
 
-                    <div class="total">Totaal: ${prijs} (incl. BTW)</div>
-                </body>
-                </html>
-            `);
-            win.document.close();
-            setTimeout(() => { win.focus(); win.print(); }, 500);
+                    <label>Eindbestemming</label>
+                    <input type="text" id="route-eind" placeholder="Zoek bestemming..." onchange="berekenRoute()">
+                    
+                    <div class="info-display">
+                        <div class="info-row"><span>Garage ➔ Klant:</span> <span class="info-val" id="info-aanrij">-</span></div>
+                        <div class="info-row"><span>Klant ➔ Bestemming:</span> <span class="info-val" id="info-hoofd">-</span></div>
+                        <div style="border-top:1px dashed #bfdbfe; margin:10px 0;"></div>
+                        <div class="info-row" style="font-size:16px;">
+                            <span>Totaal (Retour):</span> 
+                            <span class="info-val" id="info-totaal">0 km</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <div class="section-header">3. Tijdsplanning</div>
+                    <div id="tijd-container"></div>
+                    <div style="text-align:right; font-weight:bold; margin-top:10px; color:var(--primary);">
+                        Totaal Inzet: <span id="uren-display">0.0</span> uur
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="section-header">4. Berekening</div>
+                    <label>Extra Kosten (Tol/Parkeren)</label>
+                    <input type="number" id="kosten-extra" value="0" placeholder="€ 0.00" oninput="rekenPrijs()">
+                    
+                    <div class="total-box">
+                        <div style="font-size:14px; opacity:0.9; margin-bottom:5px;">Totaal incl. 9% BTW</div>
+                        <div class="total-price" id="prijs-display">€ 0,00</div>
+                        <div class="btw-line" id="btw-display">BTW (9%): € 0,00</div>
+                    </div>
+                    
+                    <button class="btn btn-green" onclick="opslaan()"><i class="fa-solid fa-save"></i> Opslaan in Historie</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="klanten" class="page-section">
+        <h2>Klantenbestand</h2>
+        <div class="card">
+            <div class="section-header">Nieuwe Klant</div>
+            <label>Zoek Bedrijf (Google)</label>
+            <input type="text" id="zoek-bedrijf" placeholder="Typ bedrijfsnaam..." style="border:2px solid var(--primary);">
+            
+            <div class="grid-2">
+                <div>
+                    <label>Naam</label>
+                    <input type="text" id="nk-naam">
+                    <label>Telefoon</label>
+                    <input type="text" id="nk-tel">
+                </div>
+                <div>
+                    <label>Adres</label>
+                    <input type="text" id="nk-adres">
+                    <label>Plaats</label>
+                    <input type="text" id="nk-plaats">
+                </div>
+            </div>
+            <button class="btn btn-green" onclick="klantOpslaan()">Toevoegen</button>
+        </div>
+        <div class="card">
+            <div class="section-header">Bestaande Klanten</div>
+            <div id="klanten-lijst"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // ---------------------------------------------------------
+    // 1. DATA & INSTELLINGEN
+    // ---------------------------------------------------------
+    let db = { klanten: [], ritten: [] };
+    let retourKM = 0;
+
+    const busOpties = [
+        { label: 'Bus 19 (Max 19)', prijs: 0.75 },
+        { label: 'Bus 23 (Max 19)', prijs: 0.75 },
+        { label: 'Bus 50 (Max 50)', prijs: 1.00 },
+        { label: 'Bus 55 (Max 53)', prijs: 1.00 },
+        { label: 'Bus 60 (Max 60)', prijs: 1.20 },
+        { label: 'Bus 62 (Max 62)', prijs: 1.20 }
+    ];
+
+    const tijdVelden = [
+        { id: 'vertrek_zaak', label: '1. Vertrek Garage', defH: '08', defM: '00', auto: true },
+        { id: 'voorstaan', label: '2. Voorstaan', defH: '08', defM: '30', readonly: true },
+        { id: 'vertrek_klant', label: '3. Vertrek Klant', defH: '08', defM: '45', auto: true, style: 'border-left:3px solid #10b981' },
+        { id: 'aankomst_loc', label: '4. Aankomst Loc.', defH: '10', defM: '00' },
+        { id: 'vertrek_loc', label: '5. Vertrek Loc.', defH: '16', defM: '00' },
+        { id: 'retour_klant', label: '6. Retour Klant', defH: '17', defM: '15', auto: true, style: 'border-left:3px solid #10b981' },
+        { id: 'aankomst_zaak', label: '7. Aankomst Garage', defH: '18', defM: '00', readonly: true, style: 'background:#f3f4f6' }
+    ];
+
+    // ---------------------------------------------------------
+    // 2. INITIALISATIE (Wordt aangeroepen door Google Maps)
+    // ---------------------------------------------------------
+    window.initApp = function() {
+        // Laad opgeslagen data
+        const save = localStorage.getItem('berkhout_v2');
+        if(save) db = JSON.parse(save);
+        
+        // Bouw de interface
+        bouwBusKiezers();
+        bouwTijdKiezers();
+        updateKlantenLijst();
+        updateDashboard();
+        
+        // Start Google Maps functies
+        initMapsAutofill();
+        
+        // Eerste berekening
+        rekenUren();
+    }
+
+    // ---------------------------------------------------------
+    // 3. UI BOUWERS
+    // ---------------------------------------------------------
+    function bouwBusKiezers() {
+        const container = document.getElementById('bus-container');
+        let html = '';
+        busOpties.forEach((bus, index) => {
+            html += `
+            <label class="bus-option">
+                <input type="checkbox" class="bus-check" value="${index}" onchange="rekenPrijs()">
+                <span><b>${bus.label}</b><br><small>€${bus.prijs.toFixed(2)} p/km</small></span>
+            </label>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function bouwTijdKiezers() {
+        const container = document.getElementById('tijd-container');
+        let html = '';
+        tijdVelden.forEach(veld => {
+            // Uren dropdown
+            let urenOpties = '';
+            for(let i=0; i<24; i++) {
+                let val = i.toString().padStart(2,'0');
+                let sel = val === veld.defH ? 'selected' : '';
+                urenOpties += `<option value="${val}" ${sel}>${val}</option>`;
+            }
+            // Minuten dropdown
+            let minOpties = '';
+            ['00','15','30','45'].forEach(m => {
+                let sel = m === veld.defM ? 'selected' : '';
+                minOpties += `<option value="${m}" ${sel}>${m}</option>`;
+            });
+
+            let changeFn = veld.auto ? `syncTijden(); rekenUren()` : `rekenUren()`;
+            let disabled = veld.readonly ? 'disabled' : '';
+            let style = veld.style || '';
+
+            html += `
+            <div class="time-row" style="${style}">
+                <div class="time-label">${veld.label}</div>
+                <div class="time-select-group">
+                    <select id="h_${veld.id}" class="select-uur" onchange="${changeFn}" ${disabled}>${urenOpties}</select>
+                    <span style="font-weight:bold;">:</span>
+                    <select id="m_${veld.id}" class="select-min" onchange="${changeFn}" ${disabled}>${minOpties}</select>
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function toggleVia() {
+        document.getElementById('via-container').classList.toggle('hidden');
+    }
+
+    function nav(id) {
+        document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+    }
+
+    // ---------------------------------------------------------
+    // 4. GOOGLE MAPS LOGICA (Autofill & Afstand)
+    // ---------------------------------------------------------
+    function initMapsAutofill() {
+        const opts = { componentRestrictions: {country: 'nl'} };
+        
+        // Koppel inputs aan Google
+        const velden = ['route-start', 'route-ophaal', 'route-eind', 'route-via1', 'route-via2'];
+        velden.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) {
+                const auto = new google.maps.places.Autocomplete(el, opts);
+                auto.addListener('place_changed', berekenRoute);
+            }
+        });
+
+        // Bedrijf zoeker apart
+        const zoekBedrijf = document.getElementById('zoek-bedrijf');
+        if(zoekBedrijf) {
+            const autoB = new google.maps.places.Autocomplete(zoekBedrijf, opts);
+            autoB.addListener('place_changed', () => {
+                const p = autoB.getPlace();
+                document.getElementById('nk-naam').value = p.name || '';
+                document.getElementById('nk-tel').value = p.formatted_phone_number || '';
+                document.getElementById('nk-adres').value = p.formatted_address || '';
+                
+                let stad = '';
+                if(p.address_components) {
+                    p.address_components.forEach(c => { if(c.types.includes('locality')) stad = c.long_name; });
+                }
+                document.getElementById('nk-plaats').value = stad;
+            });
+        }
+    }
+
+    function berekenRoute() {
+        const start = document.getElementById('route-start').value;
+        const ophaal = document.getElementById('route-ophaal').value;
+        const eind = document.getElementById('route-eind').value;
+        
+        // Alleen rekenen als de 3 basisvelden gevuld zijn
+        if(!start || !ophaal || !eind) return;
+
+        const waypoints = [{location: ophaal, stopover: true}];
+        if(document.getElementById('route-via1').value) waypoints.push({location: document.getElementById('route-via1').value, stopover:true});
+        if(document.getElementById('route-via2').value) waypoints.push({location: document.getElementById('route-via2').value, stopover:true});
+
+        const ds = new google.maps.DirectionsService();
+        ds.route({ origin: start, destination: eind, waypoints: waypoints, travelMode: 'DRIVING' }, (res, status) => {
+            if(status === 'OK') {
+                const legs = res.routes[0].legs;
+                
+                // Garage -> Klant is altijd de eerste 'leg'
+                let aanrijM = legs[0].distance.value;
+                let aanrijS = legs[0].duration.value;
+                
+                // De rest is de hoofdrit
+                let hoofdM = 0;
+                let hoofdS = 0;
+                for(let i=1; i<legs.length; i++) {
+                    hoofdM += legs[i].distance.value;
+                    hoofdS += legs[i].duration.value;
+                }
+
+                // Update UI
+                document.getElementById('info-aanrij').innerText = `${Math.round(aanrijM/1000)} km (${Math.round(aanrijS/60)} min)`;
+                document.getElementById('info-hoofd').innerText = `${Math.round(hoofdM/1000)} km (${Math.round(hoofdS/60)} min)`;
+
+                // Totaal retour berekenen
+                let totaalM = (aanrijM + hoofdM) * 2;
+                retourKM = Math.round(totaalM / 1000);
+                document.getElementById('info-totaal').innerText = retourKM + " km";
+
+                // Herbereken prijs
+                rekenPrijs();
+            }
+        });
+    }
+
+    // ---------------------------------------------------------
+    // 5. REKEN LOGICA (Tijden & Prijs)
+    // ---------------------------------------------------------
+    function syncTijden() {
+        // Hulpfunctie om tijdvelden uit te lezen naar Date objecten
+        const getTijd = (id) => {
+            const h = parseInt(document.getElementById('h_'+id).value);
+            const m = parseInt(document.getElementById('m_'+id).value);
+            return new Date(2000, 0, 1, h, m);
+        };
+        const setTijd = (id, date) => {
+            document.getElementById('h_'+id).value = date.getHours().toString().padStart(2,'0');
+            document.getElementById('m_'+id).value = date.getMinutes().toString().padStart(2,'0');
+        };
+
+        // 1. Voorstaan = Vertrek Klant - 15 min
+        let dVertrekKlant = getTijd('vertrek_klant');
+        let dVoorstaan = new Date(dVertrekKlant.getTime() - 15*60000);
+        setTijd('voorstaan', dVoorstaan);
+
+        // 2. Aankomst Garage = Retour Klant + (Reistijd heenweg)
+        let dStart = getTijd('vertrek_zaak');
+        let reistijd = dVertrekKlant - dStart; // Verschil in ms
+        if(reistijd < 0) reistijd = 0;
+
+        let dRetourKlant = getTijd('retour_klant');
+        let dAankomstZaak = new Date(dRetourKlant.getTime() + reistijd);
+        setTijd('aankomst_zaak', dAankomstZaak);
+    }
+
+    function rekenUren() {
+        const h1 = document.getElementById('h_vertrek_zaak').value;
+        const m1 = document.getElementById('m_vertrek_zaak').value;
+        const h2 = document.getElementById('h_aankomst_zaak').value;
+        const m2 = document.getElementById('m_aankomst_zaak').value;
+        
+        const d1 = new Date(2000, 0, 1, h1, m1);
+        const d2 = new Date(2000, 0, 1, h2, m2);
+        
+        let diff = (d2 - d1) / (1000 * 60 * 60);
+        if(diff < 0) diff += 24; // Nachtwerk correctie
+
+        document.getElementById('uren-display').innerText = diff.toFixed(2);
+        rekenPrijs();
+    }
+
+    function rekenPrijs() {
+        const uren = parseFloat(document.getElementById('uren-display').innerText) || 0;
+        const extra = parseFloat(document.getElementById('kosten-extra').value) || 0;
+
+        // Bepaal bus prijzen
+        let kmTariefTotaal = 0;
+        let aantalBussen = 0;
+        document.querySelectorAll('.bus-check').forEach(box => {
+            if(box.checked) {
+                kmTariefTotaal += busOpties[box.value].prijs;
+                aantalBussen++;
+            }
+        });
+
+        if (aantalBussen === 0) {
+            document.getElementById('prijs-display').innerText = '€ 0,00';
+            document.getElementById('btw-display').innerText = 'BTW (9%): € 0,00';
+            return;
         }
 
-        function verstuurMail() {
-            const mail = document.getElementById('klant_mail').value;
-            const prijs = document.getElementById('totaal').innerText;
-            const datum = document.getElementById('rit_datum').value;
-            window.location.href = `mailto:${mail}?subject=Offerte%20Berkhout%20${datum}&body=Uw%20prijs:%20${prijs}`;
+        // --- DE FORMULE ---
+        let kostenKM = retourKM * kmTariefTotaal;
+        let kostenUur = uren * 33.00 * aantalBussen;
+        let kostprijs = kostenKM + kostenUur + extra;
+        
+        // Marge 25% (Delen door 0.75)
+        let verkoopEx = kostprijs / 0.75;
+        
+        // BTW toevoegen
+        let verkoopIncl = verkoopEx * 1.09;
+        
+        // Afronden op 25 euro (naar boven)
+        let eindBedrag = Math.ceil(verkoopIncl / 25) * 25;
+        if(eindBedrag < 200) eindBedrag = 200;
+
+        // BTW terugrekenen uit eindbedrag voor weergave
+        let prijsExBtw = eindBedrag / 1.09;
+        let btwBedrag = eindBedrag - prijsExBtw;
+
+        // Weergave
+        document.getElementById('prijs-display').innerText = '€ ' + eindBedrag.toLocaleString('nl-NL', {minimumFractionDigits: 2});
+        document.getElementById('btw-display').innerText = 'BTW (9%): € ' + btwBedrag.toLocaleString('nl-NL', {minimumFractionDigits: 2});
+    }
+
+    // ---------------------------------------------------------
+    // 6. OPSLAG & KLANTEN BEHEER
+    // ---------------------------------------------------------
+    function vulKlant() {
+        const id = document.getElementById('calc-klant').value;
+        const klant = db.klanten.find(k => k.id == id);
+        const detailBox = document.getElementById('klant-details');
+        
+        if(klant) {
+            document.getElementById('route-ophaal').value = klant.adres || klant.plaats;
+            detailBox.style.display = 'block';
+            detailBox.innerHTML = `<b>${klant.naam}</b><br>${klant.adres}, ${klant.plaats}<br>Tel: ${klant.tel}`;
+            berekenRoute();
+        } else {
+            detailBox.style.display = 'none';
         }
-    </script>
+    }
+
+    function klantOpslaan() {
+        db.klanten.push({
+            id: Date.now(),
+            naam: document.getElementById('nk-naam').value,
+            tel: document.getElementById('nk-tel').value,
+            adres: document.getElementById('nk-adres').value,
+            plaats: document.getElementById('nk-plaats').value
+        });
+        saveDB();
+        updateKlantenLijst();
+        
+        // Velden legen
+        ['nk-naam','nk-tel','nk-adres','nk-plaats','zoek-bedrijf'].forEach(id => document.getElementById(id).value = '');
+        nav('klanten');
+    }
+
+    function opslaan() {
+        const id = document.getElementById('calc-klant').value;
+        const klantNaam = id ? db.klanten.find(k => k.id == id).naam : 'Onbekende klant';
+        
+        db.ritten.unshift({
+            datum: new Date().toLocaleDateString('nl-NL'),
+            klant: klantNaam,
+            prijs: document.getElementById('prijs-display').innerText,
+            dest: document.getElementById('route-eind').value
+        });
+        saveDB();
+        updateDashboard();
+        alert('Offerte opgeslagen!');
+    }
+
+    function updateKlantenLijst() {
+        const sel = document.getElementById('calc-klant');
+        sel.innerHTML = '<option value="">-- Kies Klant --</option>';
+        
+        let lijstHtml = '<table style="width:100%; text-align:left; font-size:14px; border-collapse:collapse;"><tr><th style="border-bottom:1px solid #ddd; padding:5px;">Naam</th><th style="border-bottom:1px solid #ddd;">Plaats</th></tr>';
+        
+        db.klanten.forEach(k => {
+            sel.innerHTML += `<option value="${k.id}">${k.naam}</option>`;
+            lijstHtml += `<tr><td style="padding:8px; border-bottom:1px solid #eee;">${k.naam}</td><td style="border-bottom:1px solid #eee;">${k.plaats}</td></tr>`;
+        });
+        document.getElementById('klanten-lijst').innerHTML = lijstHtml + '</table>';
+    }
+
+    function updateDashboard() {
+        document.getElementById('dash-aantal').innerText = db.ritten.length;
+        let html = '<table style="width:100%; text-align:left; font-size:14px;"><tr><th>Datum</th><th>Klant</th><th>Bestemming</th><th>Prijs</th></tr>';
+        db.ritten.slice(0,5).forEach(r => {
+            html += `<tr><td style="padding:5px;">${r.datum}</td><td>${r.klant}</td><td>${r.dest}</td><td>${r.prijs}</td></tr>`;
+        });
+        document.getElementById('recent-list').innerHTML = html + '</table>';
+    }
+
+    function saveDB() {
+        localStorage.setItem('berkhout_v2', JSON.stringify(db));
+    }
+</script>
+
 </body>
 </html>
