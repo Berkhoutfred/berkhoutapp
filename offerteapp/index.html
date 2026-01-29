@@ -3,345 +3,249 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Berkhout Planning V4.0</title>
+    <title>Berkhout Planning V4.1</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi1U8gP0dlE87sYaUDI2JbKKFxJW_YjlY&libraries=places&callback=initMap" async defer></script>
-
     <style>
+        /* STYLING VAN DE APP */
         :root { 
-            --blue: #004a99; 
-            --blue-light: #e6f0fa;
-            --grey: #f4f6f8; 
-            --text: #333;
+            --primary: #004a99; 
+            --bg-color: #f0f2f5;
+            --text-color: #333;
         }
         
         body { 
-            font-family: 'Inter', sans-serif; 
-            background: var(--grey); 
-            padding: 20px; 
-            margin: 0; 
-            color: var(--text);
+            font-family: 'Roboto', sans-serif; 
+            background: var(--bg-color); 
+            margin: 0; padding: 0;
+            color: var(--text-color);
         }
 
-        .container { max-width: 500px; margin: 0 auto; }
+        .app-header {
+            background: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
         
-        h2 { color: var(--blue); text-align: center; margin-bottom: 20px; }
+        .container { max-width: 500px; margin: 20px auto; padding: 0 15px 40px 15px; }
 
         .card { 
             background: white; 
-            border-radius: 12px; 
+            border-radius: 8px; 
             padding: 20px; 
             margin-bottom: 20px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
-            border: 1px solid #eee;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+            border-left: 5px solid var(--primary);
         }
 
-        .card-header {
-            font-size: 14px;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: var(--blue);
-            border-bottom: 2px solid var(--blue-light);
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-            letter-spacing: 0.5px;
+        .card-title {
+            font-size: 16px; font-weight: 700; color: var(--primary);
+            margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;
         }
 
-        label { 
-            display: block; 
-            font-size: 12px; 
-            color: #666; 
-            margin-bottom: 6px; 
-            font-weight: 600; 
-        }
+        label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 500; }
 
         input { 
-            width: 100%; 
-            padding: 12px; 
-            border: 1px solid #ddd; 
-            border-radius: 8px; 
-            font-size: 15px; 
-            box-sizing: border-box; 
-            margin-bottom: 15px; 
-            transition: border-color 0.2s;
-            font-family: 'Inter', sans-serif;
+            width: 100%; padding: 12px; border: 1px solid #ccc; 
+            border-radius: 6px; font-size: 16px; box-sizing: border-box; 
+            margin-bottom: 15px; background: #fafafa;
         }
 
-        input:focus { outline: none; border-color: var(--blue); }
+        input:focus { outline: none; border-color: var(--primary); background: white; }
 
-        /* Specifieke styling voor de tijden zodat ze netjes naast elkaar staan */
-        .time-row { display: flex; gap: 15px; }
-        .time-col { flex: 1; }
-        
-        .time-input-styled {
-            background-color: #f9f9f9;
-            text-align: center;
-            font-weight: 600;
-            color: var(--blue);
+        .row-2 { display: flex; gap: 15px; }
+        .col { flex: 1; }
+
+        .result-box {
+            background: #eef6ff; color: #003366; padding: 10px;
+            border-radius: 6px; font-weight: bold; text-align: center;
+            border: 1px dashed var(--primary); margin-bottom: 10px;
         }
 
-        #km_display { 
-            font-size: 16px; 
-            font-weight: 600; 
-            color: var(--blue); 
-            text-align: center; 
-            padding: 12px; 
-            border-radius: 8px; 
-            background: var(--blue-light); 
-            margin-bottom: 5px; 
-        }
-
-        .price-box { 
-            background: white; 
-            border: 2px solid var(--blue); 
-            text-align: center; 
-            padding: 20px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 15px rgba(0,74,153,0.1);
-        }
-
-        .price { 
-            font-size: 42px; 
-            color: var(--blue); 
-            font-weight: 800; 
-            margin: 10px 0; 
-        }
+        .price-card { background: var(--primary); color: white; text-align: center; border: none; }
+        .price-display { font-size: 40px; font-weight: 700; margin: 10px 0; }
 
         .btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        
-        button { 
-            flex: 1;
-            border: none; 
-            padding: 14px; 
-            border-radius: 8px; 
-            font-size: 16px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            transition: opacity 0.2s;
-        }
-        
-        button:hover { opacity: 0.9; }
-
-        .btn-print { background: var(--blue); color: white; }
-        .btn-mail { background: #28a745; color: white; }
-
+        button { flex: 1; border: none; padding: 15px; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .btn-white { background: white; color: var(--primary); }
+        .btn-green { background: #28a745; color: white; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Berkhout Planning V4.0</h2>
-
-    <div class="card">
-        <div class="card-header">1. Klantgegevens</div>
-        <label>Naam Klant</label>
-        <input type="text" id="klant_naam" placeholder="Bijv. Dhr. Jansen">
-        <label>E-mailadres</label>
-        <input type="email" id="klant_mail" placeholder="klant@email.com">
-        <label>Datum van de rit</label>
-        <input type="date" id="rit_datum">
+    <div class="app-header">
+        <h1 style="margin:0; font-size:20px;">Berkhout Touringcar</h1>
+        <div style="font-size:10px; opacity:0.8;">PLANNING V4.1</div>
     </div>
 
-    <div class="card">
-        <div class="card-header">2. Route</div>
-        <label>Vertrek (Garage)</label>
-        <input type="text" id="start" value="Industrieweg 99J, Zutphen">
+    <div class="container">
         
-        <label>Bestemming</label>
-        <input type="text" id="eind" placeholder="Typ bestemming (Google zoekt...)" onchange="berekenAfstand()">
-        
-        <div id="km_display">Nog geen route berekend</div>
-    </div>
+        <div class="card">
+            <div class="card-title">1. Klantgegevens</div>
+            <label>Naam Opdrachtgever</label>
+            <input type="text" id="klant_naam" placeholder="Naam klant">
+            <label>E-mailadres</label>
+            <input type="email" id="klant_mail" placeholder="email@klant.nl">
+            <label>Datum Rit</label>
+            <input type="date" id="rit_datum">
+        </div>
 
-    <div class="card">
-        <div class="card-header">3. Tijden & Uren</div>
-        <div class="time-row">
-            <div class="time-col">
-                <label>Starttijd</label>
-                <input type="time" id="tijd_start" value="08:00" class="time-input-styled" onchange="berekenUren()">
+        <div class="card">
+            <div class="card-title">2. Route & Afstand</div>
+            <label>Vertrekpunt (Garage)</label>
+            <input type="text" id="start" value="Industrieweg 99J, Zutphen">
+            <label>Bestemming (Zoek op adres)</label>
+            <input type="text" id="eind" placeholder="Typ bestemming..." onchange="berekenAfstand()">
+            <div id="km_display" class="result-box">Nog geen route berekend</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">3. Tijdsplanning</div>
+            <div class="row-2">
+                <div class="col">
+                    <label>Starttijd</label>
+                    <input type="time" id="tijd_start" value="08:00" onchange="berekenUren()">
+                </div>
+                <div class="col">
+                    <label>Eindtijd</label>
+                    <input type="time" id="tijd_eind" value="17:00" onchange="berekenUren()">
+                </div>
             </div>
-            <div class="time-col">
-                <label>Eindtijd</label>
-                <input type="time" id="tijd_eind" value="17:00" class="time-input-styled" onchange="berekenUren()">
+            <label>Totaal berekende uren</label>
+            <input type="number" id="uren" value="9.0" readonly style="background:#eee; font-weight:bold; color:#333;">
+        </div>
+
+        <div class="card price-card">
+            <div style="font-size: 14px; opacity: 0.9;">Totaalprijs (incl. 9% BTW)</div>
+            <div class="price-display" id="totaal">€ 0,00</div>
+            <div class="btn-group">
+                <button class="btn-white" onclick="maakPDF()">📄 PDF / Print</button>
+                <button class="btn-green" onclick="verstuurMail()">✉️ Mail Klant</button>
             </div>
         </div>
-        <label>Totaal aantal uren (wordt berekend)</label>
-        <input type="number" id="uren" value="9" step="0.5" readonly style="background:#eee; font-weight:bold;">
     </div>
 
-    <div class="price-box">
-        <div style="font-weight:bold; color:#666;">Totaalprijs (incl. 9% BTW)</div>
-        <div class="price" id="totaal">€ 0,00</div>
-        
-        <div class="btn-group">
-            <button class="btn-print" onclick="maakPDF()">📄 Print PDF</button>
-            <button class="btn-mail" onclick="verstuurMail()">✉️ E-mail</button>
-        </div>
-    </div>
-</div>
+    <script>
+        let retourKm = 0;
 
-<script>
-    let retourKm = 0;
-    
-    // Globale functie die door de Google Script URL wordt aangeroepen
-    window.initMap = function() {
-        const options = { types: ['address'], componentRestrictions: {country: 'nl'} };
-        
-        // Autocomplete koppelen aan het bestemmingsveld
-        const inputEind = document.getElementById('eind');
-        const autoEind = new google.maps.places.Autocomplete(inputEind, options);
-        
-        // Als er een plek gekozen is, direct rekenen
-        autoEind.addListener('place_changed', () => { 
-            berekenAfstand(); 
-        });
-
-        // Zet datum standaard op vandaag
-        document.getElementById('rit_datum').valueAsDate = new Date();
-        
-        // Eerste berekening voor de default waarden
-        berekenUren();
-    }
-
-    function berekenAfstand() {
-        const startVal = document.getElementById('start').value;
-        const eindVal = document.getElementById('eind').value;
-
-        if(!startVal || !eindVal) return;
-
-        const service = new google.maps.DistanceMatrixService();
-        service.getDistanceMatrix({
-            origins: [startVal],
-            destinations: [eindVal],
-            travelMode: 'DRIVING'
-        }, (response, status) => {
-            if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
-                const dist = response.rows[0].elements[0].distance.value / 1000;
-                retourKm = Math.round(dist * 2); // Heen en terug
-                document.getElementById('km_display').innerText = `Afstand: ${retourKm} km (retour)`;
-                rekenen();
-            } else {
-                document.getElementById('km_display').innerText = "Kon afstand niet berekenen.";
+        // Deze functie start automatisch als Google Maps geladen is
+        window.initMap = function() {
+            const options = { types: ['address'], componentRestrictions: {country: 'nl'} };
+            const inputEind = document.getElementById('eind');
+            
+            if(inputEind) {
+                const autocomplete = new google.maps.places.Autocomplete(inputEind, options);
+                autocomplete.addListener('place_changed', berekenAfstand);
             }
-        });
-    }
 
-    function berekenUren() {
-        const t1 = document.getElementById('tijd_start').value.split(':');
-        const t2 = document.getElementById('tijd_eind').value.split(':');
-        
-        if(t1.length < 2 || t2.length < 2) return;
+            document.getElementById('rit_datum').valueAsDate = new Date();
+            berekenUren();
+        }
 
-        const d1 = new Date(0, 0, 0, t1[0], t1[1]);
-        const d2 = new Date(0, 0, 0, t2[0], t2[1]);
-        
-        let diff = (d2 - d1) / (1000 * 60 * 60);
-        if (diff < 0) diff += 24; // Nachtwerk correctie
-        
-        document.getElementById('uren').value = diff.toFixed(1);
-        rekenen();
-    }
+        function berekenAfstand() {
+            const start = document.getElementById('start').value;
+            const eind = document.getElementById('eind').value;
 
-    function rekenen() {
-        const uren = parseFloat(document.getElementById('uren').value) || 0;
-        const prijsPerKm = 1.00;
-        const uurTarief = 33.00;
-        const aantalBussen = 1;
-        const extraKosten = 0;
+            if(!start || !eind) return;
 
-        // Formule: ((KM * prijs) + (uren * 33 * bussen) + extra) / 0.75
-        let kostprijsBasis = (retourKm * prijsPerKm) + (uren * uurTarief * aantalBussen) + extraKosten;
-        
-        // Marge berekening (delen door 0.75 is factor 1.33)
-        let verkoopExBtw = kostprijsBasis / 0.75;
-        
-        // BTW toevoegen
-        let verkoopInclBtw = verkoopExBtw * 1.09;
+            const service = new google.maps.DistanceMatrixService();
+            service.getDistanceMatrix({
+                origins: [start],
+                destinations: [eind],
+                travelMode: 'DRIVING'
+            }, (response, status) => {
+                if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
+                    const dist = response.rows[0].elements[0].distance.value / 1000;
+                    retourKm = Math.round(dist * 2);
+                    document.getElementById('km_display').innerText = `Afstand: ${retourKm} km (retour)`;
+                    rekenen();
+                }
+            });
+        }
 
-        // Afronden op veelvouden van 25 euro
-        let afgerond = Math.ceil(verkoopInclBtw / 25) * 25;
+        function berekenUren() {
+            const t1 = document.getElementById('tijd_start').value.split(':');
+            const t2 = document.getElementById('tijd_eind').value.split(':');
+            
+            const d1 = new Date(0, 0, 0, t1[0], t1[1]);
+            const d2 = new Date(0, 0, 0, t2[0], t2[1]);
+            
+            let diff = (d2 - d1) / (1000 * 60 * 60);
+            if (diff < 0) diff += 24; 
+            
+            document.getElementById('uren').value = diff.toFixed(1);
+            rekenen();
+        }
 
-        // Minimum tarief
-        if (afgerond < 200) afgerond = 200;
+        function rekenen() {
+            const uren = parseFloat(document.getElementById('uren').value) || 0;
+            const prijsPerKm = 1.00;
+            const uurTarief = 33.00;
+            const aantalBussen = 1;
 
-        document.getElementById('totaal').innerText = '€ ' + afgerond.toLocaleString('nl-NL', {
-            minimumFractionDigits: 2, 
-            maximumFractionDigits: 2
-        });
-    }
+            // Formule: ((KM * prijs) + (uren * 33 * bussen)) / 0.75
+            let basisPrijs = (retourKm * prijsPerKm) + (uren * uurTarief * aantalBussen);
+            let verkoopEx = basisPrijs / 0.75; 
+            let verkoopInc = verkoopEx * 1.09;
 
-    function maakPDF() {
-        const klantNaam = document.getElementById('klant_naam').value || "Klant";
-        const datum = document.getElementById('rit_datum').value;
-        const van = document.getElementById('start').value;
-        const naar = document.getElementById('eind').value;
-        const prijs = document.getElementById('totaal').innerText;
-        const uren = document.getElementById('uren').value;
+            // Afronden op 25 euro
+            let afgerond = Math.ceil(verkoopInc / 25) * 25;
+            if (afgerond < 200) afgerond = 200;
 
-        // Hier bouwen we de 'brief' voor de PDF/Print
-        const printContent = `
-            <html>
-            <head>
-                <title>Offerte ${klantNaam}</title>
-                <style>
-                    body { font-family: sans-serif; padding: 40px; color: #333; max-width: 800px; margin: 0 auto; }
-                    h1 { color: #004a99; border-bottom: 2px solid #004a99; padding-bottom: 10px; }
-                    .row { display: flex; justify-content: space-between; margin-bottom: 10px; }
-                    .label { font-weight: bold; width: 150px; }
-                    .footer { margin-top: 50px; font-size: 12px; color: #777; border-top: 1px solid #ccc; padding-top: 20px; }
-                    .prijs-groot { font-size: 24px; font-weight: bold; color: #004a99; margin-top: 20px; }
-                </style>
-            </head>
-            <body>
-                <h1>Offerte Berkhout Touringcar</h1>
-                <p>Geachte ${klantNaam},</p>
-                <p>Hartelijk dank voor uw aanvraag. Op basis van uw gegevens bieden wij u het volgende aan:</p>
-                
-                <div style="background: #f4f6f8; padding: 20px; border-radius: 8px;">
-                    <div class="row"><span class="label">Datum:</span> <span>${datum}</span></div>
-                    <div class="row"><span class="label">Vertrek:</span> <span>${van}</span></div>
-                    <div class="row"><span class="label">Bestemming:</span> <span>${naar}</span></div>
-                    <div class="row"><span class="label">Verwachte duur:</span> <span>${uren} uur</span></div>
-                    <div class="row"><span class="label">Afstand:</span> <span>${retourKm} km (retour)</span></div>
-                </div>
+            document.getElementById('totaal').innerText = '€ ' + afgerond.toLocaleString('nl-NL', {minimumFractionDigits: 2});
+        }
 
-                <div class="prijs-groot">
-                    Totaalprijs: ${prijs} <span style="font-size:14px; color:#333;">(inclusief 9% BTW)</span>
-                </div>
+        function maakPDF() {
+            const naam = document.getElementById('klant_naam').value;
+            const datum = document.getElementById('rit_datum').value;
+            const van = document.getElementById('start').value;
+            const naar = document.getElementById('eind').value;
+            const prijs = document.getElementById('totaal').innerText;
+            const uren = document.getElementById('uren').value;
 
-                <p>Deze offerte is geldig tot 14 dagen na dagtekening.</p>
-                
-                <div class="footer">
-                    Berkhout Touringcarverhuur | Industrieweg 99J, Zutphen<br>
-                    Telefoon: 0575-XXXXXX | Email: info@berkhout.nl
-                </div>
-            </body>
-            </html>
-        `;
+            const win = window.open('', '_blank');
+            win.document.write(`
+                <html>
+                <head>
+                    <title>Offerte ${naam}</title>
+                    <style>
+                        body { font-family: sans-serif; margin: 40px; color: #333; }
+                        h1 { color: #004a99; border-bottom: 2px solid #004a99; padding-bottom: 10px; }
+                        .row { display: flex; margin-bottom: 10px; justify-content: space-between; max-width: 600px; border-bottom: 1px solid #eee; padding: 5px 0;}
+                        .label { font-weight: bold; }
+                        .total { font-size: 24px; font-weight: bold; color: #004a99; margin-top: 30px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Offerte Berkhout Touringcar</h1>
+                    <p>Datum: ${datum}</p>
+                    <p>Beste ${naam},<br>Hierbij uw prijsopgave:</p>
+                    
+                    <div style="background:#f9f9f9; padding:20px; border-radius:8px; margin:20px 0;">
+                        <div class="row"><span class="label">Van:</span> <span>${van}</span></div>
+                        <div class="row"><span class="label">Naar:</span> <span>${naar}</span></div>
+                        <div class="row"><span class="label">Uren:</span> <span>${uren} uur</span></div>
+                        <div class="row"><span class="label">Afstand:</span> <span>${retourKm} km (retour)</span></div>
+                    </div>
 
-        const win = window.open('', '_blank');
-        win.document.write(printContent);
-        win.document.close();
-        
-        // Wacht heel even met printen zodat plaatjes/stijlen geladen zijn (indien van toepassing)
-        setTimeout(() => {
-            win.focus();
-            win.print();
-        }, 500);
-    }
+                    <div class="total">Totaal: ${prijs} (incl. BTW)</div>
+                </body>
+                </html>
+            `);
+            win.document.close();
+            setTimeout(() => { win.focus(); win.print(); }, 500);
+        }
 
-    function verstuurMail() {
-        const klantMail = document.getElementById('klant_mail').value;
-        const datum = document.getElementById('rit_datum').value;
-        const prijs = document.getElementById('totaal').innerText;
-        const onderwerp = `Offerte Berkhout - ${datum}`;
-        const body = `Uw prijsopgave is berekend op: ${prijs}.`;
-        
-        window.location.href = `mailto:${klantMail}?subject=${encodeURIComponent(onderwerp)}&body=${encodeURIComponent(body)}`;
-    }
-</script>
-
+        function verstuurMail() {
+            const mail = document.getElementById('klant_mail').value;
+            const prijs = document.getElementById('totaal').innerText;
+            const datum = document.getElementById('rit_datum').value;
+            window.location.href = `mailto:${mail}?subject=Offerte%20Berkhout%20${datum}&body=Uw%20prijs:%20${prijs}`;
+        }
+    </script>
 </body>
 </html>
