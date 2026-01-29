@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berkhout Planning V2.4</title>
+    <title>Berkhout Planning V2.5</title>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi1U8gP0dlE87sYaUDI2JbKKFxJW_YjlY&libraries=places"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
@@ -40,8 +40,10 @@
         
         /* INFO DISPLAY */
         .info-display { background: #eef6ff; border: 1px solid var(--primary); padding: 10px; border-radius: 6px; margin-top: 5px; color: var(--primary); }
-        .info-large { font-size: 18px; font-weight: bold; }
-        .info-sub { font-size: 12px; color: #555; margin-top: 3px; }
+        .info-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; border-bottom: 1px dashed #ccc; padding-bottom: 4px; }
+        .info-row:last-child { border: none; margin-bottom: 0; padding-bottom: 0; }
+        .info-label { color: #666; }
+        .info-val { font-weight: bold; }
 
         /* TOTALEN */
         .total-box { text-align: right; background: #eef6ff; padding: 15px; border-radius: 8px; border: 2px solid var(--primary); }
@@ -52,9 +54,11 @@
         .btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; width: 100%; margin-top: 10px; }
         .btn-blue { background: var(--primary); }
         .btn-green { background: #28a745; }
+        .btn-link { background: none; color: var(--primary); border: none; font-size: 12px; cursor: pointer; padding: 0; width: auto; text-decoration: underline; margin-bottom: 10px; }
 
         .page-section { display: none; }
         .page-section.active { display: block; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -103,22 +107,37 @@
                 </div>
 
                 <div class="card">
-                    <div class="section-header">2. Route (Auto + 15% Busfactor)</div>
-                    <label>Vertrek (Garage)</label>
+                    <div class="section-header">2. Route (Garage ➔ Klant ➔ Bestemming)</div>
+                    <label>Vertrek Garage</label>
                     <input type="text" id="route-start" value="Industrieweg 99J, Zutphen">
                     
-                    <label>Via 1 (Optioneel)</label>
-                    <input type="text" id="route-via1" placeholder="Plaats of Adres..." onchange="berekenRoute()">
+                    <label>Ophaaladres Klant</label>
+                    <input type="text" id="route-ophaal" placeholder="Wordt ingevuld bij kiezen klant..." onchange="berekenRoute()">
+
+                    <button class="btn-link" onclick="toggleVia()">+ Via-locatie toevoegen</button>
+                    <div id="via-container" class="hidden">
+                        <label>Via 1</label>
+                        <input type="text" id="route-via1" placeholder="Plaats of Adres..." onchange="berekenRoute()">
+                        <label>Via 2</label>
+                        <input type="text" id="route-via2" placeholder="Plaats of Adres..." onchange="berekenRoute()">
+                    </div>
                     
-                    <label>Via 2 (Optioneel)</label>
-                    <input type="text" id="route-via2" placeholder="Plaats of Adres..." onchange="berekenRoute()">
-                    
-                    <label>Bestemming</label>
+                    <label>Eindbestemming</label>
                     <input type="text" id="route-eind" placeholder="Waar gaat de reis heen?" onchange="berekenRoute()">
                     
                     <div class="info-display">
-                        <div class="info-large"><span id="km-display">0</span> km <span style="font-size:14px; font-weight:normal;">(Retour)</span></div>
-                        <div class="info-sub" id="tijd-display">Nog geen route berekend</div>
+                        <div class="info-row">
+                            <span class="info-label">Garage ➔ Klant:</span>
+                            <span class="info-val" id="info-aanrij">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Klant ➔ Bestemming:</span>
+                            <span class="info-val" id="info-hoofd">-</span>
+                        </div>
+                        <div class="info-row" style="border-top:2px solid #ccc; margin-top:5px; padding-top:5px;">
+                            <span class="info-label" style="color:#000;">Totaal Retour:</span>
+                            <span class="info-val" style="color:var(--primary); font-size:15px;" id="info-totaal">0 km</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -129,9 +148,6 @@
                     <div id="tijd-container"></div>
                     <div style="text-align:right; font-weight:bold; margin-top:10px;">
                         Totaal Inzet: <span id="uren-display">0.0</span> uur
-                    </div>
-                    <div style="text-align:right; font-size:11px; color:#666; font-style:italic;">
-                        * Aankomst Garage wordt automatisch berekend
                     </div>
                 </div>
 
@@ -161,7 +177,7 @@
             <input type="text" id="zoek-bedrijf" placeholder="Bijv. Gemeente Zutphen...">
             <div class="grid-2">
                 <input type="text" id="nk-naam" placeholder="Naam">
-                <input type="text" id="nk-plaats" placeholder="Plaats">
+                <input type="text" id="nk-plaats" placeholder="Plaats/Adres">
             </div>
             <button class="btn btn-green" onclick="klantOpslaan()">Toevoegen</button>
         </div>
@@ -176,7 +192,7 @@
     // DATA STORE
     let db = { klanten: [], ritten: [] };
     
-    // VOERTUIGEN CONFIGURATIE (Nieuwe indeling)
+    // CONFIGURATIE
     const busOpties = [
         { label: 'Bus 19 (Max 19)', prijs: 0.75 },
         { label: 'Bus 23 (Max 19)', prijs: 0.75 },
@@ -186,8 +202,6 @@
         { label: 'Bus 62 (Max 62)', prijs: 1.20 }
     ];
 
-    // TIJDEN CONFIGURATIE
-    // We geven aan welke velden 'triggers' zijn voor de automatische berekening
     const tijdVelden = [
         { id: 'vertrek_zaak', label: '1. Vertrek Garage', defH: '08', defM: '00', auto: true },
         { id: 'voorstaan', label: '2. Voorstaan', defH: '08', defM: '30', readonly: true },
@@ -198,7 +212,7 @@
         { id: 'aankomst_zaak', label: '7. Aankomst Garage', defH: '18', defM: '00', readonly: true, style: 'background:#f0f0f0' }
     ];
 
-    let retourKM = 0;
+    let retourKM = 0; // Totaal retour
 
     function init() {
         const save = localStorage.getItem('berkhout_v2');
@@ -210,6 +224,11 @@
         updateDashboard();
         initMaps();
         rekenUren();
+    }
+
+    function toggleVia() {
+        const el = document.getElementById('via-container');
+        el.classList.toggle('hidden');
     }
 
     // BUS CHECKBOXES
@@ -243,11 +262,8 @@
                 minOpties += `<option value="${m}" ${sel}>${m}</option>`;
             });
 
-            // Logica voor onChange:
-            // Als het een 'auto' veld is, triggeren we de sync functie
             let changeFn = `rekenUren()`;
             if(veld.auto) changeFn = `syncTijden(); rekenUren()`;
-            
             let disabled = veld.readonly ? 'disabled style="background:#eee"' : '';
             let style = veld.style || '';
 
@@ -263,29 +279,24 @@
         container.innerHTML = html;
     }
 
-    // SLIMME TIJD SYNCHRONISATIE
     function syncTijden() {
-        // 1. Update Voorstaan (Altijd 15 min voor vertrek klant)
         let hv = parseInt(document.getElementById('h_vertrek_klant').value);
         let mv = parseInt(document.getElementById('m_vertrek_klant').value);
         let dVoor = new Date(2000,0,1, hv, mv - 15);
         document.getElementById('h_voorstaan').value = dVoor.getHours().toString().padStart(2,'0');
         document.getElementById('m_voorstaan').value = dVoor.getMinutes().toString().padStart(2,'0');
 
-        // 2. Bereken Reistijd Heen (Vertrek Garage -> Vertrek Klant)
         let h1 = parseInt(document.getElementById('h_vertrek_zaak').value);
         let m1 = parseInt(document.getElementById('m_vertrek_zaak').value);
         let dStart = new Date(2000,0,1, h1, m1);
         let dKlant = new Date(2000,0,1, hv, mv);
         
-        let reisTijdMs = dKlant - dStart; // Verschil in ms
-        if(reisTijdMs < 0) reisTijdMs = 0; // Geen negatieve tijd
+        let reisTijdMs = dKlant - dStart;
+        if(reisTijdMs < 0) reisTijdMs = 0;
 
-        // 3. Update Aankomst Garage (Retour Klant + Reistijd Heen)
         let hr = parseInt(document.getElementById('h_retour_klant').value);
         let mr = parseInt(document.getElementById('m_retour_klant').value);
         let dRetour = new Date(2000,0,1, hr, mr);
-        
         let dAankomst = new Date(dRetour.getTime() + reisTijdMs);
         
         document.getElementById('h_aankomst_zaak').value = dAankomst.getHours().toString().padStart(2,'0');
@@ -296,6 +307,7 @@
     function initMaps() {
         const opts = { componentRestrictions: {country: 'nl'} };
         new google.maps.places.Autocomplete(document.getElementById('route-start'), opts);
+        new google.maps.places.Autocomplete(document.getElementById('route-ophaal'), opts);
         new google.maps.places.Autocomplete(document.getElementById('route-via1'), opts);
         new google.maps.places.Autocomplete(document.getElementById('route-via2'), opts);
         const autoEind = new google.maps.places.Autocomplete(document.getElementById('route-eind'), opts);
@@ -312,32 +324,49 @@
 
     function berekenRoute() {
         const start = document.getElementById('route-start').value;
+        const ophaal = document.getElementById('route-ophaal').value;
         const eind = document.getElementById('route-eind').value;
         const v1 = document.getElementById('route-via1').value;
         const v2 = document.getElementById('route-via2').value;
 
-        if(!start || !eind) return;
+        if(!start || !ophaal || !eind) return;
 
+        // We bouwen de route: Garage -> Ophaal -> (Vias) -> Eind
+        // Google ziet dit als 1 route met waypoints
         const waypoints = [];
+        waypoints.push({location: ophaal, stopover: true}); // Ophaal is de eerste stop
         if(v1) waypoints.push({location: v1, stopover:true});
         if(v2) waypoints.push({location: v2, stopover:true});
 
         const ds = new google.maps.DirectionsService();
         ds.route({ origin: start, destination: eind, waypoints: waypoints, travelMode: 'DRIVING' }, (res, status) => {
             if(status === 'OK') {
-                let m = 0; let s = 0;
-                res.routes[0].legs.forEach(leg => { m += leg.distance.value; s += leg.duration.value; });
+                const legs = res.routes[0].legs;
+                // Leg 0 = Garage -> Ophaal
+                // Leg 1..n = Ophaal -> Eind
                 
-                retourKM = Math.round((m / 1000) * 2);
-                document.getElementById('km-display').innerText = retourKM;
+                let aanrijM = legs[0].distance.value;
+                let aanrijS = legs[0].duration.value;
+                
+                let hoofdM = 0;
+                let hoofdS = 0;
+                for(let i=1; i<legs.length; i++) {
+                    hoofdM += legs[i].distance.value;
+                    hoofdS += legs[i].duration.value;
+                }
 
-                let enkeleReisSec = s * 1.15; // 15% extra
-                let uren = Math.floor(enkeleReisSec / 3600);
-                let minuten = Math.round((enkeleReisSec % 3600) / 60);
-                document.getElementById('tijd-display').innerHTML = `Geschatte reistijd (enkel): <b>${uren}u ${minuten}m</b> (Incl. 15% busfactor)`;
+                // Display
+                document.getElementById('info-aanrij').innerText = `${Math.round(aanrijM/1000)} km / ${Math.round(aanrijS/60)} min`;
+                document.getElementById('info-hoofd').innerText = `${Math.round(hoofdM/1000)} km / ${Math.round(hoofdS/60)} min`;
+
+                // Totaal Retour (Alles x 2)
+                let totaalM = (aanrijM + hoofdM) * 2;
+                retourKM = Math.round(totaalM / 1000);
+                document.getElementById('info-totaal').innerText = retourKM + " km";
+
                 rekenPrijs();
             } else {
-                alert("Let op: Directions API inschakelen!");
+                alert("Kan route niet berekenen. Controleer adressen.");
             }
         });
     }
@@ -380,24 +409,31 @@
         let kostenUur = uren * 33.00 * aantalBussen;
         let kostprijs = kostenKM + kostenUur + extra;
         
-        // MARGE 25% op Verkoopprijs
-        // Formule: Verkoopprijs = Kostprijs / (1 - Marge)
-        // Verkoopprijs = Kostprijs / 0.75
+        // MARGE 25% (Kostprijs / 0.75)
         let verkoopEx = kostprijs / 0.75; 
         let btwBedrag = verkoopEx * 0.09;
         let incl = verkoopEx + btwBedrag;
         
-        // Afronding op 25
         incl = Math.round(incl / 25) * 25;
         if(incl < 200) incl = 200;
 
-        // Herbereken BTW na afronding voor weergave (terugrekenen)
-        // incl = 109%, btw = 9%
+        // Terugrekenen BTW
         let echteVerkoop = incl / 1.09;
         let echteBtw = incl - echteVerkoop;
 
         document.getElementById('prijs-display').innerText = '€ ' + incl.toLocaleString('nl-NL', {minimumFractionDigits: 2});
         document.getElementById('btw-display').innerText = 'Waarvan BTW (9%): € ' + echteBtw.toLocaleString('nl-NL', {minimumFractionDigits: 2});
+    }
+
+    // AUTO-FILL KLANT
+    function vulKlant() {
+        const kId = document.getElementById('calc-klant').value;
+        if(!kId) return;
+        const klant = db.klanten.find(k => k.id == kId);
+        if(klant) {
+            document.getElementById('route-ophaal').value = klant.plaats; // Vult adres/plaats in
+            berekenRoute(); // Herbereken direct als route al deels is ingevuld
+        }
     }
 
     function opslaan() {
