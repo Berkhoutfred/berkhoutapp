@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berkhout Planning V2.2</title>
+    <title>Berkhout Planning V2.3</title>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAi1U8gP0dlE87sYaUDI2JbKKFxJW_YjlY&libraries=places"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
@@ -25,6 +25,12 @@
         label { display: block; font-size: 11px; font-weight: bold; color: #666; margin-bottom: 4px; text-transform: uppercase; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; margin-bottom: 10px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        /* BUS CHECKBOXES */
+        .bus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .bus-option { display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid #eee; border-radius: 6px; font-size: 13px; cursor: pointer; transition: 0.2s; }
+        .bus-option:hover { background: #f0f7ff; border-color: var(--primary); }
+        .bus-option input { width: auto; margin: 0; }
 
         /* TIJD SELECTORS */
         .time-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; padding: 5px; background: #f8f9fa; border-radius: 6px; }
@@ -84,20 +90,18 @@
         <div class="grid-2">
             <div>
                 <div class="card">
-                    <div class="section-header">1. Klant & Bus</div>
+                    <div class="section-header">1. Klant & Bus(sen)</div>
                     <select id="calc-klant" onchange="vulKlant()"><option value="">-- Kies Klant --</option></select>
-                    <div class="grid-2">
-                        <div><label>Personen</label><input type="number" id="pax" placeholder="Aantal"></div>
-                        <div>
-                            <label>Bus Type</label>
-                            <select id="bus-type">
-                                <option>50-persoons</option>
-                                <option>60-persoons</option>
-                                <option>19-persoons</option>
-                                <option>Combi</option>
-                            </select>
+                    
+                    <label style="margin-top:10px;">Selecteer Voertuigen (Vink aan)</label>
+                    <div class="bus-grid" id="bus-container">
                         </div>
+                    <div style="margin-top:5px; font-size:11px; color:#666; font-style:italic;">
+                        Selecteer meerdere voor een combi-rit.
                     </div>
+
+                    <label style="margin-top:10px;">Aantal Personen (Totaal)</label>
+                    <input type="number" id="pax" placeholder="Aantal">
                 </div>
 
                 <div class="card">
@@ -137,7 +141,7 @@
                     
                     <div class="total-box">
                         <label>Totaal incl. 9% BTW</label>
-                        <div class="total-price" id="prijs-display">€ 200,00</div>
+                        <div class="total-price" id="prijs-display">€ 0,00</div>
                         <small>Incl. 33% marge, afgerond op €25</small>
                     </div>
                     
@@ -170,6 +174,16 @@
     // DATA STORE
     let db = { klanten: [], ritten: [] };
     
+    // VOERTUIGEN CONFIGURATIE
+    const busOpties = [
+        { label: '19-persoons', prijs: 0.75 },
+        { label: '23-persoons', prijs: 0.75 },
+        { label: '50-persoons', prijs: 1.00 },
+        { label: '55-persoons', prijs: 1.00 },
+        { label: '60-persoons', prijs: 1.20 },
+        { label: '62-persoons', prijs: 1.20 }
+    ];
+
     // TIJDEN CONFIGURATIE
     const tijdVelden = [
         { id: 'vertrek_zaak', label: '1. Vertrek Garage', defH: '08', defM: '00' },
@@ -187,6 +201,7 @@
         const save = localStorage.getItem('berkhout_v2');
         if(save) db = JSON.parse(save);
         
+        bouwBusKiezers();
         bouwTijdKiezers();
         updateKlantenLijst();
         updateDashboard();
@@ -194,11 +209,24 @@
         rekenUren();
     }
 
+    // BOUW BUS CHECKBOXES
+    function bouwBusKiezers() {
+        const container = document.getElementById('bus-container');
+        let html = '';
+        busOpties.forEach((bus, index) => {
+            html += `
+            <label class="bus-option">
+                <input type="checkbox" class="bus-check" value="${index}" onchange="rekenPrijs()">
+                <span>${bus.label} (€${bus.prijs.toFixed(2)})</span>
+            </label>`;
+        });
+        container.innerHTML = html;
+    }
+
     // BOUW DE TIJD KIEZERS
     function bouwTijdKiezers() {
         const container = document.getElementById('tijd-container');
         let html = '';
-        
         tijdVelden.forEach(veld => {
             let urenOpties = '';
             for(let i=0; i<24; i++) {
@@ -206,21 +234,17 @@
                 let sel = val === veld.defH ? 'selected' : '';
                 urenOpties += `<option value="${val}" ${sel}>${val}</option>`;
             }
-            
             let minOpties = '';
             ['00','15','30','45'].forEach(m => {
                 let sel = m === veld.defM ? 'selected' : '';
                 minOpties += `<option value="${m}" ${sel}>${m}</option>`;
             });
-
             let style = '';
             if(veld.id === 'voorstaan') style = 'border-left: 3px solid orange;';
             if(veld.id === 'vertrek_klant') style = 'border-left: 3px solid green;';
-
             let changeFn = `rekenUren()`;
             if(veld.trigger) changeFn = `updateVoorstaan(); rekenUren()`;
             let disabled = veld.readonly ? 'disabled style="background:#eee"' : '';
-
             html += `
             <div class="time-row" style="${style}">
                 <div class="time-label">${veld.label}</div>
@@ -245,14 +269,11 @@
     // MAPS & ROUTE & TIJD (MET 1.15 FACTOR)
     function initMaps() {
         const opts = { componentRestrictions: {country: 'nl'} };
-        
         new google.maps.places.Autocomplete(document.getElementById('route-start'), opts);
         new google.maps.places.Autocomplete(document.getElementById('route-via1'), opts);
         new google.maps.places.Autocomplete(document.getElementById('route-via2'), opts);
-        
         const autoEind = new google.maps.places.Autocomplete(document.getElementById('route-eind'), opts);
         autoEind.addListener('place_changed', berekenRoute);
-        
         const autoBedrijf = new google.maps.places.Autocomplete(document.getElementById('zoek-bedrijf'), opts);
         autoBedrijf.addListener('place_changed', () => {
             const p = autoBedrijf.getPlace();
@@ -280,50 +301,35 @@
         if(v2) waypoints.push({location: v2, stopover:true});
 
         const ds = new google.maps.DirectionsService();
-        ds.route({
-            origin: start, destination: eind, waypoints: waypoints, travelMode: 'DRIVING'
-        }, (res, status) => {
+        ds.route({ origin: start, destination: eind, waypoints: waypoints, travelMode: 'DRIVING' }, (res, status) => {
             if(status === 'OK') {
-                let m = 0;
-                let s = 0; // seconden
-                res.routes[0].legs.forEach(leg => {
-                    m += leg.distance.value;
-                    s += leg.duration.value;
-                });
-
-                // Afstand berekening
+                let m = 0; let s = 0;
+                res.routes[0].legs.forEach(leg => { m += leg.distance.value; s += leg.duration.value; });
+                
                 retourKM = Math.round((m / 1000) * 2);
                 document.getElementById('km-display').innerText = retourKM;
 
-                // Tijd berekening (Enkele reis) met 1.15 Touringcar Factor
-                let enkeleReisSec = s * 1.15; 
+                let enkeleReisSec = s * 1.15; // 15% extra voor bus
                 let uren = Math.floor(enkeleReisSec / 3600);
                 let minuten = Math.round((enkeleReisSec % 3600) / 60);
-                
-                document.getElementById('tijd-display').innerHTML = 
-                    `Geschatte reistijd (enkel): <b>${uren} uur ${minuten} min</b><br>` + 
-                    `(Incl. 15% extra tijd voor touringcar)`;
-
+                document.getElementById('tijd-display').innerHTML = `Geschatte reistijd (enkel): <b>${uren}u ${minuten}m</b> (Incl. 15% busfactor)`;
                 rekenPrijs();
             } else {
-                alert("Let op: 'Directions API' staat waarschijnlijk nog niet aan in Google Cloud Console.");
+                alert("Let op: 'Directions API' aanzetten in Google Cloud!");
             }
         });
     }
 
-    // PRIJS BEREKENING
+    // PRIJS BEREKENING (MET COMBI LOGICA)
     function rekenUren() {
         const h1 = document.getElementById('h_vertrek_zaak').value;
         const m1 = document.getElementById('m_vertrek_zaak').value;
         const h2 = document.getElementById('h_aankomst_zaak').value;
         const m2 = document.getElementById('m_aankomst_zaak').value;
-
         const d1 = new Date(2000, 0, 1, h1, m1);
         const d2 = new Date(2000, 0, 1, h2, m2);
-        
         let diff = (d2 - d1) / (1000 * 60 * 60);
         if(diff < 0) diff += 24; 
-
         document.getElementById('uren-display').innerText = diff.toFixed(2);
         rekenPrijs();
     }
@@ -332,10 +338,38 @@
         const uren = parseFloat(document.getElementById('uren-display').innerText) || 0;
         const extra = parseFloat(document.getElementById('kosten-extra').value) || 0;
         
-        let kostprijs = (retourKM * 1.00) + (uren * 33.00) + extra;
+        // 1. Bereken KM prijs op basis van vinkjes
+        let kmTariefTotaal = 0;
+        let aantalBussen = 0;
+        const checkboxes = document.querySelectorAll('.bus-check');
+        
+        checkboxes.forEach(box => {
+            if(box.checked) {
+                let index = parseInt(box.value);
+                kmTariefTotaal += busOpties[index].prijs;
+                aantalBussen++;
+            }
+        });
+
+        if (aantalBussen === 0) {
+            document.getElementById('prijs-display').innerText = '€ 0,00';
+            return;
+        }
+
+        // 2. Kosten berekening
+        // KM Kosten: De opgetelde km-prijs van alle bussen x afstand
+        let kostenKM = retourKM * kmTariefTotaal;
+        
+        // Uur Kosten: €33 per uur PER BUS (want 2 bussen = 2 chauffeurs)
+        let kostenUur = uren * 33.00 * aantalBussen;
+
+        let kostprijs = kostenKM + kostenUur + extra;
+        
+        // 3. Winst & BTW
         let verkoop = kostprijs * 1.5; // 33% marge
         let incl = verkoop * 1.09;
         
+        // 4. Afronding
         incl = Math.round(incl / 25) * 25;
         if(incl < 200) incl = 200;
         
@@ -347,9 +381,17 @@
         const kId = document.getElementById('calc-klant').value;
         const kNaam = kId ? db.klanten.find(k => k.id == kId).naam : 'Onbekend';
         
+        // Welke bussen?
+        let gekozenBussen = [];
+        document.querySelectorAll('.bus-check').forEach(box => {
+            if(box.checked) gekozenBussen.push(busOpties[box.value].label);
+        });
+        let busTekst = gekozenBussen.length > 0 ? gekozenBussen.join(', ') : 'Geen bus';
+
         db.ritten.unshift({
             datum: new Date().toLocaleDateString(),
             klant: kNaam,
+            bus: busTekst,
             dest: document.getElementById('route-eind').value,
             prijs: document.getElementById('prijs-display').innerText
         });
@@ -376,7 +418,6 @@
         db.klanten.forEach(k => {
             s.innerHTML += `<option value="${k.id}">${k.naam} (${k.plaats})</option>`;
         });
-        
         let html = '<table style="width:100%; text-align:left;">';
         db.klanten.forEach(k => html += `<tr><td>${k.naam}</td><td>${k.plaats}</td></tr>`);
         document.getElementById('klanten-lijst').innerHTML = html + '</table>';
@@ -384,9 +425,9 @@
 
     function updateDashboard() {
         document.getElementById('dash-aantal').innerText = db.ritten.length;
-        let html = '<table style="width:100%; text-align:left;"><tr><th>Datum</th><th>Klant</th><th>Bestemming</th><th>Prijs</th></tr>';
+        let html = '<table style="width:100%; text-align:left;"><tr><th>Datum</th><th>Klant</th><th>Bus(sen)</th><th>Bestemming</th><th>Prijs</th></tr>';
         db.ritten.slice(0,5).forEach(r => {
-            html += `<tr><td>${r.datum}</td><td>${r.klant}</td><td>${r.dest}</td><td>${r.prijs}</td></tr>`;
+            html += `<tr><td>${r.datum}</td><td>${r.klant}</td><td>${r.bus}</td><td>${r.dest}</td><td>${r.prijs}</td></tr>`;
         });
         document.getElementById('recent-list').innerHTML = html + '</table>';
     }
