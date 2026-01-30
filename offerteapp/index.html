@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berkhout Planning V3.0</title>
+    <title>Berkhout Planning V3.2</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -45,13 +45,13 @@
         .bus-option:hover { background: #eff6ff; border-color: var(--primary); }
         .bus-option input { width: auto; margin: 0; }
 
-        .time-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: #f9fafb; border-radius: 6px; margin-bottom: 6px; border: 1px solid #f3f4f6; }
+        .time-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: #fff; border-radius: 6px; margin-bottom: 6px; border: 1px solid #e5e7eb; }
+        /* Geen calc-time style meer, alles is wit en aanpasbaar */
         .time-select-group { display: flex; gap: 4px; align-items: center; }
-        .select-uur, .select-min { width: 50px; padding: 5px; text-align: center; font-weight: 600; border-radius: 4px; border: 1px solid #d1d5db; }
+        .select-uur, .select-min { width: 50px; padding: 5px; text-align: center; font-weight: 600; border-radius: 4px; border: 1px solid #d1d5db; cursor: pointer; background: white; }
+        .select-uur:hover, .select-min:hover { border-color: var(--primary); }
         
-        /* MARKERINGEN */
-        .highlight-time { border-left: 3px solid #10b981; } 
-        .calc-time { background-color: #f3f4f6; color: #666; pointer-events: none; }
+        .highlight-time { border-left: 3px solid #10b981; background:#f0fdf4; } 
 
         /* PRIJS */
         .total-box { background: var(--primary); color: white; padding: 20px; border-radius: 10px; text-align: center; margin-top: 20px; }
@@ -210,13 +210,13 @@
     ];
 
     const tijdVelden = [
-        { id: 'vertrek_zaak', label: '1. Vertrek Garage', defH: '08', defM: '00', auto: true, style: 'calc-time' },
+        { id: 'vertrek_zaak', label: '1. Vertrek Garage', defH: '08', defM: '00' },
         { id: 'voorstaan', label: '2. Voorstaan', defH: '08', defM: '30' },
         { id: 'vertrek_klant', label: '3. Vertrek Klant', defH: '08', defM: '45', trigger: true, style: 'highlight-time' },
         { id: 'aankomst_loc', label: '4. Aankomst Loc.', defH: '10', defM: '00' },
         { id: 'vertrek_loc', label: '5. Vertrek Loc.', defH: '16', defM: '00' },
         { id: 'retour_klant', label: '6. Retour Klant', defH: '17', defM: '15', trigger: true, style: 'highlight-time' },
-        { id: 'aankomst_zaak', label: '7. Aankomst Garage', defH: '18', defM: '00', auto: true, style: 'calc-time' }
+        { id: 'aankomst_zaak', label: '7. Aankomst Garage', defH: '18', defM: '00' }
     ];
 
     // --- INIT ---
@@ -230,7 +230,7 @@
         updateDashboard();
         initMapsAutofill();
         
-        updateTijdVelden(); // Zet juiste velden zichtbaar
+        updateTijdVelden(); 
         rekenUren();
     }
 
@@ -252,15 +252,14 @@
             for(let i=0; i<24; i++) { let val=i.toString().padStart(2,'0'); uO+=`<option value="${val}" ${val==v.defH?'selected':''}>${val}</option>`; }
             ['00','15','30','45'].forEach(m => { mO+=`<option value="${m}" ${m==v.defM?'selected':''}>${m}</option>`; });
             
+            // Alles is editable. Trigger wel behouden voor auto-suggestie
             let changeFn = v.trigger ? `syncTijden(); rekenUren()` : `rekenUren()`;
-            let disabled = v.auto ? 'disabled' : ''; 
             
-            // We voegen een ID toe aan de row om hem te kunnen verbergen
             h += `<div id="row_${v.id}" class="time-row ${v.style || ''}">
                     <div style="font-size:12px; width:110px;">${v.label}</div>
                     <div class="time-select-group">
-                        <select id="h_${v.id}" class="select-uur" onchange="${changeFn}" ${disabled}>${uO}</select>:
-                        <select id="m_${v.id}" class="select-min" onchange="${changeFn}" ${disabled}>${mO}</select>
+                        <select id="h_${v.id}" class="select-uur" onchange="${changeFn}">${uO}</select>:
+                        <select id="m_${v.id}" class="select-min" onchange="${changeFn}">${mO}</select>
                     </div>
                   </div>`;
         });
@@ -293,12 +292,11 @@
         for(let key in rows) { if(rows[key]) rows[key].classList.remove('hidden'); }
 
         if (type === 'enkel') {
-            // Enkele rit: Alleen 1, 3, 4, 7
+            // Enkele rit: Verberg tussenliggende velden (Optioneel, maar maakt het rustiger)
             if(rows.voorstaan) rows.voorstaan.classList.add('hidden');
             if(rows.vertrek_loc) rows.vertrek_loc.classList.add('hidden');
             if(rows.retour_klant) rows.retour_klant.classList.add('hidden');
         } 
-        // Bij VV en BrengHaal laten we alles zien
     }
 
     // --- MAPS ---
@@ -361,22 +359,21 @@
     function syncTijden() {
         let reistijdMs = (enkeleReisSec > 0) ? (enkeleReisSec * 1000) : (15 * 60000);
         
-        // Garage Vertrek = Vertrek Klant (Stap 3) - Reistijd (minimaal)
+        // AUTOMATISCH INVULLEN (SUGGESTIE), MAAR OVERKLOPSBAAR
         let dVertrekKlant = getTijd('vertrek_klant');
         let dVertrekZaak = new Date(dVertrekKlant.getTime() - reistijdMs);
         setTijd('vertrek_zaak', dVertrekZaak);
 
-        // Garage Aankomst (voor Enkel/VV) = Retour Klant + Reistijd
         let dRetourKlant = getTijd('retour_klant');
-        
-        // Speciaal voor Enkele Rit: Retour Garage = Aankomst Locatie + Reistijd
         const type = document.getElementById('rit-type').value;
+        
         if(type === 'enkel') {
+            // Bij enkele rit is de terugkomst: Aankomst Loc + Terugrit (leeg)
             let dAankomstLoc = getTijd('aankomst_loc');
-            // Bus rijdt van locatie terug naar garage (reistijd gelijk aan heenweg aanname)
             let dAankomstZaak = new Date(dAankomstLoc.getTime() + reistijdMs);
             setTijd('aankomst_zaak', dAankomstZaak);
         } else {
+            // Bij VV en BrengHaal (qua logistiek) is het na de retourrit
             let dAankomstZaak = new Date(dRetourKlant.getTime() + reistijdMs);
             setTijd('aankomst_zaak', dAankomstZaak);
         }
@@ -389,34 +386,29 @@
         
         let uren = 0;
         
-        if (type === 'vv') {
-            const d1 = getTijd('vertrek_zaak');
-            const d2 = getTijd('aankomst_zaak');
-            let diff = (d2 - d1) / 3600000;
-            if(diff < 0) diff += 24;
-            uren = diff;
-            uitleg.innerText = "Tijd Garage ➔ Garage";
-        } 
-        else if (type === 'enkel') {
-            // Enkel: Aankomst Garage - Vertrek Garage
-            // SyncTijden zorgt dat Aankomst Garage = Aankomst Loc + Terugrit is
-            const d1 = getTijd('vertrek_zaak');
-            const d2 = getTijd('aankomst_zaak');
-            let diff = (d2 - d1) / 3600000;
-            if(diff < 0) diff += 24;
-            // +1 uur buffer voor enkel (schoonmaken etc)
-            uren = diff + 1.0; 
-            uitleg.innerText = "Totale rijtijd + 1u buffer";
-        } 
-        else if (type === 'brenghaal') {
-            // Breng & Haal: 2x Rijtijd Retour + 1 uur buffer
+        // LOGICA: Uren = Tijdstap 7 - Tijdstap 1. 
+        // Bij BrengHaal is het 4x reistijd (Google) omdat de midden uren onbetaald zijn
+        
+        if (type === 'brenghaal') {
+            // Breng & Haal: 4x Rijtijd. GEEN buffer.
             let rijtijdUur = (enkeleReisSec * 4) / 3600;
-            uren = rijtijdUur + 1.0;
-            uitleg.innerText = "Calculatie: 2x Rijtijd Retour + 1u";
+            uren = rijtijdUur; // Puur rijtijd
+            uitleg.innerText = "Calculatie: 4x Rijtijd (Google)";
+        } else {
+            // Enkel en VV: Gewoon verschil tussen vertrek en aankomst garage
+            const d1 = getTijd('vertrek_zaak');
+            const d2 = getTijd('aankomst_zaak');
+            let diff = (d2 - d1) / 3600000;
+            if(diff < 0) diff += 24;
+            uren = diff; // Geen +1.0 meer!
+            uitleg.innerText = "Tijd Garage ➔ Garage";
         }
 
+        // Check op NaN (voor de zekerheid)
+        if(isNaN(uren)) uren = 0;
         document.getElementById('uren-display').innerText = uren.toFixed(2);
 
+        // KILOMETERS
         let totaalKM = 0;
         if (type === 'brenghaal') {
             totaalKM = enkeleReisKM * 4; 
