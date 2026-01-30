@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berkhout Planning V3.3</title>
+    <title>Berkhout Planning V3.4</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -13,14 +13,12 @@
         :root { --primary: #004a99; --bg: #f3f4f6; --text: #1f2937; --border: #e5e7eb; }
         body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
         
-        /* SIDEBAR */
         .sidebar { width: 240px; background: var(--primary); color: white; padding: 25px; display: flex; flex-direction: column; box-shadow: 4px 0 10px rgba(0,0,0,0.1); z-index: 10; }
         .brand { font-size: 22px; font-weight: 800; margin-bottom: 40px; }
         .nav-item { padding: 14px; cursor: pointer; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; transition: 0.2s; font-weight: 500; }
         .nav-item:hover { background: rgba(255,255,255,0.1); }
         .nav-item.active { background: white; color: var(--primary); font-weight: 700; }
         
-        /* MAIN */
         .main { flex: 1; padding: 30px; overflow-y: auto; }
         .page-section { display: none; max-width: 1000px; margin: 0 auto; }
         .page-section.active { display: block; animation: fadeIn 0.3s ease; }
@@ -39,7 +37,6 @@
         input, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         input:focus, select:focus { outline: none; border-color: var(--primary); }
         
-        /* BUSSEN & TIJDEN */
         .bus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .bus-option { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; cursor: pointer; }
         .bus-option:hover { background: #eff6ff; border-color: var(--primary); }
@@ -52,13 +49,11 @@
         
         .highlight-time { border-left: 3px solid #10b981; background:#f0fdf4; } 
         
-        /* SUB-HEADERS VOOR BRENG/HAAL */
         .rit-divider {
             background: #eef6ff; color: var(--primary); font-weight: bold; 
             padding: 8px; border-radius: 6px; margin: 15px 0 5px 0; font-size: 13px; text-align: center; border: 1px dashed var(--primary);
         }
 
-        /* PRIJS */
         .total-box { background: var(--primary); color: white; padding: 20px; border-radius: 10px; text-align: center; margin-top: 20px; }
         .total-price { font-size: 32px; font-weight: 800; margin: 5px 0; }
         .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 15px; }
@@ -131,7 +126,10 @@
                     
                     <div style="background:#eff6ff; border:1px solid #bfdbfe; padding:15px; border-radius:8px; margin-top:15px;">
                         <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:14px;">
-                            <span>Reistijd (Enkel):</span><span style="font-weight:bold; color:var(--primary);" id="info-enkel">-</span>
+                            <span>Aanrijtijd (G-K):</span><span style="font-weight:bold; color:var(--primary);" id="info-aanrij">-</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:14px;">
+                            <span>Rijtijd (K-B):</span><span style="font-weight:bold; color:var(--primary);" id="info-rit">-</span>
                         </div>
                         <div style="display:flex; justify-content:space-between; font-size:16px; font-weight:bold; border-top:1px dashed #bfdbfe; padding-top:10px; margin-top:5px;">
                             <span>Afstand (Calculatie):</span><span style="color:var(--primary);" id="info-totaal">0 km</span>
@@ -211,7 +209,9 @@
     // --- CONFIGURATIE ---
     let db = { klanten: [], ritten: [] };
     let enkeleReisKM = 0; 
-    let enkeleReisSec = 0; 
+    let enkeleReisSec = 0; // Tijd Garage->Klant->Dest
+    let aanrijSec = 0; // Garage -> Klant
+    let ritSec = 0;    // Klant -> Dest
 
     const busOpties = [
         { label: 'Bus 19 (Max 19)', prijs: 0.75 },
@@ -233,20 +233,22 @@
         { id: 'std_7', label: '7. Aankomst Garage', defH: '18', defM: '00' }
     ];
 
-    // LIJST 2A: BRENGEN (Deel 1)
+    // LIJST 2A: BRENGEN (Deel 1 - 5 regels)
     const tijdVeldenBrengen = [
-        { id: 'br_1', label: '1. Vertrek Garage', defH: '12', defM: '45' },
-        { id: 'br_2', label: '2. Vertrek Klant', defH: '13', defM: '30', style: 'highlight-time' },
-        { id: 'br_3', label: '3. Aankomst Best.', defH: '14', defM: '15' },
-        { id: 'br_4', label: '4. Retour Garage', defH: '15', defM: '00' }
+        { id: 'br_1', label: '1. Vertrek Garage', defH: '12', defM: '15' },
+        { id: 'br_2', label: '2. Voorstaan', defH: '12', defM: '45' },
+        { id: 'br_3', label: '3. Vertrek Klant', defH: '13', defM: '00', trigger: true, style: 'highlight-time' },
+        { id: 'br_4', label: '4. Aankomst Best.', defH: '13', defM: '45' },
+        { id: 'br_5', label: '5. Retour Garage', defH: '14', defM: '30' }
     ];
 
-    // LIJST 2B: HALEN (Deel 2)
+    // LIJST 2B: HALEN (Deel 2 - 5 regels)
     const tijdVeldenHalen = [
         { id: 'hl_1', label: '1. Vertrek Garage', defH: '17', defM: '15' },
-        { id: 'hl_2', label: '2. Voorstaan Best.', defH: '18', defM: '00' },
-        { id: 'hl_3', label: '3. Retour Klant', defH: '21', defM: '00', style: 'highlight-time' },
-        { id: 'hl_4', label: '4. Retour Garage', defH: '21', defM: '45' }
+        { id: 'hl_2', label: '2. Voorstaan Best.', defH: '17', defM: '45' },
+        { id: 'hl_3', label: '3. Vertrek Best.', defH: '18', defM: '00', trigger: true, style: 'highlight-time' },
+        { id: 'hl_4', label: '4. Aankomst Klant', defH: '18', defM: '45' },
+        { id: 'hl_5', label: '5. Retour Garage', defH: '19', defM: '15' }
     ];
 
     // --- INIT ---
@@ -279,7 +281,7 @@
         for(let i=0; i<24; i++) { let val=i.toString().padStart(2,'0'); uO+=`<option value="${val}" ${val==veld.defH?'selected':''}>${val}</option>`; }
         ['00','15','30','45'].forEach(m => { mO+=`<option value="${m}" ${m==veld.defM?'selected':''}>${m}</option>`; });
         
-        let changeFn = veld.trigger ? `syncTijdenStandaard(); rekenUren()` : `rekenUren()`;
+        let changeFn = veld.trigger ? `syncTijden(); rekenUren()` : `rekenUren()`;
         
         return `<div id="row_${veld.id}" class="time-row ${veld.style || ''}">
                 <div style="font-size:12px; width:110px;">${veld.label}</div>
@@ -363,30 +365,77 @@
         }
     }
 
-    // Auto-fill voor Standaard/Enkel rit
-    function syncTijdenStandaard() {
-        if(document.getElementById('rit-type').value === 'brenghaal') return; // Doet niets bij split
-
-        let reistijdMs = (enkeleReisSec > 0) ? (enkeleReisSec * 1000) : (15 * 60000);
-        
-        // Vertrek Garage = Vertrek Klant - Reistijd
-        let dVertrekKlant = getTijd('std_3');
-        let dVertrekZaak = new Date(dVertrekKlant.getTime() - reistijdMs);
-        setTijd('std_1', dVertrekZaak);
-
-        // Aankomst Garage
-        let dRetourKlant = getTijd('std_6');
+    // SLIMME SYNC FUNCTIE
+    function syncTijden() {
         const type = document.getElementById('rit-type').value;
         
-        if(type === 'enkel') {
-            // Enkel: Aankomst Loc + Reistijd
-            let dAankomstLoc = getTijd('std_4');
-            let dAankomstZaak = new Date(dAankomstLoc.getTime() + reistijdMs);
-            setTijd('std_7', dAankomstZaak);
+        // Tijden uit Google (anders defaults)
+        let tAanrij = (aanrijSec > 0) ? (aanrijSec * 1000) : (15 * 60000);
+        let tRit = (ritSec > 0) ? (ritSec * 1000) : (30 * 60000);
+        let tTotaal = tAanrij + tRit; // Garage -> Bestemming
+
+        if(type === 'brenghaal') {
+            // --- DEEL 1: BRENGEN ---
+            // Vertrek Klant (Trigger)
+            let dVertrek = getTijd('br_3');
+            // Voorstaan = Vertrek - 15m
+            let dVoorstaan = new Date(dVertrek.getTime() - (15*60000));
+            setTijd('br_2', dVoorstaan);
+            // Vertrek Garage = Voorstaan - Aanrijtijd (G->K)
+            let dGarageWeg = new Date(dVoorstaan.getTime() - tAanrij);
+            setTijd('br_1', dGarageWeg);
+            // Aankomst Best = Vertrek Klant + Rittijd
+            let dAankomst = new Date(dVertrek.getTime() + tRit);
+            setTijd('br_4', dAankomst);
+            // Retour Garage = Aankomst Best + Terugtijd (We schatten G->B als terugtijd)
+            let dGarageThuis = new Date(dAankomst.getTime() + tTotaal);
+            setTijd('br_5', dGarageThuis);
+
+            // --- DEEL 2: HALEN ---
+            // Vertrek Best (Trigger)
+            let dVertrekBest = getTijd('hl_3');
+            // Voorstaan Best = Vertrek Best - 15m
+            let dVoorstaanBest = new Date(dVertrekBest.getTime() - (15*60000));
+            setTijd('hl_2', dVoorstaanBest);
+            // Vertrek Garage = Voorstaan Best - Reistijd (G->B)
+            let dGarageWeg2 = new Date(dVoorstaanBest.getTime() - tTotaal);
+            setTijd('hl_1', dGarageWeg2);
+            // Aankomst Klant = Vertrek Best + Rit
+            let dAankomstKlant = new Date(dVertrekBest.getTime() + tRit);
+            setTijd('hl_4', dAankomstKlant);
+            // Retour Garage = Aankomst Klant + Aanrijtijd (K->G)
+            let dGarageThuis2 = new Date(dAankomstKlant.getTime() + tAanrij);
+            setTijd('hl_5', dGarageThuis2);
+
         } else {
-            // VV: Retour Klant + Reistijd
-            let dAankomstZaak = new Date(dRetourKlant.getTime() + reistijdMs);
-            setTijd('std_7', dAankomstZaak);
+            // STANDAARD (Enkel / VV)
+            let dVertrekKlant = getTijd('std_3');
+            
+            // Voorstaan
+            let dVoorstaan = new Date(dVertrekKlant.getTime() - (15*60000));
+            setTijd('std_2', dVoorstaan);
+            
+            // Vertrek Garage
+            let dVertrekZaak = new Date(dVoorstaan.getTime() - tAanrij);
+            setTijd('std_1', dVertrekZaak);
+
+            // Aankomst Garage
+            let dRetourKlant = getTijd('std_6');
+            if(type === 'enkel') {
+                // Enkel: Aankomst Loc (std_4) + Reistijd (B->G)
+                let dAankomstLoc = getTijd('std_4');
+                // Auto-fill aankomst loc als het nog niet staat (Vertrek + Rit)
+                if(ritSec > 0) {
+                     dAankomstLoc = new Date(dVertrekKlant.getTime() + tRit);
+                     setTijd('std_4', dAankomstLoc);
+                }
+                let dAankomstZaak = new Date(dAankomstLoc.getTime() + tTotaal);
+                setTijd('std_7', dAankomstZaak);
+            } else {
+                // VV: Retour Klant + Reistijd (K->G)
+                let dAankomstZaak = new Date(dRetourKlant.getTime() + tAanrij);
+                setTijd('std_7', dAankomstZaak);
+            }
         }
     }
 
@@ -401,13 +450,13 @@
         if (type === 'brenghaal') {
             // BLOK 1: Einde - Start
             let d1_start = getTijd('br_1');
-            let d1_eind = getTijd('br_4');
+            let d1_eind = getTijd('br_5');
             let diff1 = (d1_eind - d1_start) / 3600000;
             if(diff1 < 0) diff1 += 24;
 
             // BLOK 2: Einde - Start
             let d2_start = getTijd('hl_1');
-            let d2_eind = getTijd('hl_4');
+            let d2_eind = getTijd('hl_5');
             let diff2 = (d2_eind - d2_start) / 3600000;
             if(diff2 < 0) diff2 += 24;
 
@@ -500,15 +549,29 @@
         const ds = new google.maps.DirectionsService();
         ds.route({ origin: start, destination: eind, waypoints: w, travelMode: 'DRIVING' }, (res, status) => {
             if(status === 'OK') {
-                let dist = 0; let dur = 0;
-                res.routes[0].legs.forEach(l => { dist += l.distance.value; dur += l.duration.value; });
+                const legs = res.routes[0].legs;
                 
-                enkeleReisKM = Math.round(dist / 1000);
-                enkeleReisSec = dur;
+                // Leg 0: Garage -> Klant (Aanrijtijd)
+                aanrijSec = legs[0].duration.value;
+                
+                // Leg 1: Klant -> Bestemming (Rittijd) - als er geen via's zijn, anders optellen
+                // We nemen simpelweg alles NA leg 0 als 'rit'
+                let ritDuur = 0;
+                let totDist = 0;
+                
+                legs.forEach((l, idx) => {
+                    totDist += l.distance.value;
+                    if(idx > 0) ritDuur += l.duration.value;
+                });
+                ritSec = ritDuur;
+                
+                enkeleReisKM = Math.round(totDist / 1000);
+                enkeleReisSec = aanrijSec + ritSec;
 
-                document.getElementById('info-enkel').innerText = `${Math.round(dur/60)} min`;
+                document.getElementById('info-aanrij').innerText = `${Math.round(aanrijSec/60)} min`;
+                document.getElementById('info-rit').innerText = `${Math.round(ritSec/60)} min`;
                 
-                syncTijdenStandaard();
+                syncTijden();
                 rekenUren(); 
             }
         });
