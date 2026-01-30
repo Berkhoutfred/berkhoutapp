@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berkhout Planning V3.8</title>
+    <title>Berkhout Planning V3.9</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -184,14 +184,23 @@
                         <option value="enkel">Enkele Rit (Brengen)</option>
                         <option value="vv" selected>Dagtocht (Volledig)</option>
                         <option value="brenghaal">Breng & Haal (Gesplitst)</option>
+                        <option value="meerdaagse">4. Meerdaagse Rit (CAO)</option>
                     </select>
 
                     <div id="tijd-standaard"></div>
                     <div id="tijd-brenghaal" class="hidden">
-                        <div class="rit-divider">DEEL 1: BRENGEN</div>
+                        <div class="rit-divider">DEEL 1: BRENGEN (Op startdatum)</div>
                         <div id="bh-deel1"></div>
-                        <div class="rit-divider">DEEL 2: HALEN</div>
+                        <div class="rit-divider">DEEL 2: HALEN (Op einddatum)</div>
                         <div id="bh-deel2"></div>
+                    </div>
+
+                    <div id="tijd-meerdaagse" class="hidden">
+                        <div class="rit-divider">DAG 1: HEENREIS</div>
+                        <div id="md-deel1"></div>
+                        
+                        <div class="rit-divider">LAATSTE DAG: TERUGREIS</div>
+                        <div id="md-deel2"></div>
                     </div>
                     
                     <div style="text-align:right; font-weight:bold; margin-top:15px; color:var(--primary); font-size:18px;">
@@ -248,9 +257,13 @@
 
     const busOpties = [ {label:'Bus 19',prijs:0.75}, {label:'Bus 23',prijs:0.75}, {label:'Bus 50',prijs:1.00}, {label:'Bus 55',prijs:1.00}, {label:'Bus 60',prijs:1.20}, {label:'Bus 62',prijs:1.20} ];
 
+    // TIJDSLIJSTEN
     const tijdVeldenStandaard = [ {id:'std_1',label:'1. Vertrek Garage',defH:'08',defM:'00'}, {id:'std_2',label:'2. Voorstaan',defH:'08',defM:'30'}, {id:'std_3',label:'3. Vertrek Klant',defH:'08',defM:'45',trigger:true,style:'highlight-time'}, {id:'std_4',label:'4. Aankomst Loc.',defH:'10',defM:'00'}, {id:'std_5',label:'5. Vertrek Loc.',defH:'16',defM:'00'}, {id:'std_6',label:'6. Retour Klant',defH:'17',defM:'15',trigger:true,style:'highlight-time'}, {id:'std_7',label:'7. Aankomst Garage',defH:'18',defM:'00'} ];
     const tijdVeldenBrengen = [ {id:'br_1',label:'1. Vertrek Garage',defH:'12',defM:'15'}, {id:'br_2',label:'2. Voorstaan',defH:'12',defM:'45'}, {id:'br_3',label:'3. Vertrek Klant',defH:'13',defM:'00',trigger:true,style:'highlight-time'}, {id:'br_4',label:'4. Aankomst Best.',defH:'13',defM:'45'}, {id:'br_5',label:'5. Retour Garage',defH:'14',defM:'30'} ];
     const tijdVeldenHalen = [ {id:'hl_1',label:'1. Vertrek Garage',defH:'17',defM:'15'}, {id:'hl_2',label:'2. Voorstaan Best.',defH:'17',defM:'45'}, {id:'hl_3',label:'3. Vertrek Best.',defH:'18',defM:'00',trigger:true,style:'highlight-time'}, {id:'hl_4',label:'4. Aankomst Klant',defH:'18',defM:'45'}, {id:'hl_5',label:'5. Retour Garage',defH:'19',defM:'15'} ];
+    // MEERDAAGSE LIJSTEN
+    const tijdVeldenMeerDag1 = [ {id:'md_1',label:'1. Vertrek Garage',defH:'08',defM:'00'}, {id:'md_2',label:'2. Aankomst Locatie',defH:'14',defM:'00'} ];
+    const tijdVeldenMeerDagEind = [ {id:'md_3',label:'1. Vertrek Locatie',defH:'12',defM:'00'}, {id:'md_4',label:'2. Aankomst Garage',defH:'18',defM:'00'} ];
 
     // --- 2. INIT ---
     window.initApp = function() {
@@ -258,17 +271,13 @@
         if(save) db = JSON.parse(save);
         bouwBusKiezers(); bouwTijdLijsten(); updateKlantenLijst(); updateDashboard(); initMapsAutofill(); wisselTijdLijst(); 
         
-        // Datums init
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('rit_datum').value = today;
         document.getElementById('rit_datum_eind').value = today;
-        
         rekenUren();
     }
 
     function syncDates() {
-        // Als startdatum verandert, zetten we einddatum ook daarop (handigheidje)
-        // tenzij einddatum al later was? Nee, gewoon resetten is veiliger voor dagtochten.
         document.getElementById('rit_datum_eind').value = document.getElementById('rit_datum').value;
         rekenUren();
     }
@@ -284,10 +293,7 @@
         db.ritten.forEach((rit, index) => {
             if(!rit.status) rit.status = { offerte: true, bevestiging: false, opdracht: false, factuur: false, betaald: false };
             let tr = document.createElement('tr');
-            
-            // Datum format
             let d1 = rit.datum; if(d1.includes('-') && d1.split('-')[0].length === 4) d1 = d1.split('-').reverse().join('-');
-            
             tr.innerHTML = `
                 <td><button class="action-btn" onclick="laadRit(${index})"><i class="fa-solid fa-pen"></i></button></td>
                 <td style="font-weight:bold;">${d1}</td>
@@ -296,9 +302,7 @@
                 <td><span style="background:#eef6ff; color:#004a99; padding:3px 8px; border-radius:10px; font-size:11px;">${rit.type || 'Dagtocht'}</span></td>
                 <td style="font-weight:bold;">${rit.prijs}</td>
                 ${['offerte','bevestiging','opdracht','factuur','betaald'].map(s => `
-                    <td class="status-cell" onclick="toggleStatus(${index}, '${s}')">
-                        <i class="fa-solid fa-circle-check status-icon ${rit.status[s] ? 'done' : ''}"></i>
-                    </td>
+                    <td class="status-cell" onclick="toggleStatus(${index}, '${s}')"><i class="fa-solid fa-circle-check status-icon ${rit.status[s] ? 'done' : ''}"></i></td>
                 `).join('')}
             `;
             tbody.appendChild(tr);
@@ -321,21 +325,15 @@
         btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Wijziging Opslaan';
         btn.className = 'btn btn-orange';
 
-        // 1. Datum & Klant
         document.getElementById('rit_datum').value = rit.details.rit_datum || new Date().toISOString().split('T')[0];
-        // Als er een einddatum was opgeslagen, laad die. Zo niet, fallback naar startdatum
         document.getElementById('rit_datum_eind').value = rit.details.rit_datum_eind || rit.details.rit_datum;
         
         document.getElementById('calc-klant').value = rit.details.klantId;
         vulKlant();
         
         document.querySelectorAll('.bus-check').forEach(b => b.checked = false);
-        rit.details.bussen.forEach(val => {
-            const cb = document.querySelector(`.bus-check[value="${val}"]`);
-            if(cb) cb.checked = true;
-        });
+        rit.details.bussen.forEach(val => { const cb = document.querySelector(`.bus-check[value="${val}"]`); if(cb) cb.checked = true; });
 
-        // 2. Route
         document.getElementById('route-start').value = rit.details.route.start;
         document.getElementById('route-ophaal').value = rit.details.route.ophaal;
         document.getElementById('route-via1').value = rit.details.route.via1;
@@ -343,25 +341,17 @@
         document.getElementById('route-eind').value = rit.details.route.eind;
         if(rit.details.route.via1 || rit.details.route.via2) document.getElementById('via-container').classList.remove('hidden');
 
-        // 3. Tijden
         document.getElementById('rit-type').value = rit.details.type;
         wisselTijdLijst();
         const tijden = rit.details.tijden;
         for(let id in tijden) {
             const [u, m] = tijden[id].split(':');
-            const elH = document.getElementById('h_' + id);
-            const elM = document.getElementById('m_' + id);
+            const elH = document.getElementById('h_' + id); const elM = document.getElementById('m_' + id);
             if(elH && elM) { elH.value = u; elM.value = m; }
         }
-
-        // 4. Kosten
         document.getElementById('kosten-extra').value = rit.details.extra;
-
         nav('calculatie');
-        // We roepen rekenUren aan om het totaal te verversen op basis van geladen tijden
         rekenUren();
-        // berekenRoute() hoeft niet persé (kost API), tenzij je afstanden opnieuw wilt checken
-        // berekenRoute(); 
     }
 
     function resetEnNav() { resetForm(); nav('calculatie'); }
@@ -377,28 +367,23 @@
         document.getElementById('rit_datum').value = today;
         document.getElementById('rit_datum_eind').value = today;
         
-        document.querySelectorAll('input[type="text"], input[type="number"]').forEach(i => {
-            if(i.id !== 'route-start') i.value = '';
-        });
+        document.querySelectorAll('input[type="text"], input[type="number"]').forEach(i => { if(i.id !== 'route-start') i.value = ''; });
         document.querySelectorAll('.bus-check').forEach(b => b.checked = false);
         document.getElementById('rit-type').value = 'vv';
         wisselTijdLijst();
-        tijdVeldenStandaard.forEach(v => {
-            document.getElementById('h_'+v.id).value = v.defH;
-            document.getElementById('m_'+v.id).value = v.defM;
-        });
+        tijdVeldenStandaard.forEach(v => { document.getElementById('h_'+v.id).value = v.defH; document.getElementById('m_'+v.id).value = v.defM; });
         rekenUren();
     }
 
     // --- 4. OPSLAAN ---
     function opslaan() {
         const type = document.getElementById('rit-type').value;
-        let actieveVelden = (type === 'brenghaal') ? [...tijdVeldenBrengen, ...tijdVeldenHalen] : tijdVeldenStandaard;
+        let actieveVelden = tijdVeldenStandaard;
+        if(type === 'brenghaal') actieveVelden = [...tijdVeldenBrengen, ...tijdVeldenHalen];
+        if(type === 'meerdaagse') actieveVelden = [...tijdVeldenMeerDag1, ...tijdVeldenMeerDagEind];
 
         let opgeslagenTijden = {};
-        actieveVelden.forEach(v => {
-            opgeslagenTijden[v.id] = `${document.getElementById('h_'+v.id).value}:${document.getElementById('m_'+v.id).value}`;
-        });
+        actieveVelden.forEach(v => { opgeslagenTijden[v.id] = `${document.getElementById('h_'+v.id).value}:${document.getElementById('m_'+v.id).value}`; });
 
         const ritDatum = document.getElementById('rit_datum').value; 
         const ritDatumEind = document.getElementById('rit_datum_eind').value; 
@@ -408,11 +393,10 @@
             klant: document.getElementById('calc-klant').selectedOptions[0].text,
             dest: document.getElementById('route-eind').value,
             prijs: document.getElementById('prijs-display').innerText,
-            type: (type==='enkel'?'Enkele rit':(type==='brenghaal'?'Breng & Haal':'Dagtocht')),
+            type: (type==='enkel'?'Enkele rit':(type==='brenghaal'?'Breng & Haal':(type==='meerdaagse'?'Meerdaagse':'Dagtocht'))),
             status: (actieveRitIndex > -1 ? db.ritten[actieveRitIndex].status : { offerte: true, bevestiging: false, opdracht: false, factuur: false, betaald: false }),
             details: {
-                rit_datum: ritDatum, 
-                rit_datum_eind: ritDatumEind,
+                rit_datum: ritDatum, rit_datum_eind: ritDatumEind,
                 klantId: document.getElementById('calc-klant').value,
                 bussen: Array.from(document.querySelectorAll('.bus-check:checked')).map(b => b.value),
                 route: {
@@ -422,38 +406,56 @@
                     via2: document.getElementById('route-via2').value,
                     eind: document.getElementById('route-eind').value
                 },
-                tijden: opgeslagenTijden,
-                type: type,
-                extra: document.getElementById('kosten-extra').value
+                tijden: opgeslagenTijden, type: type, extra: document.getElementById('kosten-extra').value
             }
         };
 
-        if (actieveRitIndex > -1) {
-            db.ritten[actieveRitIndex] = ritData;
-            alert('Rit gewijzigd!');
-        } else {
-            db.ritten.unshift(ritData);
-            alert('Nieuwe rit opgeslagen!');
-        }
+        if (actieveRitIndex > -1) { db.ritten[actieveRitIndex] = ritData; alert('Rit gewijzigd!'); }
+        else { db.ritten.unshift(ritData); alert('Nieuwe rit opgeslagen!'); }
 
         db.ritten.sort((a, b) => new Date(b.datum) - new Date(a.datum));
         localStorage.setItem('berkhout_v2', JSON.stringify(db));
-        updateDashboard();
-        resetForm(); 
-        nav('dashboard');
+        updateDashboard(); resetForm(); nav('dashboard');
     }
 
     // --- REST (LOGICA) ---
     function bouwBusKiezers() { const c = document.getElementById('bus-container'); let h = ''; busOpties.forEach((b, i) => { h += `<label class="bus-option"><input type="checkbox" class="bus-check" value="${i}" onchange="rekenPrijs()"><span><b>${b.label}</b><br><small>€${b.prijs.toFixed(2)}/km</small></span></label>`; }); c.innerHTML = h; }
     function maakTijdRij(veld) { let uO = '', mO = ''; for(let i=0; i<24; i++) { let val=i.toString().padStart(2,'0'); uO+=`<option value="${val}" ${val==veld.defH?'selected':''}>${val}</option>`; } ['00','15','30','45'].forEach(m => { mO+=`<option value="${m}" ${m==veld.defM?'selected':''}>${m}</option>`; }); let changeFn = veld.trigger ? `syncTijden(); rekenUren()` : `rekenUren()`; return `<div id="row_${veld.id}" class="time-row ${veld.style || ''}"><div style="font-size:12px; width:110px;">${veld.label}</div><div class="time-select-group"><select id="h_${veld.id}" class="select-uur" onchange="${changeFn}">${uO}</select>:<select id="m_${veld.id}" class="select-min" onchange="${changeFn}">${mO}</select></div></div>`; }
-    function bouwTijdLijsten() { let hStd = ''; tijdVeldenStandaard.forEach(v => hStd += maakTijdRij(v)); document.getElementById('tijd-standaard').innerHTML = hStd; let hBr = ''; tijdVeldenBrengen.forEach(v => hBr += maakTijdRij(v)); document.getElementById('bh-deel1').innerHTML = hBr; let hHl = ''; tijdVeldenHalen.forEach(v => hHl += maakTijdRij(v)); document.getElementById('bh-deel2').innerHTML = hHl; }
+    function bouwTijdLijsten() { 
+        let hStd = ''; tijdVeldenStandaard.forEach(v => hStd += maakTijdRij(v)); document.getElementById('tijd-standaard').innerHTML = hStd; 
+        let hBr = ''; tijdVeldenBrengen.forEach(v => hBr += maakTijdRij(v)); document.getElementById('bh-deel1').innerHTML = hBr; 
+        let hHl = ''; tijdVeldenHalen.forEach(v => hHl += maakTijdRij(v)); document.getElementById('bh-deel2').innerHTML = hHl; 
+        let hMd1 = ''; tijdVeldenMeerDag1.forEach(v => hMd1 += maakTijdRij(v)); document.getElementById('md-deel1').innerHTML = hMd1;
+        let hMd2 = ''; tijdVeldenMeerDagEind.forEach(v => hMd2 += maakTijdRij(v)); document.getElementById('md-deel2').innerHTML = hMd2;
+    }
     function nav(id) { document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active')); document.getElementById(id).classList.add('active'); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); event.currentTarget.classList.add('active'); }
     function toggleVia() { document.getElementById('via-container').classList.toggle('hidden'); }
-    function wisselTijdLijst() { const type = document.getElementById('rit-type').value; const contStd = document.getElementById('tijd-standaard'); const contBH = document.getElementById('tijd-brenghaal'); if(type === 'brenghaal') { contStd.classList.add('hidden'); contBH.classList.remove('hidden'); } else { contStd.classList.remove('hidden'); contBH.classList.add('hidden'); const rows = {'std_2':document.getElementById('row_std_2'),'std_5':document.getElementById('row_std_5'),'std_6':document.getElementById('row_std_6')}; for(let k in rows) if(rows[k]) rows[k].classList.remove('hidden'); if(type === 'enkel') { if(rows['std_2']) rows['std_2'].classList.add('hidden'); if(rows['std_5']) rows['std_5'].classList.add('hidden'); if(rows['std_6']) rows['std_6'].classList.add('hidden'); } } rekenUren(); }
+    function wisselTijdLijst() { 
+        const type = document.getElementById('rit-type').value; 
+        const contStd = document.getElementById('tijd-standaard'); const contBH = document.getElementById('tijd-brenghaal'); const contMD = document.getElementById('tijd-meerdaagse');
+        contStd.classList.add('hidden'); contBH.classList.add('hidden'); contMD.classList.add('hidden');
+        
+        if(type === 'brenghaal') contBH.classList.remove('hidden');
+        else if (type === 'meerdaagse') contMD.classList.remove('hidden');
+        else {
+            contStd.classList.remove('hidden');
+            const rows = {'std_2':document.getElementById('row_std_2'),'std_5':document.getElementById('row_std_5'),'std_6':document.getElementById('row_std_6')};
+            for(let k in rows) if(rows[k]) rows[k].classList.remove('hidden');
+            if(type === 'enkel') { if(rows['std_2']) rows['std_2'].classList.add('hidden'); if(rows['std_5']) rows['std_5'].classList.add('hidden'); if(rows['std_6']) rows['std_6'].classList.add('hidden'); }
+        }
+        rekenUren(); 
+    }
     
     function getTijd(id) { const elH = document.getElementById('h_'+id); const elM = document.getElementById('m_'+id); if(!elH || !elM) return new Date(2000,0,1,0,0); return new Date(2000, 0, 1, parseInt(elH.value), parseInt(elM.value)); }
     function setTijd(id, date) { const elH = document.getElementById('h_'+id); const elM = document.getElementById('m_'+id); if(elH && elM) { elH.value = date.getHours().toString().padStart(2,'0'); elM.value = date.getMinutes().toString().padStart(2,'0'); } }
-    function syncTijden() { const type = document.getElementById('rit-type').value; let tAanrij = (aanrijSec > 0) ? (aanrijSec * 1000) : (15 * 60000); let tRit = (ritSec > 0) ? (ritSec * 1000) : (30 * 60000); let tTotaal = tAanrij + tRit; if(type === 'brenghaal') { let dVertrek = getTijd('br_3'); let dVoorstaan = new Date(dVertrek.getTime() - (15*60000)); setTijd('br_2', dVoorstaan); let dGarageWeg = new Date(dVoorstaan.getTime() - tAanrij); setTijd('br_1', dGarageWeg); let dAankomst = new Date(dVertrek.getTime() + tRit); setTijd('br_4', dAankomst); let dGarageThuis = new Date(dAankomst.getTime() + tTotaal); setTijd('br_5', dGarageThuis); let dVertrekBest = getTijd('hl_3'); let dVoorstaanBest = new Date(dVertrekBest.getTime() - (15*60000)); setTijd('hl_2', dVoorstaanBest); let dGarageWeg2 = new Date(dVoorstaanBest.getTime() - tTotaal); setTijd('hl_1', dGarageWeg2); let dAankomstKlant = new Date(dVertrekBest.getTime() + tRit); setTijd('hl_4', dAankomstKlant); let dGarageThuis2 = new Date(dAankomstKlant.getTime() + tAanrij); setTijd('hl_5', dGarageThuis2); } else { let dVertrekKlant = getTijd('std_3'); let dVoorstaan = new Date(dVertrekKlant.getTime() - (15*60000)); setTijd('std_2', dVoorstaan); let dVertrekZaak = new Date(dVoorstaan.getTime() - tAanrij); setTijd('std_1', dVertrekZaak); let dRetourKlant = getTijd('std_6'); if(type === 'enkel') { let dAankomstLoc = getTijd('std_4'); if(ritSec > 0) { dAankomstLoc = new Date(dVertrekKlant.getTime() + tRit); setTijd('std_4', dAankomstLoc); } let dAankomstZaak = new Date(dAankomstLoc.getTime() + tTotaal); setTijd('std_7', dAankomstZaak); } else { let dAankomstZaak = new Date(dRetourKlant.getTime() + tAanrij); setTijd('std_7', dAankomstZaak); } } }
+    
+    function syncTijden() { 
+        const type = document.getElementById('rit-type').value; 
+        if(type==='meerdaagse') return; // Geen auto-sync voor meerdaagse
+        let tAanrij = (aanrijSec > 0) ? (aanrijSec * 1000) : (15 * 60000); let tRit = (ritSec > 0) ? (ritSec * 1000) : (30 * 60000); let tTotaal = tAanrij + tRit; 
+        if(type === 'brenghaal') { let dVertrek = getTijd('br_3'); let dVoorstaan = new Date(dVertrek.getTime() - (15*60000)); setTijd('br_2', dVoorstaan); let dGarageWeg = new Date(dVoorstaan.getTime() - tAanrij); setTijd('br_1', dGarageWeg); let dAankomst = new Date(dVertrek.getTime() + tRit); setTijd('br_4', dAankomst); let dGarageThuis = new Date(dAankomst.getTime() + tTotaal); setTijd('br_5', dGarageThuis); let dVertrekBest = getTijd('hl_3'); let dVoorstaanBest = new Date(dVertrekBest.getTime() - (15*60000)); setTijd('hl_2', dVoorstaanBest); let dGarageWeg2 = new Date(dVoorstaanBest.getTime() - tTotaal); setTijd('hl_1', dGarageWeg2); let dAankomstKlant = new Date(dVertrekBest.getTime() + tRit); setTijd('hl_4', dAankomstKlant); let dGarageThuis2 = new Date(dAankomstKlant.getTime() + tAanrij); setTijd('hl_5', dGarageThuis2); } 
+        else { let dVertrekKlant = getTijd('std_3'); let dVoorstaan = new Date(dVertrekKlant.getTime() - (15*60000)); setTijd('std_2', dVoorstaan); let dVertrekZaak = new Date(dVoorstaan.getTime() - tAanrij); setTijd('std_1', dVertrekZaak); let dRetourKlant = getTijd('std_6'); if(type === 'enkel') { let dAankomstLoc = getTijd('std_4'); if(ritSec > 0) { dAankomstLoc = new Date(dVertrekKlant.getTime() + tRit); setTijd('std_4', dAankomstLoc); } let dAankomstZaak = new Date(dAankomstLoc.getTime() + tTotaal); setTijd('std_7', dAankomstZaak); } else { let dAankomstZaak = new Date(dRetourKlant.getTime() + tAanrij); setTijd('std_7', dAankomstZaak); } } 
+    }
     
     function rekenUren() { 
         const type = document.getElementById('rit-type').value; 
@@ -461,59 +463,49 @@
         const kmDisplay = document.getElementById('info-totaal'); 
         let uren = 0; let totaalKM = 0; 
 
-        // DATUMS OPHALEN
+        // Datum Setup
         const dateStrStart = document.getElementById('rit_datum').value;
         const dateStrEnd = document.getElementById('rit_datum_eind').value;
-        
-        // Helper om volledige Date objecten te maken
-        const getFullDate = (dateStr, tijdId) => {
-            const t = getTijd(tijdId); // Geeft datum op 2000-01-01
-            const d = new Date(dateStr);
-            d.setHours(t.getHours(), t.getMinutes(), 0, 0);
-            return d;
-        };
+        const getFullDate = (dateStr, tijdId) => { const t = getTijd(tijdId); const d = new Date(dateStr); d.setHours(t.getHours(), t.getMinutes(), 0, 0); return d; };
 
-        if (type === 'brenghaal') { 
-            // Brengen is op Startdatum
-            let start1 = getFullDate(dateStrStart, 'br_1'); 
-            let end1 = getFullDate(dateStrStart, 'br_5');
-            let diff1 = (end1 - start1) / 3600000;
-            if(diff1 < 0) diff1 += 24; // Mocht het toch over middernacht gaan
+        if(type === 'meerdaagse') {
+            // CAO LOGICA
+            const dayDiff = Math.round((new Date(dateStrEnd) - new Date(dateStrStart)) / (1000 * 60 * 60 * 24)) + 1; // Totaal aantal dagen
+            
+            // Dag 1 (Gewoon uren berekenen)
+            let start1 = getTijd('md_1'); let end1 = getTijd('md_2');
+            let uren1 = (end1 - start1) / 3600000; if(uren1 < 0) uren1 += 24;
+            
+            // Laatste Dag (Gewoon uren berekenen)
+            let start2 = getTijd('md_3'); let end2 = getTijd('md_4');
+            let uren2 = (end2 - start2) / 3600000; if(uren2 < 0) uren2 += 24;
+            
+            // Tussenliggende Dagen (8 uur per stuk)
+            let tussenDagen = Math.max(0, dayDiff - 2);
+            let urenTussen = tussenDagen * 8;
 
-            // Halen is op Einddatum
-            let start2 = getFullDate(dateStrEnd, 'hl_1');
-            let end2 = getFullDate(dateStrEnd, 'hl_5');
-            let diff2 = (end2 - start2) / 3600000;
-            if(diff2 < 0) diff2 += 24;
+            uren = uren1 + uren2 + urenTussen;
+            uitleg.innerText = `Meerdaagse (CAO): Dag 1 (${uren1.toFixed(1)}u) + Laatste (${uren2.toFixed(1)}u) + ${tussenDagen} tussendagen.`;
+            totaalKM = enkeleReisKM * 2; kmDisplay.innerText = `${totaalKM} km (Retour)`;
 
+        } else if (type === 'brenghaal') { 
+            let start1 = getFullDate(dateStrStart, 'br_1'); let end1 = getFullDate(dateStrStart, 'br_5');
+            let diff1 = (end1 - start1) / 3600000; if(diff1 < 0) diff1 += 24;
+            let start2 = getFullDate(dateStrEnd, 'hl_1'); let end2 = getFullDate(dateStrEnd, 'hl_5');
+            let diff2 = (end2 - start2) / 3600000; if(diff2 < 0) diff2 += 24;
             uren = diff1 + diff2; 
             uitleg.innerText = `Brengen (${diff1.toFixed(2)}u) + Halen (${diff2.toFixed(2)}u)`; 
             totaalKM = enkeleReisKM * 4; kmDisplay.innerText = `${totaalKM} km (2x Retour)`; 
-        
         } else { 
-            // Dagtocht of Enkel
-            let start = getFullDate(dateStrStart, 'std_1'); 
-            let end = getFullDate(dateStrEnd, 'std_7');
-            
-            // Verschil berekenen (houdt rekening met dagen)
-            let diffMs = end - start;
-            let diffHours = diffMs / 3600000;
-            
-            if(diffHours < 0) diffHours = 0; // Veiligheid
-            
+            let start = getFullDate(dateStrStart, 'std_1'); let end = getFullDate(dateStrEnd, 'std_7');
+            let diffMs = end - start; let diffHours = diffMs / 3600000; if(diffHours < 0) diffHours = 0; 
             uren = diffHours; 
-            
             let daysDiff = (new Date(dateStrEnd) - new Date(dateStrStart)) / (1000 * 60 * 60 * 24);
-            if(daysDiff > 0) uitleg.innerText = `Meerdaagse rit (${daysDiff} nacht(en))`;
-            else uitleg.innerText = "Totaal dagtocht (Garage ➔ Garage)"; 
-            
+            if(daysDiff > 0) uitleg.innerText = `Meerdaagse rit (${daysDiff} nacht(en))`; else uitleg.innerText = "Totaal dagtocht (Garage ➔ Garage)"; 
             totaalKM = enkeleReisKM * 2; kmDisplay.innerText = `${totaalKM} km (Retour)`; 
         } 
         
-        if(isNaN(uren)) uren = 0; 
-        document.getElementById('uren-display').innerText = uren.toFixed(2); 
-        window.berekendeTotaalKM = totaalKM; 
-        rekenPrijs(); 
+        if(isNaN(uren)) uren = 0; document.getElementById('uren-display').innerText = uren.toFixed(2); window.berekendeTotaalKM = totaalKM; rekenPrijs(); 
     }
 
     function rekenPrijs() { const uren = parseFloat(document.getElementById('uren-display').innerText) || 0; const extra = parseFloat(document.getElementById('kosten-extra').value) || 0; const kms = window.berekendeTotaalKM || 0; let kmTarief = 0; let bussen = 0; document.querySelectorAll('.bus-check').forEach(b => { if(b.checked) { kmTarief += busOpties[b.value].prijs; bussen++; } }); if (bussen === 0) { document.getElementById('prijs-display').innerText = '€ 0,00'; return; } let kostprijs = (kms * kmTarief) + (uren * 33.00 * bussen) + extra; let verkoopEx = kostprijs / 0.75; let verkoopIncl = verkoopEx * 1.09; let eind = Math.ceil(verkoopIncl / 25) * 25; if(eind < 200) eind = 200; let exBtw = eind / 1.09; let btw = eind - exBtw; document.getElementById('prijs-display').innerText = '€ ' + eind.toLocaleString('nl-NL', {minimumFractionDigits: 2}); document.getElementById('btw-display').innerText = 'BTW (9%): € ' + btw.toLocaleString('nl-NL', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
