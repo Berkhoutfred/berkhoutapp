@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berkhout Planning V3.19 (Fixes & Days)</title>
+    <title>Berkhout Planning V3.20 (Final Polish)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -60,13 +60,24 @@
         .rit-divider { background: #eef6ff; color: var(--primary); font-weight: bold; padding: 8px; border-radius: 6px; margin: 15px 0 5px 0; text-align: center; }
         
         .cost-split { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .cost-split div label { font-size: 11px; color:#666; }
+        .cost-split div input { padding: 8px; font-size: 13px; }
+        
         .correction-box { background: #fdf2f8; border: 1px solid #fbcfe8; padding: 10px; border-radius: 8px; margin-bottom: 20px; }
-        .status-timeline { background: #fff; border: 2px solid #e5e7eb; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
-        .timeline-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; border-bottom:1px dashed #eee; padding-bottom:5px; }
+        
+        /* NEW STATUS TABLE LAYOUT (V3.20) */
+        .status-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
+        .status-table td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        .status-table tr:last-child td { border-bottom: none; }
+        .status-label { width: 100px; font-size: 12px; font-weight: 700; color: var(--primary); }
+        .status-input input { width: 100%; border: 1px solid #ddd; padding: 6px; font-size: 12px; }
+
         .total-box { background: var(--primary); color: white; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 15px; }
         .total-price { font-size: 32px; font-weight: 800; margin: 5px 0; }
         .profit-footer { background: #ecfdf5; border: 2px solid #10b981; padding: 15px; border-radius: 8px; text-align: center; margin-top: 15px; }
-        
+        .profit-title { font-size:11px; font-weight:bold; color:#047857; text-transform:uppercase; }
+        .profit-amount { font-size:24px; font-weight:800; color:#047857; margin-top: 2px; }
+
         .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 15px; }
         .btn-green { background: #10b981; color: white; } .btn-blue { background: var(--primary); color: white; } .btn-grey { background: #9ca3af; color: white; }
         .contact-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 40px; gap: 10px; background: #fafafa; padding: 10px; border-radius: 6px; margin-bottom: 8px; }
@@ -167,14 +178,25 @@
                         <div class="total-price" id="prijs-display">€ 0,00</div>
                         <div style="font-size:13px;" id="btw-display">BTW: € 0,00</div>
                     </div>
-                    <div class="status-timeline">
-                        <div class="timeline-row"><span>Offerte</span><input type="date" id="calc-date-offerte"></div>
-                        <div class="timeline-row"><span>Bevestiging</span><input type="date" id="calc-date-bevestiging"></div>
-                        <div class="timeline-row"><span>Factuur</span><input type="date" id="calc-date-factuur"></div>
-                    </div>
+                    
+                    <table class="status-table">
+                        <tr>
+                            <td class="status-label"><i class="fa-solid fa-paper-plane"></i> Offerte</td>
+                            <td class="status-input"><input type="date" id="calc-date-offerte"></td>
+                        </tr>
+                        <tr>
+                            <td class="status-label"><i class="fa-solid fa-thumbs-up"></i> Bevestigd</td>
+                            <td class="status-input"><input type="date" id="calc-date-bevestiging"></td>
+                        </tr>
+                        <tr>
+                            <td class="status-label"><i class="fa-solid fa-file-invoice-dollar"></i> Factuur</td>
+                            <td class="status-input"><input type="date" id="calc-date-factuur"></td>
+                        </tr>
+                    </table>
+
                     <div class="profit-footer">
-                        <div style="font-size:11px; font-weight:bold; color:#047857;">WINST (NETTO)</div>
-                        <div style="font-size:28px; font-weight:800; color:#047857;" id="live-profit">€ 0</div>
+                        <div class="profit-title">WINST (incl. afronding)</div>
+                        <div class="profit-amount" id="live-profit">€ 0</div>
                     </div>
                     <button class="btn btn-green" onclick="opslaan()" style="margin-top:20px;">Opslaan</button>
                 </div>
@@ -258,7 +280,6 @@
         let totalCostPrice = baseCost + costParking + costToll + costCat;
         let baseSalesPrice = totalCostPrice / 0.75; 
         
-        // V3.19 FIX: Correction is EX VAT, added to base sales
         let finalSalesPriceEx = baseSalesPrice + profitCorrection;
         let finalSalesPriceIncl = finalSalesPriceEx * 1.09;
         
@@ -351,12 +372,13 @@
     function wisselTijdLijst(){const t=document.getElementById('rit-type').value;['tijd-standaard','tijd-brenghaal','tijd-meerdaagse'].forEach(id=>document.getElementById(id).classList.add('hidden'));if(t==='brenghaal')document.getElementById('tijd-brenghaal').classList.remove('hidden');else if(t==='meerdaagse')document.getElementById('tijd-meerdaagse').classList.remove('hidden');else{document.getElementById('tijd-standaard').classList.remove('hidden');const r={'std_2':2,'std_5':5,'std_6':6};for(let k in r)document.getElementById('row_'+k).classList.remove('hidden');if(t==='enkel'){['std_2','std_5','std_6'].forEach(k=>document.getElementById('row_'+k).classList.add('hidden'));}}rekenUren();}
     function getTijd(id){const h=document.getElementById('h_'+id);const m=document.getElementById('m_'+id);if(!h||!m)return new Date(2000,0,1,0,0);return new Date(2000,0,1,parseInt(h.value),parseInt(m.value));}
     
-    // V3.19 FIX: Round to nearest 15 mins for dropdown compatibility
+    // V3.20 FIX: Force min 15 mins drive time
     function setTijd(id,d){
         const h=document.getElementById('h_'+id);
         const m=document.getElementById('m_'+id);
         if(h&&m){
             let mins = d.getMinutes();
+            // Force 15 min round up/down for Google precision
             const remainder = mins % 15;
             if(remainder > 7) mins += (15 - remainder); else mins -= remainder;
             let hours = d.getHours();
@@ -368,7 +390,41 @@
         }
     }
 
-    function syncTijden(){const t=document.getElementById('rit-type').value;if(t==='meerdaagse')return;let a=(aanrijSec>0)?(aanrijSec*1000):(15*60000);let r=(ritSec>0)?(ritSec*1000):(30*60000);let tot=a+r;if(t==='brenghaal'){let v=getTijd('br_3');setTijd('br_2',new Date(v-15*60000));setTijd('br_1',new Date(v-15*60000-a));let ank=new Date(v.getTime()+r);setTijd('br_4',ank);setTijd('br_5',new Date(ank.getTime()+tot));let vb=getTijd('hl_3');setTijd('hl_2',new Date(vb-15*60000));setTijd('hl_1',new Date(vb-15*60000-tot));let ak=new Date(vb.getTime()+r);setTijd('hl_4',ak);setTijd('hl_5',new Date(ak.getTime()+a));}else{let vk=getTijd('std_3');setTijd('std_2',new Date(vk-15*60000));setTijd('std_1',new Date(vk-15*60000-a));let rk=getTijd('std_6');if(t==='enkel'){let al=getTijd('std_4');if(ritSec>0){al=new Date(vk.getTime()+r);setTijd('std_4',al);}setTijd('std_7',new Date(al.getTime()+tot));}else{setTijd('std_7',new Date(rk.getTime()+a));}}}
+    function syncTijden(){const t=document.getElementById('rit-type').value;if(t==='meerdaagse')return;
+        let a=(aanrijSec>0)?(aanrijSec*1000):(15*60000); 
+        if(a < 15*60000) a = 15*60000; // MINIMAAL 15 MIN AANRIJ (V3.20)
+        
+        let r=(ritSec>0)?(ritSec*1000):(30*60000);
+        
+        let tot=a+r;
+        if(t==='brenghaal'){
+            let v=getTijd('br_3');
+            setTijd('br_2',new Date(v-15*60000));
+            setTijd('br_1',new Date(v-15*60000-a));
+            let ank=new Date(v.getTime()+r);
+            setTijd('br_4',ank);
+            setTijd('br_5',new Date(ank.getTime()+tot));
+            let vb=getTijd('hl_3');
+            setTijd('hl_2',new Date(vb-15*60000));
+            setTijd('hl_1',new Date(vb-15*60000-tot));
+            let ak=new Date(vb.getTime()+r);
+            setTijd('hl_4',ak);
+            setTijd('hl_5',new Date(ak.getTime()+a));
+        }else{
+            let vk=getTijd('std_3');
+            setTijd('std_2',new Date(vk-15*60000));
+            setTijd('std_1',new Date(vk-15*60000-a));
+            let rk=getTijd('std_6');
+            if(t==='enkel'){
+                let al=getTijd('std_4');
+                if(ritSec>0){ al=new Date(vk.getTime()+r); setTijd('std_4',al); }
+                setTijd('std_7',new Date(al.getTime()+tot));
+            }else{
+                setTijd('std_7',new Date(rk.getTime()+a));
+            }
+        }
+    }
+    
     function rekenUren(){const t=document.getElementById('rit-type').value;let u=0;let km=0;const ds=document.getElementById('rit_datum').value;const de=document.getElementById('rit_datum_eind').value;const fd=(s,i)=>{const tm=getTijd(i);const d=new Date(s);d.setHours(tm.getHours(),tm.getMinutes(),0,0);return d;};if(t==='meerdaagse'){const dd=Math.round((new Date(de)-new Date(ds))/(1000*60*60*24))+1;let u1=(getTijd('md_2')-getTijd('md_1'))/3600000;if(u1<0)u1+=24;let u2=(getTijd('md_4')-getTijd('md_3'))/3600000;if(u2<0)u2+=24;let td=Math.max(0,dd-2);u=u1+u2+(td*8);document.getElementById('uren-display').innerText=u.toFixed(2);km=enkeleReisKM*2;document.getElementById('info-totaal').innerText=`${km} km (Retour)`;}else if(t==='brenghaal'){let u1=(fd(ds,'br_5')-fd(ds,'br_1'))/3600000;if(u1<0)u1+=24;let u2=(fd(de,'hl_5')-fd(de,'hl_1'))/3600000;if(u2<0)u2+=24;u=u1+u2;document.getElementById('uren-display').innerText=u.toFixed(2);km=enkeleReisKM*4;document.getElementById('info-totaal').innerText=`${km} km (2x Retour)`;}else{let diff=(fd(de,'std_7')-fd(ds,'std_1'))/3600000;if(diff<0)diff=0;u=diff;let dd=(new Date(de)-new Date(ds))/(864e5);km=enkeleReisKM*2;document.getElementById('uren-display').innerText=u.toFixed(2);document.getElementById('info-totaal').innerText=`${km} km (Retour)`;}if(isNaN(u))u=0;window.berekendeTotaalKM=km;rekenPrijs();}
     function initMapsAutofill(){const o={componentRestrictions:{country:'nl'}};['route-start','route-ophaal','route-eind','route-via1','route-via2','crm-adres'].forEach(id=>{const el=document.getElementById(id);if(el)new google.maps.places.Autocomplete(el,o).addListener('place_changed',function(){if(id==='crm-adres'){const p=this.getPlace();el.value=p.formatted_address||'';let s='';if(p.address_components)p.address_components.forEach(c=>{if(c.types.includes('locality'))s=c.long_name});if(s)document.getElementById('crm-plaats').value=s;}else berekenRoute();});});}
     function berekenRoute(){const s=document.getElementById('route-start').value;const o=document.getElementById('route-ophaal').value;const e=document.getElementById('route-eind').value;if(!s||!o||!e)return;const w=[{location:o,stopover:true}];if(document.getElementById('route-via1').value)w.push({location:document.getElementById('route-via1').value,stopover:true});if(document.getElementById('route-via2').value)w.push({location:document.getElementById('route-via2').value,stopover:true});const ds=new google.maps.DirectionsService();ds.route({origin:s,destination:e,waypoints:w,travelMode:'DRIVING'},(r,st)=>{if(st==='OK'){const l=r.routes[0].legs;aanrijSec=l[0].duration.value;let rd=0;let td=0;l.forEach((lg,i)=>{td+=lg.distance.value;if(i>0)rd+=lg.duration.value;});ritSec=rd;enkeleReisKM=Math.round(td/1000);enkeleReisSec=aanrijSec+ritSec;document.getElementById('info-aanrij').innerText=`${Math.round(aanrijSec/60)} min`;document.getElementById('info-rit').innerText=`${Math.round(ritSec/60)} min`;syncTijden();rekenUren();}});}
@@ -379,7 +435,7 @@
     function saveInternalNote(){if(appState.activeRitId!==null){db.ritten[appState.activeRitId].internal_notes=document.getElementById('offerte-note-text').value;localStorage.setItem('berkhout_v2',JSON.stringify(db));alert('Opgeslagen');}}
     function confirmOfferte(){if(appState.activeRitId!==null){db.ritten[appState.activeRitId].status.offerte=true;localStorage.setItem('berkhout_v2',JSON.stringify(db));updateDashboard();closeModal('offerte-modal');}}
     
-    // V3.19: PDF MET DAGNAAM
+    // V3.20: PDF MET DAGNAAM
     function printOfferte(){if(appState.activeRitId===null)return;const r=db.ritten[appState.activeRitId];const k=db.klanten.find(x=>x.id==r.details.klantId);let cp="";if(r.details.contactIdx!==""&&k&&k.contactpersonen[r.details.contactIdx])cp=k.contactpersonen[r.details.contactIdx].naam;
     const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     const d=new Date().toLocaleDateString('nl-NL', dateOpts);
