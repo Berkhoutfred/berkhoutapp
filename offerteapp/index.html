@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berkhout Planning V3.13 (Workflow)</title>
+    <title>Berkhout Planning V3.14 (PDF Editie)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -35,13 +35,13 @@
         
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         
-        /* ZOEKRESULTATEN DROPDOWN (NIEUW) */
+        /* ZOEKRESULTATEN DROPDOWN */
         .search-wrapper { position: relative; }
         .search-results { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid var(--primary); border-radius: 6px; max-height: 200px; overflow-y: auto; z-index: 100; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .search-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
         .search-item:hover { background: #f0f9ff; }
         
-        /* MODAL STYLING (OFFERTE VOORBEELD) */
+        /* MODAL STYLING */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
         .modal-box { background: white; width: 800px; max-width: 95%; max-height: 90vh; overflow-y: auto; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: flex; flex-direction: column; }
         .modal-header { background: var(--primary); color: white; padding: 15px 20px; font-weight: bold; font-size: 18px; display: flex; justify-content: space-between; align-items: center; }
@@ -159,11 +159,14 @@
                     <label>Zoek Klant</label>
                     <div class="search-wrapper">
                         <input type="text" id="calc-klant-zoek" placeholder="Typ naam..." oninput="filterCalcClients()">
-                        <input type="hidden" id="calc-klant-id"> <div class="search-results" id="calc-klant-results"></div>
+                        <input type="hidden" id="calc-klant-id">
+                        <div class="search-results" id="calc-klant-results"></div>
                     </div>
 
                     <label>Contactpersoon</label>
                     <select id="calc-contact"><option value="">-- Eerst klant kiezen --</option></select>
+
+                    <label>Aantal Personen</label> <input type="number" id="calc-pax" placeholder="Bijv. 50">
 
                     <div id="klant-details" style="display:none; background:#f0f9ff; padding:10px; border-radius:6px; margin-top:10px; font-size:13px; color:#0369a1;"></div>
                     <label>Kies Voertuig(en)</label><div class="bus-grid" id="bus-container"></div>
@@ -261,19 +264,17 @@
             <span>Offerte Voorbeeld</span>
             <span onclick="closeModal('offerte-modal')" style="cursor:pointer;"><i class="fa-solid fa-times"></i></span>
         </div>
-        <div class="modal-body" id="offerte-modal-content">
-            </div>
+        <div class="modal-body" id="offerte-modal-content"></div>
         <div style="padding:0 20px; text-align:right;">
             <i class="fa-solid fa-pen-to-square note-toggle" onclick="toggleNote()"></i>
             <div id="offerte-note-box" class="note-box">
-                <label style="margin-top:0;">Interne Notitie (Alleen voor jou)</label>
-                <textarea id="offerte-note-text" rows="3" placeholder="Bijv: Klant belt vrijdag terug..."></textarea>
+                <label style="margin-top:0;">Interne Notitie</label>
+                <textarea id="offerte-note-text" rows="3"></textarea>
                 <button class="btn-blue" style="width:auto; padding:5px 10px; font-size:12px;" onclick="saveInternalNote()">Opslaan</button>
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn-grey" style="width:auto;" onclick="alert('PDF generatie komt in de volgende update!')"><i class="fa-solid fa-file-pdf"></i> Download PDF</button>
-            <button class="btn-grey" style="width:auto;" onclick="alert('Mail functie komt in de volgende update!')"><i class="fa-solid fa-envelope"></i> Mailen</button>
+            <button class="btn-grey" style="width:auto;" onclick="printOfferte()"><i class="fa-solid fa-file-pdf"></i> PDF Maken / Afdrukken</button>
             <button class="btn-green" style="width:auto;" onclick="confirmOfferte()"><i class="fa-solid fa-check"></i> Bevestigen</button>
         </div>
     </div>
@@ -307,13 +308,12 @@
         rekenUren();
     }
 
-    // --- 3. KLANT ZOEKEN & SELECTEREN (V3.13) ---
+    // --- 3. KLANT ZOEKEN & SELECTEREN ---
     function filterCalcClients() {
         const q = document.getElementById('calc-klant-zoek').value.toLowerCase();
         const resultsDiv = document.getElementById('calc-klant-results');
         resultsDiv.innerHTML = '';
         if(q.length < 2) { resultsDiv.style.display = 'none'; return; }
-        
         const filtered = db.klanten.filter(k => k.naam.toLowerCase().includes(q) || k.plaats.toLowerCase().includes(q));
         if(filtered.length > 0) {
             resultsDiv.style.display = 'block';
@@ -324,9 +324,7 @@
                 div.onclick = () => selectCalcClient(k.id);
                 resultsDiv.appendChild(div);
             });
-        } else {
-            resultsDiv.style.display = 'none';
-        }
+        } else resultsDiv.style.display = 'none';
     }
 
     function selectCalcClient(id) {
@@ -335,72 +333,147 @@
         document.getElementById('calc-klant-zoek').value = k.naam;
         document.getElementById('calc-klant-id').value = k.id;
         document.getElementById('calc-klant-results').style.display = 'none';
-        
-        // Vul adres in
         document.getElementById('route-ophaal').value = k.adres || k.plaats;
         const d = document.getElementById('klant-details');
-        d.style.display = 'block';
-        d.innerHTML = `<b>${k.naam}</b><br>${k.adres}, ${k.plaats}`;
-        
-        // Vul contactpersonen
+        d.style.display = 'block'; d.innerHTML = `<b>${k.naam}</b><br>${k.adres}, ${k.plaats}`;
         const cpSelect = document.getElementById('calc-contact');
         cpSelect.innerHTML = '<option value="">-- Kies Contactpersoon --</option>';
         if(k.contactpersonen && k.contactpersonen.length > 0) {
-            k.contactpersonen.forEach((cp, idx) => {
-                cpSelect.innerHTML += `<option value="${idx}">${cp.naam}</option>`;
-            });
-            if(k.contactpersonen.length === 1) cpSelect.selectedIndex = 1; // Auto select if only 1
+            k.contactpersonen.forEach((cp, idx) => { cpSelect.innerHTML += `<option value="${idx}">${cp.naam}</option>`; });
+            if(k.contactpersonen.length === 1) cpSelect.selectedIndex = 1; 
         }
-        
         berekenRoute();
     }
 
-    function startOfferte(id) {
-        resetForm(); // Reset en ga naar calc
-        nav('calculatie');
-        selectCalcClient(id); // Selecteer de klant
-    }
+    function startOfferte(id) { resetForm(); nav('calculatie'); selectCalcClient(id); }
 
-    // --- 4. OFFERTE WORKFLOW (V3.13) ---
+    // --- 4. OFFERTE WORKFLOW & PDF GENERATIE (NIEUW) ---
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-    function toggleNote() { 
-        const box = document.getElementById('offerte-note-box'); 
-        box.style.display = (box.style.display === 'block') ? 'none' : 'block'; 
-    }
+    function toggleNote() { const box = document.getElementById('offerte-note-box'); box.style.display = (box.style.display === 'block') ? 'none' : 'block'; }
 
     function openOfferteModal(index) {
-        appState.activeRitId = index; // Onthoud welke rit
+        appState.activeRitId = index;
         const rit = db.ritten[index];
         const klant = db.klanten.find(k => k.id == rit.details.klantId);
         let cpNaam = "Geen contactpersoon";
-        if(rit.details.contactIdx !== "" && klant && klant.contactpersonen[rit.details.contactIdx]) {
-            cpNaam = klant.contactpersonen[rit.details.contactIdx].naam;
-        }
+        if(rit.details.contactIdx !== "" && klant && klant.contactpersonen[rit.details.contactIdx]) cpNaam = klant.contactpersonen[rit.details.contactIdx].naam;
 
         let html = `
             <div style="border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:10px;">
                 <h3 style="margin:0; color:#333;">${klant ? klant.naam : rit.klant}</h3>
-                <div style="font-size:13px; color:#666;">
-                    ${klant ? klant.adres + ', ' + klant.plaats : ''}<br>
-                    <b>T.a.v:</b> ${cpNaam}
-                </div>
+                <div style="font-size:13px; color:#666;">${klant ? klant.adres + ', ' + klant.plaats : ''}<br><b>T.a.v:</b> ${cpNaam}</div>
             </div>
             <div style="background:#f9fafb; padding:15px; border-radius:8px;">
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:13px;">
                     <div><b>Vertrekdatum:</b> ${rit.datum}</div>
-                    <div><b>Type:</b> ${rit.type}</div>
+                    <div><b>Passagiers:</b> ${rit.details.pax || '-'}</div>
                     <div><b>Van:</b> ${rit.details.route.ophaal}</div>
                     <div><b>Naar:</b> ${rit.dest}</div>
                 </div>
-                <div style="margin-top:15px; font-size:18px; font-weight:bold; color:var(--primary); text-align:right;">
-                    Totaal: ${rit.prijs}
-                </div>
+                <div style="margin-top:15px; font-size:18px; font-weight:bold; color:var(--primary); text-align:right;">Totaal: ${rit.prijs}</div>
             </div>
         `;
         document.getElementById('offerte-modal-content').innerHTML = html;
         document.getElementById('offerte-note-text').value = rit.internal_notes || '';
-        document.getElementById('offerte-note-box').style.display = 'none'; // Reset note box
+        document.getElementById('offerte-note-box').style.display = 'none';
         document.getElementById('offerte-modal').classList.remove('hidden');
+    }
+
+    // --- DE PDF PRINT FUNCTIE ---
+    function printOfferte() {
+        if(appState.activeRitId === null) return;
+        const rit = db.ritten[appState.activeRitId];
+        const klant = db.klanten.find(k => k.id == rit.details.klantId);
+        
+        let cpInfo = "";
+        if(rit.details.contactIdx !== "" && klant && klant.contactpersonen[rit.details.contactIdx]) {
+            cpInfo = klant.contactpersonen[rit.details.contactIdx].naam;
+        }
+
+        // Datum formattering
+        const dateObj = new Date();
+        const dateStr = dateObj.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
+        const ritDatum = new Date(rit.datum).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
+
+        // HTML voor de PDF
+        const pdfContent = `
+            <html>
+            <head>
+                <title>Offerte - ${rit.klant}</title>
+                <style>
+                    body { font-family: 'Arial', sans-serif; padding: 40px; color: #333; line-height: 1.5; max-width: 800px; margin: 0 auto; }
+                    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 50px; }
+                    .logo-area { font-size: 24px; font-weight: bold; color: #004a99; }
+                    .sender-info { font-size: 12px; color: #666; text-align: right; }
+                    .receiver-info { margin-bottom: 40px; font-size: 14px; }
+                    .meta-info { display: flex; justify-content: space-between; margin-bottom: 30px; font-size: 14px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+                    .subject { font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #004a99; }
+                    .table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; }
+                    .table th { text-align: left; border-bottom: 1px solid #ccc; padding: 8px; }
+                    .table td { border-bottom: 1px solid #eee; padding: 8px; }
+                    .total-block { text-align: right; font-size: 16px; margin-top: 20px; }
+                    .total-price { font-size: 22px; font-weight: bold; color: #004a99; }
+                    .footer { margin-top: 60px; font-size: 11px; color: #888; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div class="logo-area">
+                        <i class="fa-solid fa-bus"></i> BERKHOUT REIZEN
+                    </div>
+                    <div class="sender-info">
+                        Berkhout Reizen<br>Industrieweg 99J<br>7202 CA Zutphen<br>info@berkhoutreizen.nl
+                    </div>
+                </div>
+
+                <div class="receiver-info">
+                    <strong>${klant ? klant.naam : rit.klant}</strong><br>
+                    ${cpInfo ? 'T.a.v. ' + cpInfo + '<br>' : ''}
+                    ${klant ? klant.adres + '<br>' + klant.plaats : ''}
+                </div>
+
+                <div class="meta-info">
+                    <div><strong>Datum:</strong> ${dateStr}</div>
+                    <div><strong>Geldig tot:</strong> 14 dagen na dagtekening</div>
+                </div>
+
+                <div class="subject">Offerte: Vervoer naar ${rit.dest}</div>
+
+                <p>Geachte relatie,</p>
+                <p>Hartelijk dank voor uw aanvraag. Hierbij doen wij u graag de volgende aanbieding voor uw busvervoer.</p>
+
+                <table class="table">
+                    <tr><th>Omschrijving</th><th>Details</th></tr>
+                    <tr><td>Vertrekdatum</td><td>${ritDatum}</td></tr>
+                    <tr><td>Vertreklocatie</td><td>${rit.details.route.ophaal}</td></tr>
+                    <tr><td>Bestemming</td><td>${rit.dest}</td></tr>
+                    <tr><td>Type Reis</td><td>${rit.type}</td></tr>
+                    <tr><td>Aantal Personen</td><td>${rit.details.pax || 'Niet opgegeven'}</td></tr>
+                </table>
+
+                <div class="total-block">
+                    Totaalbedrag (inclusief 9% BTW):<br>
+                    <span class="total-price">${rit.prijs}</span>
+                </div>
+
+                <p style="margin-top:40px;">Wij hopen u hiermee een passende aanbieding te hebben gedaan en zien uw reactie met belangstelling tegemoet.</p>
+                
+                <p>Met vriendelijke groet,<br><br>Berkhout Reizen</p>
+
+                <div class="footer">
+                    Op al onze diensten zijn de Algemene Vervoersvoorwaarden van toepassing. KVK: 12345678.
+                </div>
+            </body>
+            </html>
+        `;
+
+        const win = window.open('', '_blank');
+        win.document.write(pdfContent);
+        win.document.close();
+        // Wacht heel even met printen zodat plaatjes/fonts laden
+        setTimeout(() => {
+            win.print();
+        }, 500);
     }
 
     function saveInternalNote() {
@@ -420,7 +493,7 @@
         }
     }
 
-    // --- 5. CRM BASIS (V3.12 - Intact) ---
+    // --- 5. CRM BASIS ---
     function nieuwKlantScherm() { appState.activeClientId = null; document.getElementById('crm-title').innerText = "Nieuwe Klant"; ['crm-naam','crm-adres','crm-plaats','crm-tel','crm-deb'].forEach(id => document.getElementById(id).value = ''); document.getElementById('crm-contacts-container').innerHTML = ''; addContactRow(); switchCrmView(true); }
     function editClient(id) { const k = db.klanten.find(x => x.id == id); if(!k) return; appState.activeClientId = id; document.getElementById('crm-title').innerText = "Klant Bewerken"; document.getElementById('crm-naam').value = k.naam||''; document.getElementById('crm-adres').value = k.adres||''; document.getElementById('crm-plaats').value = k.plaats||''; document.getElementById('crm-tel').value = k.tel||''; document.getElementById('crm-deb').value = k.debiteurnr||''; const c = document.getElementById('crm-contacts-container'); c.innerHTML = ''; if(k.contactpersonen && k.contactpersonen.length > 0) k.contactpersonen.forEach(cp => addContactRow(cp)); else addContactRow(); switchCrmView(true); }
     function saveClient() { const naam = document.getElementById('crm-naam').value; if(!naam) { alert("Naam verplicht"); return; } const contacts = []; document.querySelectorAll('.contact-row').forEach(row => { const inputs = row.querySelectorAll('input'); if(inputs[0].value) contacts.push({naam: inputs[0].value, email: inputs[1].value, tel: inputs[2].value, mob: inputs[3].value}); }); const data = { id: appState.activeClientId || Date.now(), naam: naam, adres: document.getElementById('crm-adres').value, plaats: document.getElementById('crm-plaats').value, tel: document.getElementById('crm-tel').value, debiteurnr: document.getElementById('crm-deb').value, contactpersonen: contacts }; if(appState.activeClientId) db.klanten[db.klanten.findIndex(x=>x.id==appState.activeClientId)] = data; else db.klanten.push(data); localStorage.setItem('berkhout_v2', JSON.stringify(db)); renderClientList(); terugNaarLijst(); }
@@ -434,40 +507,27 @@
         const type=document.getElementById('rit-type').value; let av=tijdVeldenStandaard; if(type==='brenghaal')av=[...tijdVeldenBrengen,...tijdVeldenHalen]; if(type==='meerdaagse')av=[...tijdVeldenMeerDag1,...tijdVeldenMeerDagEind];
         let ot={}; av.forEach(v=>{ot[v.id]=`${document.getElementById('h_'+v.id).value}:${document.getElementById('m_'+v.id).value}`});
         const rd=document.getElementById('rit_datum').value; const rde=document.getElementById('rit_datum_eind').value;
-        // Check of klant via zoekveld is gekozen (ID is er) of via oude manier (text)
-        let kId = document.getElementById('calc-klant-id').value;
-        // Fallback voor als er geen ID is (oude ritten/direct typen):
-        if(!kId) kId = document.getElementById('calc-klant').value; 
+        let kId = document.getElementById('calc-klant-id').value; if(!kId) kId = document.getElementById('calc-klant').value; 
 
         const data={datum:rd,klant:document.getElementById('calc-klant-zoek').value || 'Onbekend', dest:document.getElementById('route-eind').value,prijs:document.getElementById('prijs-display').innerText,type:(type==='enkel'?'Enkele rit':(type==='brenghaal'?'Breng & Haal':(type==='meerdaagse'?'Meerdaagse':'Dagtocht'))),status:(actieveRitIndex>-1?db.ritten[actieveRitIndex].status:{offerte:false,bevestiging:false,opdracht:false,factuur:false,betaald:false}),
-        details:{rit_datum:rd,rit_datum_eind:rde,klantId:kId,contactIdx:document.getElementById('calc-contact').value,bussen:Array.from(document.querySelectorAll('.bus-check:checked')).map(b=>b.value),route:{start:document.getElementById('route-start').value,ophaal:document.getElementById('route-ophaal').value,via1:document.getElementById('route-via1').value,via2:document.getElementById('route-via2').value,eind:document.getElementById('route-eind').value},tijden:ot,type:type,extra:document.getElementById('kosten-extra').value}};
+        details:{rit_datum:rd,rit_datum_eind:rde,klantId:kId,contactIdx:document.getElementById('calc-contact').value,pax:document.getElementById('calc-pax').value,bussen:Array.from(document.querySelectorAll('.bus-check:checked')).map(b=>b.value),route:{start:document.getElementById('route-start').value,ophaal:document.getElementById('route-ophaal').value,via1:document.getElementById('route-via1').value,via2:document.getElementById('route-via2').value,eind:document.getElementById('route-eind').value},tijden:ot,type:type,extra:document.getElementById('kosten-extra').value}};
         if(actieveRitIndex>-1) db.ritten[actieveRitIndex]=data; else db.ritten.unshift(data);
         localStorage.setItem('berkhout_v2',JSON.stringify(db)); 
         const d=new Date(rd); appState.currentYear=d.getFullYear(); appState.currentMonth=d.getMonth(); renderMonthButtons(); updateDashboard(); resetForm(); nav('dashboard');
     }
 
     function toggleStatus(index, veld) {
-        // INTERCEPT OFFERTE CLICK
-        if(veld === 'offerte' && !db.ritten[index].status.offerte) {
-            openOfferteModal(index);
-            return;
-        }
+        if(veld === 'offerte' && !db.ritten[index].status.offerte) { openOfferteModal(index); return; }
         db.ritten[index].status[veld] = !db.ritten[index].status[veld];
-        localStorage.setItem('berkhout_v2', JSON.stringify(db));
-        updateDashboard();
+        localStorage.setItem('berkhout_v2', JSON.stringify(db)); updateDashboard();
     }
 
-    // --- 7. LOAD RIT (AANGEPAST VOOR NIEUWE KLANTSELECTIE) ---
     function laadRit(index) {
         const rit = db.ritten[index]; if(!rit.details){alert("Oude rit.");return;} actieveRitIndex=index;
         document.getElementById('calc-title').innerText="Rit Bewerken"; document.getElementById('btn-save').innerHTML='<i class="fa-solid fa-rotate"></i> Wijziging Opslaan'; document.getElementById('btn-save').className='btn btn-orange';
         document.getElementById('rit_datum').value=rit.details.rit_datum; document.getElementById('rit_datum_eind').value=rit.details.rit_datum_eind||rit.details.rit_datum;
-        
-        // Laad klant via ID in de zoek-interface
-        if(rit.details.klantId) selectCalcClient(rit.details.klantId);
-        // Selecteer juiste contactpersoon
-        if(rit.details.contactIdx) document.getElementById('calc-contact').value = rit.details.contactIdx;
-
+        if(rit.details.klantId) selectCalcClient(rit.details.klantId); if(rit.details.contactIdx) document.getElementById('calc-contact').value = rit.details.contactIdx;
+        document.getElementById('calc-pax').value = rit.details.pax || '';
         document.querySelectorAll('.bus-check').forEach(b=>b.checked=false); rit.details.bussen.forEach(v=>{const c=document.querySelector(`.bus-check[value="${v}"]`);if(c)c.checked=true;});
         document.getElementById('route-start').value=rit.details.route.start; document.getElementById('route-ophaal').value=rit.details.route.ophaal;
         document.getElementById('route-via1').value=rit.details.route.via1; document.getElementById('route-via2').value=rit.details.route.via2;
