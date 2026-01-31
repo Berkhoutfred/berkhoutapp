@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berkhout Planning V3.20 (Final Polish)</title>
+    <title>Berkhout Planning V3.21 (Dagweergave)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -65,7 +65,6 @@
         
         .correction-box { background: #fdf2f8; border: 1px solid #fbcfe8; padding: 10px; border-radius: 8px; margin-bottom: 20px; }
         
-        /* NEW STATUS TABLE LAYOUT (V3.20) */
         .status-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
         .status-table td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
         .status-table tr:last-child td { border-bottom: none; }
@@ -85,6 +84,9 @@
         
         input[type="date"] { padding: 10px; border: 2px solid var(--primary); border-radius: 6px; font-weight: bold; color: var(--primary); font-family: inherit; }
         
+        /* NEW: Date display text */
+        .date-text-display { font-size: 11px; color: #666; margin-top: 4px; font-weight: 600; font-style: italic; min-height: 15px; }
+
         .hidden { display: none !important; }
     </style>
 </head>
@@ -121,8 +123,16 @@
                 <div class="card">
                     <div class="section-header">1. Klant & Datum</div>
                     <div style="display:flex; gap:15px; margin-bottom:15px;">
-                        <div style="flex:1;"><label>Start</label><input type="date" id="rit_datum" onchange="syncDates()"></div>
-                        <div style="flex:1;"><label>Eind</label><input type="date" id="rit_datum_eind" onchange="rekenUren()"></div>
+                        <div style="flex:1;">
+                            <label>Startdatum</label>
+                            <input type="date" id="rit_datum" onchange="syncDates()">
+                            <div id="display-start-date" class="date-text-display"></div>
+                        </div>
+                        <div style="flex:1;">
+                            <label>Einddatum</label>
+                            <input type="date" id="rit_datum_eind" onchange="rekenUren()">
+                            <div id="display-end-date" class="date-text-display"></div>
+                        </div>
                     </div>
                     <label>Zoek Klant</label>
                     <div class="search-wrapper">
@@ -363,7 +373,23 @@
         });
     }
     function toggleStatus(index, veld) {if(veld==='offerte'&&!db.ritten[index].status.offerte){openOfferteModal(index);return;}db.ritten[index].status[veld]=!db.ritten[index].status[veld];if(db.ritten[index].status[veld]){if(!db.ritten[index].history)db.ritten[index].history={};if(!db.ritten[index].history[veld])db.ritten[index].history[veld]=new Date().toISOString().split('T')[0];}localStorage.setItem('berkhout_v2',JSON.stringify(db));updateDashboard();}
-    function syncDates(){document.getElementById('rit_datum_eind').value=document.getElementById('rit_datum').value;rekenUren();}
+    
+    // V3.21: UPDATE DATE TEXT DISPLAY
+    function syncDates(){
+        const startVal = document.getElementById('rit_datum').value;
+        document.getElementById('rit_datum_eind').value=startVal;
+        updateDateDisplays();
+        rekenUren();
+    }
+    function updateDateDisplays() {
+        const startVal = document.getElementById('rit_datum').value;
+        const endVal = document.getElementById('rit_datum_eind').value;
+        const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        
+        if(startVal) document.getElementById('display-start-date').innerText = new Date(startVal).toLocaleDateString('nl-NL', opts);
+        if(endVal) document.getElementById('display-end-date').innerText = new Date(endVal).toLocaleDateString('nl-NL', opts);
+    }
+
     function bouwBusKiezers(){const c=document.getElementById('bus-container');let h='';busOpties.forEach((b,i)=>{h+=`<label class="bus-option"><input type="checkbox" class="bus-check" value="${i}" onchange="rekenPrijs()"><span><b>${b.label}</b><br><small>€${b.prijs.toFixed(2)}/km</small></span></label>`;});c.innerHTML=h;}
     function maakTijdRij(v){let u='',m='';for(let i=0;i<24;i++){let val=i.toString().padStart(2,'0');u+=`<option value="${val}" ${val==v.defH?'selected':''}>${val}</option>`;}['00','15','30','45'].forEach(x=>{m+=`<option value="${x}" ${x==v.defM?'selected':''}>${x}</option>`;});let fn=v.trigger?`syncTijden(); rekenUren()`:`rekenUren()`;return`<div id="row_${v.id}" class="time-row ${v.style||''}"><div style="font-size:12px;width:110px;">${v.label}</div><div class="time-select-group"><select id="h_${v.id}" class="select-uur" onchange="${fn}">${u}</select>:<select id="m_${v.id}" class="select-min" onchange="${fn}">${m}</select></div></div>`;}
     function bouwTijdLijsten(){let hStd='';tijdVeldenStandaard.forEach(v=>hStd+=maakTijdRij(v));document.getElementById('tijd-standaard').innerHTML=hStd;let hBr='';tijdVeldenBrengen.forEach(v=>hBr+=maakTijdRij(v));document.getElementById('bh-deel1').innerHTML=hBr;let hHl='';tijdVeldenHalen.forEach(v=>hHl+=maakTijdRij(v));document.getElementById('bh-deel2').innerHTML=hHl;let hMd1='';tijdVeldenMeerDag1.forEach(v=>hMd1+=maakTijdRij(v));document.getElementById('md-deel1').innerHTML=hMd1;let hMd2='';tijdVeldenMeerDagEind.forEach(v=>hMd2+=maakTijdRij(v));document.getElementById('md-deel2').innerHTML=hMd2;}
@@ -372,19 +398,16 @@
     function wisselTijdLijst(){const t=document.getElementById('rit-type').value;['tijd-standaard','tijd-brenghaal','tijd-meerdaagse'].forEach(id=>document.getElementById(id).classList.add('hidden'));if(t==='brenghaal')document.getElementById('tijd-brenghaal').classList.remove('hidden');else if(t==='meerdaagse')document.getElementById('tijd-meerdaagse').classList.remove('hidden');else{document.getElementById('tijd-standaard').classList.remove('hidden');const r={'std_2':2,'std_5':5,'std_6':6};for(let k in r)document.getElementById('row_'+k).classList.remove('hidden');if(t==='enkel'){['std_2','std_5','std_6'].forEach(k=>document.getElementById('row_'+k).classList.add('hidden'));}}rekenUren();}
     function getTijd(id){const h=document.getElementById('h_'+id);const m=document.getElementById('m_'+id);if(!h||!m)return new Date(2000,0,1,0,0);return new Date(2000,0,1,parseInt(h.value),parseInt(m.value));}
     
-    // V3.20 FIX: Force min 15 mins drive time
     function setTijd(id,d){
         const h=document.getElementById('h_'+id);
         const m=document.getElementById('m_'+id);
         if(h&&m){
             let mins = d.getMinutes();
-            // Force 15 min round up/down for Google precision
             const remainder = mins % 15;
             if(remainder > 7) mins += (15 - remainder); else mins -= remainder;
             let hours = d.getHours();
             if(mins === 60) { mins=0; hours++; }
             if(hours === 24) hours = 0;
-            
             h.value=hours.toString().padStart(2,'0');
             m.value=mins.toString().padStart(2,'0');
         }
@@ -392,7 +415,7 @@
 
     function syncTijden(){const t=document.getElementById('rit-type').value;if(t==='meerdaagse')return;
         let a=(aanrijSec>0)?(aanrijSec*1000):(15*60000); 
-        if(a < 15*60000) a = 15*60000; // MINIMAAL 15 MIN AANRIJ (V3.20)
+        if(a < 15*60000) a = 15*60000; 
         
         let r=(ritSec>0)?(ritSec*1000):(30*60000);
         
@@ -425,7 +448,7 @@
         }
     }
     
-    function rekenUren(){const t=document.getElementById('rit-type').value;let u=0;let km=0;const ds=document.getElementById('rit_datum').value;const de=document.getElementById('rit_datum_eind').value;const fd=(s,i)=>{const tm=getTijd(i);const d=new Date(s);d.setHours(tm.getHours(),tm.getMinutes(),0,0);return d;};if(t==='meerdaagse'){const dd=Math.round((new Date(de)-new Date(ds))/(1000*60*60*24))+1;let u1=(getTijd('md_2')-getTijd('md_1'))/3600000;if(u1<0)u1+=24;let u2=(getTijd('md_4')-getTijd('md_3'))/3600000;if(u2<0)u2+=24;let td=Math.max(0,dd-2);u=u1+u2+(td*8);document.getElementById('uren-display').innerText=u.toFixed(2);km=enkeleReisKM*2;document.getElementById('info-totaal').innerText=`${km} km (Retour)`;}else if(t==='brenghaal'){let u1=(fd(ds,'br_5')-fd(ds,'br_1'))/3600000;if(u1<0)u1+=24;let u2=(fd(de,'hl_5')-fd(de,'hl_1'))/3600000;if(u2<0)u2+=24;u=u1+u2;document.getElementById('uren-display').innerText=u.toFixed(2);km=enkeleReisKM*4;document.getElementById('info-totaal').innerText=`${km} km (2x Retour)`;}else{let diff=(fd(de,'std_7')-fd(ds,'std_1'))/3600000;if(diff<0)diff=0;u=diff;let dd=(new Date(de)-new Date(ds))/(864e5);km=enkeleReisKM*2;document.getElementById('uren-display').innerText=u.toFixed(2);document.getElementById('info-totaal').innerText=`${km} km (Retour)`;}if(isNaN(u))u=0;window.berekendeTotaalKM=km;rekenPrijs();}
+    function rekenUren(){const t=document.getElementById('rit-type').value;let u=0;let km=0;const ds=document.getElementById('rit_datum').value;const de=document.getElementById('rit_datum_eind').value;const fd=(s,i)=>{const tm=getTijd(i);const d=new Date(s);d.setHours(tm.getHours(),tm.getMinutes(),0,0);return d;};if(t==='meerdaagse'){const dd=Math.round((new Date(de)-new Date(ds))/(1000*60*60*24))+1;let u1=(getTijd('md_2')-getTijd('md_1'))/3600000;if(u1<0)u1+=24;let u2=(getTijd('md_4')-getTijd('md_3'))/3600000;if(u2<0)u2+=24;let td=Math.max(0,dd-2);u=u1+u2+(td*8);document.getElementById('uren-display').innerText=u.toFixed(2);km=enkeleReisKM*2;document.getElementById('info-totaal').innerText=`${km} km (Retour)`;}else if(t==='brenghaal'){let u1=(fd(ds,'br_5')-fd(ds,'br_1'))/3600000;if(u1<0)u1+=24;let u2=(fd(de,'hl_5')-fd(de,'hl_1'))/3600000;if(u2<0)u2+=24;u=u1+u2;document.getElementById('uren-display').innerText=u.toFixed(2);km=enkeleReisKM*4;document.getElementById('info-totaal').innerText=`${km} km (2x Retour)`;}else{let diff=(fd(de,'std_7')-fd(ds,'std_1'))/3600000;if(diff<0)diff=0;u=diff;let dd=(new Date(de)-new Date(ds))/(864e5);km=enkeleReisKM*2;document.getElementById('uren-display').innerText=u.toFixed(2);document.getElementById('info-totaal').innerText=`${km} km (Retour)`;}if(isNaN(u))u=0;window.berekendeTotaalKM=km;updateDateDisplays();rekenPrijs();}
     function initMapsAutofill(){const o={componentRestrictions:{country:'nl'}};['route-start','route-ophaal','route-eind','route-via1','route-via2','crm-adres'].forEach(id=>{const el=document.getElementById(id);if(el)new google.maps.places.Autocomplete(el,o).addListener('place_changed',function(){if(id==='crm-adres'){const p=this.getPlace();el.value=p.formatted_address||'';let s='';if(p.address_components)p.address_components.forEach(c=>{if(c.types.includes('locality'))s=c.long_name});if(s)document.getElementById('crm-plaats').value=s;}else berekenRoute();});});}
     function berekenRoute(){const s=document.getElementById('route-start').value;const o=document.getElementById('route-ophaal').value;const e=document.getElementById('route-eind').value;if(!s||!o||!e)return;const w=[{location:o,stopover:true}];if(document.getElementById('route-via1').value)w.push({location:document.getElementById('route-via1').value,stopover:true});if(document.getElementById('route-via2').value)w.push({location:document.getElementById('route-via2').value,stopover:true});const ds=new google.maps.DirectionsService();ds.route({origin:s,destination:e,waypoints:w,travelMode:'DRIVING'},(r,st)=>{if(st==='OK'){const l=r.routes[0].legs;aanrijSec=l[0].duration.value;let rd=0;let td=0;l.forEach((lg,i)=>{td+=lg.distance.value;if(i>0)rd+=lg.duration.value;});ritSec=rd;enkeleReisKM=Math.round(td/1000);enkeleReisSec=aanrijSec+ritSec;document.getElementById('info-aanrij').innerText=`${Math.round(aanrijSec/60)} min`;document.getElementById('info-rit').innerText=`${Math.round(ritSec/60)} min`;syncTijden();rekenUren();}});}
     
@@ -435,7 +458,7 @@
     function saveInternalNote(){if(appState.activeRitId!==null){db.ritten[appState.activeRitId].internal_notes=document.getElementById('offerte-note-text').value;localStorage.setItem('berkhout_v2',JSON.stringify(db));alert('Opgeslagen');}}
     function confirmOfferte(){if(appState.activeRitId!==null){db.ritten[appState.activeRitId].status.offerte=true;localStorage.setItem('berkhout_v2',JSON.stringify(db));updateDashboard();closeModal('offerte-modal');}}
     
-    // V3.20: PDF MET DAGNAAM
+    // PDF
     function printOfferte(){if(appState.activeRitId===null)return;const r=db.ritten[appState.activeRitId];const k=db.klanten.find(x=>x.id==r.details.klantId);let cp="";if(r.details.contactIdx!==""&&k&&k.contactpersonen[r.details.contactIdx])cp=k.contactpersonen[r.details.contactIdx].naam;
     const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     const d=new Date().toLocaleDateString('nl-NL', dateOpts);
