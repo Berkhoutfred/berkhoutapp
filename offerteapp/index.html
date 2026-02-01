@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berkhout Planning V3.23 (Clean Start)</title>
+    <title>Berkhout Planning V3.24 (Bulletproof)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -77,6 +77,7 @@
         
         .status-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
         .status-table td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        .status-table tr:last-child td { border-bottom: none; }
         .status-label { width: 100px; font-size: 12px; font-weight: 700; color: var(--primary); }
         .status-input input { width: 100%; border: 1px solid #ddd; padding: 6px; font-size: 12px; }
 
@@ -261,25 +262,44 @@
     const tijdVeldenMeerDag1 = [ {id:'md_1',label:'1. Vertrek Garage',defH:'08',defM:'00'}, {id:'md_2',label:'2. Aankomst Locatie',defH:'14',defM:'00'} ];
     const tijdVeldenMeerDagEind = [ {id:'md_3',label:'1. Vertrek Locatie',defH:'12',defM:'00'}, {id:'md_4',label:'2. Aankomst Garage',defH:'18',defM:'00'} ];
 
-    // 2. INIT
+    // 2. INIT & REPAIR (V3.22)
     window.initApp = function() {
         try {
-            const s=localStorage.getItem('berkhout_v2'); 
-            if(s) {
-                db=JSON.parse(s);
-            } else {
-                db={klanten:[], ritten:[]};
-            }
-            if(!db.klanten) db.klanten=[];
-            if(!db.ritten) db.ritten=[];
+            console.log("App starting...");
+            // Initialize global db first to prevent undefined errors
+            db = { klanten: [], ritten: [] };
             
-            db.klanten.forEach(k=>{if(!k.contactpersonen)k.contactpersonen=[]});
+            const s = localStorage.getItem('berkhout_v2');
+            if(s) {
+                try {
+                    db = JSON.parse(s);
+                } catch(parseErr) {
+                    console.error("Data corrupt, resetting db");
+                    db = { klanten: [], ritten: [] };
+                }
+            }
+            
+            // Repair structure if needed
+            if(!Array.isArray(db.klanten)) db.klanten = [];
+            if(!Array.isArray(db.ritten)) db.ritten = [];
+            
+            // Repair clients without contacts array
+            db.klanten.forEach(k=>{ if(!k.contactpersonen) k.contactpersonen=[]; });
+            
+            console.log("DB Loaded:", db);
+
             bouwBusKiezers(); bouwTijdLijsten(); initMapsAutofill(); wisselTijdLijst();
             renderMonthButtons(); updateDashboard(); renderClientList();
-            const t=new Date().toISOString().split('T')[0];
-            document.getElementById('rit_datum').value=t; document.getElementById('rit_datum_eind').value=t;
+            
+            const t = new Date().toISOString().split('T')[0];
+            const rd = document.getElementById('rit_datum');
+            if(rd) { rd.value=t; document.getElementById('rit_datum_eind').value=t; }
+            
             rekenUren();
-        } catch(e){ console.error("Init fout",e); alert("Er ging iets mis bij het starten."); }
+        } catch(e){ 
+            console.error("Critical Init Error:",e); 
+            alert("Er is een fout opgetreden bij het laden.");
+        }
     };
 
     function hardReset() {
@@ -479,89 +499,99 @@
     const rd=new Date(r.datum).toLocaleDateString('nl-NL', dateOpts);
     const c=`<html><head><title>Offerte</title><style>body{font-family:Arial,sans-serif;padding:40px;color:#333;line-height:1.5;max-width:800px;margin:0 auto;}.header{display:flex;justify-content:space-between;margin-bottom:50px;}.logo-area{font-size:24px;font-weight:bold;color:#004a99;}.sender-info{font-size:12px;color:#666;text-align:right;}.receiver-info{margin-bottom:40px;font-size:14px;}.meta-info{display:flex;justify-content:space-between;margin-bottom:30px;font-size:14px;border-bottom:2px solid #eee;padding-bottom:10px;}.subject{font-size:18px;font-weight:bold;margin-bottom:20px;color:#004a99;}.table{width:100%;border-collapse:collapse;margin-bottom:30px;font-size:14px;}.table th{text-align:left;border-bottom:1px solid #ccc;padding:8px;}.table td{border-bottom:1px solid #eee;padding:8px;}.total-block{text-align:right;font-size:16px;margin-top:20px;}.total-price{font-size:22px;font-weight:bold;color:#004a99;}.footer{margin-top:60px;font-size:11px;color:#888;text-align:center;border-top:1px solid #eee;padding-top:20px;}</style></head><body><div class="header"><div class="logo-area">BERKHOUT REIZEN</div><div class="sender-info">Berkhout Reizen<br>Industrieweg 99J<br>7202 CA Zutphen<br>info@berkhoutreizen.nl</div></div><div class="receiver-info"><strong>${k?k.naam:r.klant}</strong><br>${cp?'T.a.v. '+cp+'<br>':''}${k?k.adres+'<br>'+k.plaats:''}</div><div class="meta-info"><div><strong>Datum:</strong> ${d}</div><div><strong>Geldig tot:</strong> 14 dagen na dagtekening</div></div><div class="subject">Offerte: Vervoer naar ${r.dest}</div><p>Geachte relatie,</p><p>Hartelijk dank voor uw aanvraag. Hierbij doen wij u graag de volgende aanbieding.</p><table class="table"><tr><th>Omschrijving</th><th>Details</th></tr><tr><td>Vertrekdatum</td><td>${rd}</td></tr><tr><td>Vertreklocatie</td><td>${r.details.route.ophaal}</td></tr><tr><td>Bestemming</td><td>${r.dest}</td></tr><tr><td>Type Reis</td><td>${r.type}</td></tr><tr><td>Aantal Personen</td><td>${r.details.pax||'-'}</td></tr></table><div class="total-block">Totaalbedrag (incl. 9% BTW):<br><span class="total-price">${r.prijs}</span></div><p style="margin-top:40px;">Met vriendelijke groet,<br><br>Berkhout Reizen</p><div class="footer">Op al onze diensten zijn de Algemene Vervoersvoorwaarden van toepassing. KVK: 12345678.</div></body></html>`;const w=window.open('','_blank');w.document.write(c);w.document.close();setTimeout(()=>{w.print()},500);}
 
-    // CRM FIXED V3.23 (SIMPLE)
+    // CRM V3.23: THE CLEANEST VERSION
     function nieuwKlantScherm(){
         appState.activeClientId = null;
         document.getElementById('crm-title').innerText = "Nieuwe Klant";
-        document.getElementById('crm-naam').value = '';
-        document.getElementById('crm-adres').value = '';
-        document.getElementById('crm-plaats').value = '';
-        document.getElementById('crm-tel').value = '';
-        document.getElementById('crm-deb').value = '';
+        
+        // Reset Inputs
+        const ids = ['crm-naam','crm-adres','crm-plaats','crm-tel','crm-deb'];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.value = '';
+        });
+        
+        // Reset Contacts
         const c = document.getElementById('crm-contacts-container');
-        c.innerHTML = '';
-        addContactRow();
+        if(c) {
+            c.innerHTML = '';
+            addContactRow();
+        }
+        
         switchCrmView(true);
     }
     
     function editClient(id){
+        // Loose comparison for string/number ID mismatch
         const k = db.klanten.find(x => x.id == id);
         if(!k) return;
+        
         appState.activeClientId = id;
         document.getElementById('crm-title').innerText = "Klant Bewerken";
-        document.getElementById('crm-naam').value = k.naam;
-        document.getElementById('crm-adres').value = k.adres;
-        document.getElementById('crm-plaats').value = k.plaats;
-        document.getElementById('crm-tel').value = k.tel;
-        document.getElementById('crm-deb').value = k.debiteurnr;
+        
+        document.getElementById('crm-naam').value = k.naam || '';
+        document.getElementById('crm-adres').value = k.adres || '';
+        document.getElementById('crm-plaats').value = k.plaats || '';
+        document.getElementById('crm-tel').value = k.tel || '';
+        document.getElementById('crm-deb').value = k.debiteurnr || '';
         
         const c = document.getElementById('crm-contacts-container');
-        c.innerHTML = '';
-        if(k.contactpersonen && k.contactpersonen.length > 0){
-            k.contactpersonen.forEach(cp => addContactRow(cp));
-        } else {
-            addContactRow();
+        if(c) {
+            c.innerHTML = '';
+            if(k.contactpersonen && k.contactpersonen.length > 0){
+                k.contactpersonen.forEach(cp => addContactRow(cp));
+            } else {
+                addContactRow();
+            }
         }
         switchCrmView(true);
     }
 
     function saveClient(){
-        try {
-            const naam = document.getElementById('crm-naam').value;
-            if(!naam) { alert("Vul minimaal een naam in!"); return; }
-            
-            const contacts = [];
-            document.querySelectorAll('.contact-row').forEach(row => {
-                const inputs = row.querySelectorAll('input');
-                if(inputs[0].value) {
-                    contacts.push({
-                        naam: inputs[0].value,
-                        email: inputs[1].value,
-                        tel: inputs[2].value,
-                        mob: inputs[3].value
-                    });
-                }
-            });
-            
-            const klantData = {
-                id: appState.activeClientId ? appState.activeClientId : Date.now(),
-                naam: naam,
-                adres: document.getElementById('crm-adres').value,
-                plaats: document.getElementById('crm-plaats').value,
-                tel: document.getElementById('crm-tel').value,
-                debiteurnr: document.getElementById('crm-deb').value,
-                contactpersonen: contacts
-            };
-            
-            if(appState.activeClientId) {
-                // Bewerken
-                const index = db.klanten.findIndex(x => x.id == appState.activeClientId);
-                if(index !== -1) {
-                    db.klanten[index] = klantData;
-                }
+        const naam = document.getElementById('crm-naam').value;
+        if(!naam) { alert("Vul minimaal een naam in!"); return; }
+        
+        const contacts = [];
+        document.querySelectorAll('.contact-row').forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            if(inputs && inputs[0] && inputs[0].value) {
+                contacts.push({
+                    naam: inputs[0].value,
+                    email: inputs[1].value,
+                    tel: inputs[2].value,
+                    mob: inputs[3].value
+                });
+            }
+        });
+        
+        const klantData = {
+            id: appState.activeClientId ? appState.activeClientId : Date.now(),
+            naam: naam,
+            adres: document.getElementById('crm-adres').value,
+            plaats: document.getElementById('crm-plaats').value,
+            tel: document.getElementById('crm-tel').value,
+            debiteurnr: document.getElementById('crm-deb').value,
+            contactpersonen: contacts
+        };
+        
+        // Ensure DB integrity
+        if(!db.klanten) db.klanten = [];
+
+        if(appState.activeClientId) {
+            const index = db.klanten.findIndex(x => x.id == appState.activeClientId);
+            if(index !== -1) {
+                db.klanten[index] = klantData;
             } else {
-                // Nieuw
                 db.klanten.push(klantData);
             }
-            
-            localStorage.setItem('berkhout_v2', JSON.stringify(db));
-            renderClientList();
-            terugNaarLijst();
-            
-        } catch (err) {
-            console.error(err);
-            alert("Er ging iets mis met opslaan: " + err.message);
+        } else {
+            db.klanten.push(klantData);
         }
+        
+        localStorage.setItem('berkhout_v2', JSON.stringify(db));
+        alert("Klant opgeslagen!"); // Confirm success
+        renderClientList();
+        terugNaarLijst();
     }
 
     function addContactRow(d={}){
@@ -581,18 +611,22 @@
     function renderClientList(){
         const q = document.getElementById('crm-search').value.toLowerCase();
         const b = document.getElementById('crm-table-body');
+        if(!b) return;
         b.innerHTML = '';
         
+        if(!db.klanten) return;
+        
         db.klanten.forEach(k => {
-            if(k.naam.toLowerCase().includes(q) || k.plaats.toLowerCase().includes(q)) {
+            if((k.naam && k.naam.toLowerCase().includes(q)) || (k.plaats && k.plaats.toLowerCase().includes(q))) {
+                const email = (k.contactpersonen && k.contactpersonen[0]) ? k.contactpersonen[0].email : '-';
                 b.innerHTML += `<tr>
                     <td style="font-weight:bold;">${k.naam}</td>
                     <td>${k.plaats||'-'}</td>
-                    <td>${(k.contactpersonen[0] ? k.contactpersonen[0].email : '-')}</td>
+                    <td>${email}</td>
                     <td>${k.tel||'-'}</td>
                     <td style="text-align:center; display:flex; gap:5px; justify-content:center;">
                         <button class="action-btn" onclick="startOfferte(${k.id})"><i class="fa-solid fa-calculator"></i></button>
-                        <button class="action-btn" onclick="editClient(${k.id})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="action-btn" onclick="editClient('${k.id}')"><i class="fa-solid fa-pen"></i></button>
                     </td>
                 </tr>`;
             }
