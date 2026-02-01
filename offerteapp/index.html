@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Berkhout Planning V3.21.2 (CRM Fixed)</title>
+    <title>Berkhout Planning V3.21.3 (CRM Final)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -259,6 +259,10 @@
     window.initApp = function() {
         try {
             const s=localStorage.getItem('berkhout_v2'); if(s) db=JSON.parse(s);
+            // V3.21.3 REPAIR: Ensure DB structure is valid
+            if(!db.klanten) db.klanten = [];
+            if(!db.ritten) db.ritten = [];
+            
             db.klanten.forEach(k=>{if(!k.contactpersonen)k.contactpersonen=[]});
             bouwBusKiezers(); bouwTijdLijsten(); initMapsAutofill(); wisselTijdLijst();
             renderMonthButtons(); updateDashboard(); renderClientList();
@@ -458,7 +462,7 @@
     const rd=new Date(r.datum).toLocaleDateString('nl-NL', dateOpts);
     const c=`<html><head><title>Offerte</title><style>body{font-family:Arial,sans-serif;padding:40px;color:#333;line-height:1.5;max-width:800px;margin:0 auto;}.header{display:flex;justify-content:space-between;margin-bottom:50px;}.logo-area{font-size:24px;font-weight:bold;color:#004a99;}.sender-info{font-size:12px;color:#666;text-align:right;}.receiver-info{margin-bottom:40px;font-size:14px;}.meta-info{display:flex;justify-content:space-between;margin-bottom:30px;font-size:14px;border-bottom:2px solid #eee;padding-bottom:10px;}.subject{font-size:18px;font-weight:bold;margin-bottom:20px;color:#004a99;}.table{width:100%;border-collapse:collapse;margin-bottom:30px;font-size:14px;}.table th{text-align:left;border-bottom:1px solid #ccc;padding:8px;}.table td{border-bottom:1px solid #eee;padding:8px;}.total-block{text-align:right;font-size:16px;margin-top:20px;}.total-price{font-size:22px;font-weight:bold;color:#004a99;}.footer{margin-top:60px;font-size:11px;color:#888;text-align:center;border-top:1px solid #eee;padding-top:20px;}</style></head><body><div class="header"><div class="logo-area">BERKHOUT REIZEN</div><div class="sender-info">Berkhout Reizen<br>Industrieweg 99J<br>7202 CA Zutphen<br>info@berkhoutreizen.nl</div></div><div class="receiver-info"><strong>${k?k.naam:r.klant}</strong><br>${cp?'T.a.v. '+cp+'<br>':''}${k?k.adres+'<br>'+k.plaats:''}</div><div class="meta-info"><div><strong>Datum:</strong> ${d}</div><div><strong>Geldig tot:</strong> 14 dagen na dagtekening</div></div><div class="subject">Offerte: Vervoer naar ${r.dest}</div><p>Geachte relatie,</p><p>Hartelijk dank voor uw aanvraag. Hierbij doen wij u graag de volgende aanbieding.</p><table class="table"><tr><th>Omschrijving</th><th>Details</th></tr><tr><td>Vertrekdatum</td><td>${rd}</td></tr><tr><td>Vertreklocatie</td><td>${r.details.route.ophaal}</td></tr><tr><td>Bestemming</td><td>${r.dest}</td></tr><tr><td>Type Reis</td><td>${r.type}</td></tr><tr><td>Aantal Personen</td><td>${r.details.pax||'-'}</td></tr></table><div class="total-block">Totaalbedrag (incl. 9% BTW):<br><span class="total-price">${r.prijs}</span></div><p style="margin-top:40px;">Met vriendelijke groet,<br><br>Berkhout Reizen</p><div class="footer">Op al onze diensten zijn de Algemene Vervoersvoorwaarden van toepassing. KVK: 12345678.</div></body></html>`;const w=window.open('','_blank');w.document.write(c);w.document.close();setTimeout(()=>{w.print()},500);}
 
-    // CRM FIXED V3.21.2
+    // CRM FIXED V3.21.3
     function nieuwKlantScherm(){
         appState.activeClientId = null;
         document.getElementById('crm-title').innerText = "Nieuwe Klant";
@@ -538,19 +542,26 @@
             contactpersonen: contacts
         };
         
+        // Zeker weten dat db.klanten bestaat
+        if(!db.klanten) db.klanten = [];
+
         if(appState.activeClientId) {
             // Update bestaande klant
             const idx = db.klanten.findIndex(x => x.id == appState.activeClientId);
             if(idx > -1) db.klanten[idx] = data;
         } else {
             // Nieuwe klant toevoegen
-            if(!db.klanten) db.klanten = [];
             db.klanten.push(data);
         }
         
-        localStorage.setItem('berkhout_v2', JSON.stringify(db));
-        renderClientList();
-        terugNaarLijst();
+        try {
+            localStorage.setItem('berkhout_v2', JSON.stringify(db));
+            alert("Klant opgeslagen!");
+            renderClientList();
+            terugNaarLijst();
+        } catch(e) {
+            alert("Fout bij opslaan: " + e.message);
+        }
     }
 
     function addContactRow(d={}){
