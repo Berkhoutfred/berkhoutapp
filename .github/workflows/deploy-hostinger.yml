@@ -1,0 +1,52 @@
+name: Deploy to Hostinger (FTP)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'wp-content/**'
+  workflow_dispatch:
+
+jobs:
+  ftp-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Check FTP-poort 21 bereikbaar
+        env:
+          FTP_HOST: ${{ secrets.FTP_SERVER }}
+        run: |
+          set -e
+          if [ -z "$FTP_HOST" ]; then
+            echo "::error::Secret FTP_SERVER is leeg."
+            exit 1
+          fi
+          ok=0
+          for attempt in 1 2 3; do
+            if timeout 15 bash -c "echo >/dev/tcp/$FTP_HOST/21" 2>/dev/null; then
+              ok=1
+              break
+            fi
+            sleep 10
+          done
+          if [ "$ok" != "1" ]; then
+            echo "::error::Geen TCP-verbinding naar FTP-host op poort 21."
+            exit 1
+          fi
+
+      - name: FTP deploy mu-plugin
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: /public_html/
+          local-dir: ./wp-content/
+          protocol: ftps
+          port: 21
+          timeout: 600000
+          security: loose
+          log-level: standard
