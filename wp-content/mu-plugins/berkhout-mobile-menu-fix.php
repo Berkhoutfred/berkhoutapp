@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Berkhout Mobile Menu Fix
  * Description: Corrigeert afgesneden menu-tekst in het Astra mobiele hamburger-menu op berkhoutreizen.nl.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Berkhout
  */
 
@@ -13,7 +13,7 @@ add_action(
 	static function (): void {
 		$handle = 'berkhout-mobile-menu-fix';
 
-		wp_register_style( $handle, false, array(), '1.0.0' );
+		wp_register_style( $handle, false, array(), '1.0.1' );
 		wp_enqueue_style( $handle );
 
 		wp_add_inline_style(
